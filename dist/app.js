@@ -1,5 +1,5 @@
 import {problems as bundledProblems} from "./problems.js";
-import {Cloud} from "./cloud.js";
+import {Cloud} from "./cloud.js?v=20261113-fetch";
 import {blankProgress, validateProgress, mergeProgress} from "./progress.js";
 import {Studio} from "./studio.js";
 const problems=[...bundledProblems];
