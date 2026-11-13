@@ -1,0 +1,11 @@
+{
+  "name": "bytequest",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A playful, real-Java learning playground that runs on GitHub Pages.",
+  "scripts": {
+    "build": "node scripts/build-java.mjs",
+    "test": "node tests/verify.mjs"
+  }
+}

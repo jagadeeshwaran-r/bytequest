@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>ByteQuest Java runtime</title></head>
+<body>
+<script src="https://cjrtnc.leaningtech.com/5.0/loader.js"></script>
+<script type="module">
+const channel = "bytequest-java";
+const send = data => parent.postMessage({channel,...data}, location.origin);
+let Runner;
+let running = false;
+try {
+  if (typeof cheerpjInit !== "function") throw new Error("The Java runtime CDN is unavailable. Check your connection and try again.");
+  send({type:"status",message:"Loading the browser JDK. The first launch can take a minute."});
+  await cheerpjInit({version:17,status:"none",javaProperties:["java.io.tmpdir=/files"]});
+  const jar = "/app" + new URL("java-runner.jar", location.href).pathname;
+  const lib = await cheerpjRunLibrary(jar);
+  Runner = await lib.quest.JavaRunner;
+  send({id:"boot",type:"ready",result:true});
+} catch (error) {
+  send({id:"boot",type:"error",message:"Java could not start: " + String(error.message || error)});
+}
+addEventListener("message", async event => {
+  if (event.source !== parent || event.origin !== location.origin || event.data?.channel !== channel || event.data.type !== "run") return;
+  const {id,source,tests} = event.data;
+  if (!Runner || running) { send({id,type:"error",message:"The Java runtime is busy or not ready."}); return; }
+  running = true;
+  try { send({id,type:"result",result:JSON.parse(await Runner.run(source,tests))}); }
+  catch (error) { send({id,type:"error",message:String(error.message || error)}); }
+  finally { running = false; }
+});
+</script>
+</body>
+</html>
