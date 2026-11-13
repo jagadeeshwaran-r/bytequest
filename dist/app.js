@@ -241,12 +241,14 @@ $("confirmReset").onclick=()=>{state.drafts[current.id]=current.starter;touch("d
 document.querySelectorAll(".dialog-close,.dialog-close-button").forEach(b=>b.onclick=()=>b.closest("dialog").close());
 document.querySelectorAll("dialog").forEach(d=>d.addEventListener("click",event=>{if(event.target===d){const r=d.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)d.close();}}));
 $("aboutBtn").onclick=()=>$("aboutDialog").showModal();
+let previousView=null;
 function route(){
   const view=["map","progress","studio"].includes(location.hash.slice(1))?location.hash.slice(1):"practice";
   ["practice","map","progress","studio"].forEach(name=>$(name+"View").hidden=view!==name);
   document.querySelectorAll("[data-view]").forEach(a=>a.classList.toggle("active",a.dataset.view===view));
   $("breadcrumb").textContent=({practice:"Practice",map:"Problem library",progress:"My progress",studio:"Problem studio"})[view];
   if(view!=="practice"){pauseTrace();if(busy)stopRun();}if(view!=="studio")studio.stop();if(view==="studio")studio.open();if(view==="map")renderMap();if(view==="progress")renderProgress();
+  if(previousView!==null&&previousView!==view)window.scrollTo({top:0,left:0,behavior:"instant"});previousView=view;
 }
 addEventListener("hashchange",route);
 $("topicFilter").innerHTML+=[...topics].map(t=>'<option>'+html(t)+'</option>').join("");
