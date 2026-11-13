@@ -22,6 +22,7 @@ const validateBackup=validateProgress;
 let state=blank(),storageOK=true;
 function readLocal(key){try{const saved=JSON.parse(localStorage.getItem(key));return saved?validateProgress(saved):blank();}catch{return blank();}}
 state=readLocal(storageKey);
+let publicProfile=null;
 let syncTimer,syncing=false,syncAgain=false,accountEpoch=0,accountOwner,accountReady=false;
 const cloud=new Cloud(user=>changeAccount(user));
 const studio=new Studio({cloud,notify:message=>notify(message),onCatalogChanged:()=>refreshCatalog()});
@@ -311,7 +312,7 @@ $("importFile").onchange=async event=>{
 };
 function setSyncStatus(kind,label){$("syncBadge").className="sync-badge "+kind;$("syncLabel").textContent=label;}
 function refreshAccountUi(){
-  shell.setAccount(cloud.user);
+  shell.setAccount(cloud.user,publicProfile);
   const user=cloud.user,meta=user?.user_metadata||{},name=String(meta.full_name||meta.name||"Java explorer");
   $("accountLabel").textContent=user?String(name).split(" ")[0]:"Sign in with Google";
   $("profileName").textContent=user?name:"Java explorer";$("profileAvatar").textContent=user?name.charAt(0).toUpperCase():"J";
@@ -327,20 +328,21 @@ function refreshAccountUi(){
 }
 async function changeAccount(user){
   const owner=user?.id||null;if(owner===accountOwner&&accountReady)return;
-  const epoch=++accountEpoch;accountOwner=owner;accountReady=false;clearTimeout(syncTimer);syncing=false;syncAgain=false;
+  const epoch=++accountEpoch;publicProfile=null;accountOwner=owner;accountReady=false;clearTimeout(syncTimer);syncing=false;syncAgain=false;
   if(busy)stopRun();studio.accountChanged();dashboard.accountChanged();storageKey=owner?"bytequest.user."+owner:guestStorageKey;
   state=readLocal(storageKey);current=problems.find(p=>p.id===state.current)||problems[0]||null;
   renderPractice();$("codeEditor").readOnly=true;updateStats();refreshAccountUi();
   let needsSync=false;
   if(owner){
     setSyncStatus("syncing","Loading your progress");
-    const loaded=await Promise.allSettled([cloud.loadProgress(owner),cloud.checkAdmin(owner)]);
+    const loaded=await Promise.allSettled([cloud.loadProgress(owner),cloud.checkAdmin(owner),cloud.request("self")]);
     if(epoch!==accountEpoch)return;
     if(loaded[0].status==="fulfilled"){
       const remote=loaded[0].value;state=mergeProgress(state,remote.state);needsSync=JSON.stringify(state)!==JSON.stringify(remote.state);
       setSyncStatus("synced",remote.revision?"Saved to cloud":"Cloud connected");
     }else{setSyncStatus("failed","Saved on this device");$("authMessage").textContent="Could not load cloud progress. Your account’s local work is kept. Use Sync now to retry.";}
     if(loaded[1].status==="rejected")cloud.admin=false;
+    if(loaded[2].status==="fulfilled")publicProfile=loaded[2].value.profile;
   }else setSyncStatus("","On this device");
   if(epoch!==accountEpoch)return;
   current=problems.find(p=>p.id===state.current)||problems[0]||null;
