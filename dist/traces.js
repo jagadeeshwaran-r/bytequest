@@ -1,5 +1,6 @@
 const frame = (values, active, message, note = "", found = [], dim = []) => ({values,active,message,note,found,dim});
 export function traceFor(p) {
+  if(Array.isArray(p.frames)&&p.frames.length)return p.frames;
   if (p.id === "two-sum") return [
     frame([2,7,11,15],[], "We need two values that add up to 9. Start with an empty map.", "seen = {}"),
     frame([2,7,11,15],[0], "Visit 2. Its complement is 9 − 2 = 7. We have not seen 7 yet.", "need = 7 · not found"),
@@ -92,7 +93,7 @@ export function traceFor(p) {
     frame([7,1,5,3,6,4],[4], "Selling at 6 improves the profit to 5.", "lowest = 1 · best = 5",[1,4]),
     frame([7,1,5,3,6,4],[5], "4 gives a smaller profit. Return the best seen, 5.", "answer = 5",[1,4])
   ];
-  return [
+  if(p.id === "max-subarray") return [
     frame([-2,1,-3,4,-1,2,1,-5,4],[0], "Initialize from the first value. A nonempty answer may be negative.", "endingHere = −2 · best = −2"),
     frame([-2,1,-3,4,-1,2,1,-5,4],[1], "Start fresh at 1: it is better than extending the sum −2.", "endingHere = 1 · best = 1"),
     frame([-2,1,-3,4,-1,2,1,-5,4],[2], "Extend to −2. The overall best stays 1.", "endingHere = −2 · best = 1"),
@@ -100,4 +101,5 @@ export function traceFor(p) {
     frame([-2,1,-3,4,-1,2,1,-5,4],[4,5,6], "Extend through −1, 2 and 1. The running sum reaches 6.", "endingHere = 6 · best = 6",[3,4,5,6]),
     frame([-2,1,-3,4,-1,2,1,-5,4],[], "The remaining values never improve on 6. Return 6.", "best subarray = [4, −1, 2, 1]",[3,4,5,6])
   ];
+  return [frame(["?"],[],"An animation has not been added for this problem yet. Use the pattern guide and sketch the state changes as you practise.","Your Java still runs normally in the editor.")];
 }

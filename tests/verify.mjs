@@ -1,3 +1,4 @@
+import "./cloud-models.mjs";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from "node:fs";

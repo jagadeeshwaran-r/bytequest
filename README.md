@@ -14,7 +14,10 @@ A small, playful problem-solving playground for learning Java. Made for a Java /
 - Learn mode first, optional 20- or 30-minute focus timer in Challenge mode.
 - 100 XP per first accepted quest, confidence notes, activity history, streaks and topic progress.
 - 2 / 7 / 21-day reviews after first completion; 20 XP for a completed due review.
-- JSON backup export and merge restore. No account, database, paid API key or server required.
+- Guest practice without an account, plus Google sign-in and private progress sync through Supabase once OAuth is activated.
+- A live database problem library and editor-only studio for adding, validating, drafting and publishing challenges without redeploying.
+- JSON backup export and merge restore, including older ByteQuest backups.
+- A clean blue-and-white interface with playful topic colours and a responsive practice workspace.
 - Responsive mobile layout and reduced-motion support.
 
 ## Publish free with GitHub Pages
@@ -66,36 +69,40 @@ JavaRunner.run writes Solution.java and a generated test harness into a temporar
 - Browser sandbox limits apply. This is a personal learning tool, not an adversarial online judge. Cases are public and inspectable. Do not treat the checks, XP or local progress as trusted competition scores.
 - For a future multi-user competition platform with secret tests and trusted scores, add an authenticated backend plus a properly isolated judge service. Do not run arbitrary visitors' Java directly in a Spring Boot process.
 
+## Database and Google sign-in
+
+The connected Supabase project is **ByteQuest** (`zwubrziriuppkldrdoos`, Mumbai). Its database schema and 16 published problems are installed. `dist/config.js` contains only the public project URL and publishable key; Row Level Security controls access.
+
+**Google OAuth activation is still required.** The app detects whether the provider is enabled and explains the pending activation while keeping guest practice available. See [DATABASE.md](DATABASE.md) for the exact Google Cloud and Supabase configuration, editor enrolment and future problem publishing workflow. No client secret or service key belongs in this repository.
+
 ## Privacy and persistence
 
-Drafts, notes, solved state and practice history are stored in localStorage on the current site origin and browser. They do not sync between devices or between the preview and GitHub Pages. Use **Save progress** and **My progress → Restore backup** to transfer progress.
+Guest drafts, notes, solved state and practice history stay in localStorage on the current browser and origin. After Google sign-in, each account uses its own local cache and private Supabase progress row. Newer draft/note edits merge by field timestamp; solved dates retain their earliest value. Simultaneous cloud saves use revision checks to prevent blind overwrites. Offline changes remain on the device and retry when online. Synced progress is personal learning data, not a trusted score.
 
-Code execution happens in the browser; there is no submission endpoint. The page fetches CheerpJ's runtime from its CDN and fonts from Google Fonts. Browser/runtime caching uses local browser storage. Closing the tab or clearing site data can discard local work; export backups regularly.
+Guest progress is imported only when you choose **Bring guest progress** in the account dialog. Signing out returns to guest mode and leaves the account cache on that browser; clear site data on a shared device after exporting any work you need. **Backup** and **My progress → Restore backup** still work without an account. Restoring merges records rather than deleting current progress.
 
-Reviews are computed when you open the site. There are no background notifications. On-time reviews target day 2, day 7 and day 21 from the first completion; a late review advances the stored review stage, so another overdue stage may become immediately due.
+Signed-in source drafts and notes are stored in Supabase for sync; Java compilation/execution still happens locally in the browser. The page also loads the Supabase SDK from a pinned esm.sh URL, CheerpJ's runtime from its official CDN, and fonts from Google Fonts. See the site's [privacy notice](https://jagadeeshwaran-r.github.io/bytequest/privacy.html).
 
-Restore merges solved records, notes and activity. Existing local drafts win over backup drafts. Keep the downloaded backup if you want to recover its exact code separately.
+Reviews are computed when you open the site. There are no background notifications. Reviews target day 2, day 7 and day 21 from first completion; a late review advances its stage, so another overdue stage may become immediately due.
 
-## Add a quest
+## Add a problem
 
-Edit dist/problems.js. Use the make helper with:
+After OAuth activation and owner editor enrolment, open **Problem studio**. Create or import a definition, supply examples and edge cases, teaching notes, Java starter/reference code and optional animation steps. Validate the reference solution in real Java before checking **Published** and saving. Drafts are visible only to editors. Uncheck Published to remove a challenge from the public library while retaining it in the database. Counts and topic filters update automatically.
 
-1. A unique id, title, topic and Java method signature.
-2. A clear original statement and explicit constraints.
-3. At least two sample cases, followed by additional edge cases.
-4. A reference method body, pattern idea, invariant, complexity and hints.
-5. A reference trace in dist/traces.js.
+Problems support `int`, `int[]`, `boolean` and ASCII `String` parameters/results. Linked lists, trees, graphs and interactive stdin are not part of the current judge protocol. Published cases and reference solutions are public and inspectable.
 
-Supported parameter and result types are int, int[], boolean and ASCII String. This first version intentionally focuses on arrays, strings, search, stacks, basic math and DP. Linked lists, trees, graphs and interactive stdin are not yet part of its judge protocol.
-
-Run node tests/verify.mjs after adding a quest. Update the displayed quest counts in index.html and app.js if expanding the catalog. The existing structure can grow into your larger study plan.
+The bundled `dist/problems.js` catalog is a connection-failure fallback. To update that fallback, edit it and `dist/traces.js`, then run `node tests/verify.mjs`. The live Supabase catalog is authoritative while connected; use the studio for routine additions. See [DATABASE.md](DATABASE.md) for schema and import details.
 
 ## Files
 
 | File | Purpose |
 | --- | --- |
-| dist/index.html, dist/style.css | Interface, responsive layout and animations |
-| dist/app.js | Practice, progress, backup and review workflow |
+| dist/index.html, dist/style.css, dist/theme.css | Interface, blue/white theme, responsive layout and animations |
+| dist/app.js, dist/progress.js | Practice, account-aware progress, merges, backups and reviews |
+| dist/cloud.js, dist/config.js | Supabase client, Google OAuth and cloud sync |
+| dist/studio.js, dist/catalog.js | Editor studio and validated problem definitions |
+| database/ | Schema snapshot, seed catalog and transactional access checks |
+| DATABASE.md | OAuth activation and editor setup |
 | dist/problems.js | Quest content, Java templates and test data |
 | dist/traces.js | Guided reference-algorithm traces |
 | dist/judge.js, dist/runner.html | Browser-JVM orchestration |
@@ -119,3 +126,7 @@ Official references (checked November 13, 2026):
 - [CheerpJ 5.0 and its full browser JDK](https://cheerpj.com/cheerpj-5-0-released/)
 - [CheerpJ documentation](https://cheerpj.com/docs/overview)
 - [CheerpJ licensing](https://cheerpj.com/docs/licensing.html)
+
+- [Supabase Google OAuth configuration](https://supabase.com/docs/guides/auth/social-login/auth-google)
+- [Supabase Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security)
+- [Supabase pricing and free-plan limits](https://supabase.com/pricing)

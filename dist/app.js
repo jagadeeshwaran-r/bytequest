@@ -1,31 +1,25 @@
-import {problems, topics} from "./problems.js";
+import {problems as bundledProblems} from "./problems.js";
+import {Cloud} from "./cloud.js";
+import {blankProgress, validateProgress, mergeProgress} from "./progress.js";
+import {Studio} from "./studio.js";
+const problems=[...bundledProblems];
+let topics=[...new Set(problems.map(p=>p.topic))];
 import {JavaJudge, buildTests} from "./judge.js";
 import {traceFor} from "./traces.js";
 const $ = id => document.getElementById(id);
 const html = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
 const icon = name => '<svg aria-hidden="true"><use href="#i-' + name + '"/></svg>';
-const storageKey = "bytequest.v1";
-const blank = () => ({version:1,current:"two-sum",drafts:{},solved:{},notes:{},confidence:{},activity:[],days:[],reviews:{},attempts:{}});
-let state = blank(), storageOK = true;
-try { const saved = JSON.parse(localStorage.getItem(storageKey)); if (saved) state = validateBackup(saved); } catch { storageOK = false; }
-function validateBackup(value) {
-  if (!value || value.version !== 1 || typeof value !== "object") throw new Error("This is not a ByteQuest v1 backup.");
-  const clean = blank();
-  for (const p of problems) {
-    if (typeof value.drafts?.[p.id] === "string" && value.drafts[p.id].length <= 60000) clean.drafts[p.id] = value.drafts[p.id];
-    if (typeof value.notes?.[p.id] === "string") clean.notes[p.id] = value.notes[p.id].slice(0,4000);
-    if ([1,2,3].includes(value.confidence?.[p.id])) clean.confidence[p.id] = value.confidence[p.id];
-    if (Number.isFinite(value.solved?.[p.id]) && value.solved[p.id] > 0) clean.solved[p.id] = value.solved[p.id];
-    const r = value.reviews?.[p.id];
-    if (r && Number.isFinite(r.anchor) && Number.isInteger(r.step) && r.step >= 0 && r.step <= 3) clean.reviews[p.id] = {anchor:r.anchor,step:r.step};
-    const tries = value.attempts?.[p.id];
-    if (Number.isInteger(tries) && tries >= 0 && tries <= 100000) clean.attempts[p.id] = tries;
-  }
-  clean.activity = Array.isArray(value.activity) ? value.activity.filter(a => a && problems.some(p=>p.id===a.id) && Number.isFinite(a.at) && ["attempt","solved","review"].includes(a.type)).slice(-200).map(a=>({id:a.id,at:a.at,type:a.type,passed:Math.max(0,Number(a.passed)||0),total:Math.max(0,Number(a.total)||0)})) : [];
-  clean.days = Array.isArray(value.days) ? [...new Set(value.days.filter(d=>typeof d==="string" && /^\d{4}-\d{2}-\d{2}$/.test(d)))].slice(-1000) : [];
-  if (problems.some(p=>p.id===value.current)) clean.current=value.current;
-  return clean;
-}
+const guestStorageKey="bytequest.v1";
+let storageKey=guestStorageKey;
+const blank=blankProgress;
+const validateBackup=validateProgress;
+let state=blank(),storageOK=true;
+function readLocal(key){try{const saved=JSON.parse(localStorage.getItem(key));return saved?validateProgress(saved):blank();}catch{return blank();}}
+state=readLocal(storageKey);
+let syncTimer,syncing=false,syncAgain=false,accountEpoch=0,accountOwner,accountReady=false;
+const cloud=new Cloud(user=>changeAccount(user));
+const studio=new Studio({cloud,notify:message=>notify(message),onCatalogChanged:()=>refreshCatalog()});
+function touch(field,id){state.modified[id]??={};state.modified[id][field]=Date.now();}
 let current = problems.find(p => p.id === state.current) || problems[0];
 let tab = "problem", mode = "learn", hints = 0, selectedCase = 0, customCases = [], results = null;
 let busy = false, runEpoch = 0, watchdog, toastTimer, traceTimer, traceStep = 0;
@@ -41,8 +35,9 @@ const judge = new JavaJudge(message => {
   }
 });
 function persist() {
-  try { localStorage.setItem(storageKey,JSON.stringify(state)); storageOK=true; $("saveStatus").textContent="Draft saved on this device"; }
+  try { localStorage.setItem(storageKey,JSON.stringify(state)); storageOK=true; $("saveStatus").textContent=cloud.user?"Draft saved · cloud sync queued":"Draft saved on this device"; }
   catch { storageOK=false; $("saveStatus").textContent="Storage full or unavailable — export a backup"; }
+  if(accountReady&&cloud.user){clearTimeout(syncTimer);setSyncStatus("syncing","Changes saved here");syncTimer=setTimeout(()=>syncCloud(),1800);}
 }
 function notify(message) { clearTimeout(toastTimer); $("toast").textContent=message; $("toast").classList.add("show"); toastTimer=setTimeout(()=>$("toast").classList.remove("show"),4000); }
 function dateKey(date = new Date()) { return date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0"); }
@@ -55,7 +50,7 @@ function streak() {
 function xp() { return Object.keys(state.solved).length*100 + Object.values(state.reviews).reduce((sum,r)=>sum+r.step*20,0); }
 function dueTime(id) { const r=state.reviews[id]; if(!r||r.step>=3)return Infinity; return r.anchor+reviewDays[r.step]*86400000; }
 function due(id) { return dueTime(id)<=Date.now(); }
-function updateStats() { $("solvedCount").textContent=Object.keys(state.solved).length; $("xpCount").textContent=xp(); $("streak").textContent=streak(); $("level").textContent=1+Math.floor(xp()/300); }
+function updateStats() { $("solvedCount").textContent=problems.filter(p=>state.solved[p.id]).length; $("solvedTotal").textContent=problems.length; $("catalogCount").textContent=problems.length+" problems · "+topics.length+" topics"; $("xpCount").textContent=xp(); $("streak").textContent=streak(); $("level").textContent=1+Math.floor(xp()/300); }
 function highlight(source) {
   const regex=/(\/\/[^\n]*|\/\*[\s\S]*?\*\/)|("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|\b(import|class|public|private|static|return|throw|new|for|while|if|else|int|boolean|void|true|false|null|long|double|char|continue|break|final|try|catch)\b|\b(String|Solution|Map|HashMap|Set|HashSet|Deque|ArrayDeque|Integer|Math|Arrays|Character|UnsupportedOperationException)\b|\b(\d+)\b/g;
   let out="", last=0;
@@ -64,7 +59,7 @@ function highlight(source) {
 }
 function updateEditor() { $("codeHighlight").firstElementChild.innerHTML=highlight($("codeEditor").value); $("lineNumbers").textContent=$("codeEditor").value.split("\n").map((_,i)=>i+1).join("\n"); syncScroll(); }
 function syncScroll(){ $("codeHighlight").scrollTop=$("codeEditor").scrollTop; $("codeHighlight").scrollLeft=$("codeEditor").scrollLeft; $("lineNumbers").scrollTop=$("codeEditor").scrollTop; }
-function saveDraft(){state.drafts[current.id]=$("codeEditor").value;persist();updateEditor();if(results){results=null;renderTests();$("resultOutput").replaceChildren();}}
+function saveDraft(){state.drafts[current.id]=$("codeEditor").value;touch("drafts",current.id);persist();updateEditor();if(results){results=null;renderTests();$("resultOutput").replaceChildren();}}
 $("codeEditor").addEventListener("input",saveDraft);
 $("codeEditor").addEventListener("scroll",syncScroll);
 $("codeEditor").addEventListener("keydown",event=>{
@@ -73,10 +68,12 @@ $("codeEditor").addEventListener("keydown",event=>{
 });
 function renderPractice() {
   pauseTrace();
+  $("practiceView").classList.toggle("empty-catalog",!current);$("catalogEmpty").hidden=!!current;
+  if(!current)return;
   $("questTitle").textContent=current.title; $("questTopic").textContent=current.topic;
   $("questNumber").textContent=String(problems.indexOf(current)+1).padStart(2,"0");
-  $("difficulty").textContent=current.difficulty; $("difficulty").className="difficulty"+(current.difficulty==="Medium"?" medium":"");
-  $("questMinutes").textContent=current.difficulty==="Easy"?"15–25 min":"25–35 min";
+  $("difficulty").textContent=current.difficulty; $("difficulty").className="difficulty "+current.difficulty.toLowerCase();
+  $("questMinutes").textContent=current.difficulty==="Easy"?"15–25 min":current.difficulty==="Medium"?"25–35 min":"35–50 min";
   $("problemSelect").value=current.id;
   $("learnMode").classList.toggle("active",mode==="learn"); $("challengeMode").classList.toggle("active",mode==="challenge");
   $("codeEditor").value=state.drafts[current.id]??current.starter; updateEditor();
@@ -105,7 +102,7 @@ function renderLearning(){
     referenceUsed=true;
     $("referenceContent").innerHTML='<p class="reference-reveal-note">Trace the idea, then close this and try it yourself.</p><pre class="reference-code">'+html(current.reference)+'</pre><button id="copyReference" class="reference-button">Try this code in the editor</button>';
     $("referenceBtn").hidden=true;
-    $("copyReference").onclick=()=>{state.drafts[current.id]=current.reference;$("codeEditor").value=current.reference;persist();updateEditor();notify("Walkthrough loaded. Try changing one line and predict what happens.");};
+    $("copyReference").onclick=()=>{state.drafts[current.id]=current.reference;touch("drafts",current.id);$("codeEditor").value=current.reference;persist();updateEditor();notify("Walkthrough loaded. Try changing one line and predict what happens.");};
   };
   if(tab==="visual"){
     traceStep=0;renderTrace();
@@ -126,6 +123,7 @@ function renderTrace(){
   $("traceBoard").innerHTML='<div class="trace-cells">'+f.values.map((v,i)=>'<span class="trace-cell'+(f.active.includes(i)?" active":"")+(f.found.includes(i)?" found":"")+(f.dim.includes(i)?" dim":"")+'">'+html(v)+'<small>'+i+'</small></span>').join("")+'</div><div class="trace-note">'+html(f.note)+'</div>';
   $("traceCaption").textContent=f.message;$("traceCounter").textContent=(traceStep+1)+" / "+frames.length;
   $("traceBack").disabled=traceStep===0;$("traceNext").disabled=traceStep===frames.length-1;
+  $("tracePlay").disabled=frames.length<2;
 }
 function pauseTrace(){if(traceTimer)clearInterval(traceTimer);traceTimer=null;if($("tracePlay"))$("tracePlay").textContent="▶ Play";}
 function formatArgs(args){return args.map((v,i)=>current.params[i].name+" = "+JSON.stringify(v)).join(", ");}
@@ -160,12 +158,12 @@ function updateTimer(){
 }
 $("learnMode").onclick=()=>{mode="learn";if(timerStarted){timerUsed+=Date.now()-timerStarted;timerStarted=null;}renderLearning();$("learnMode").classList.add("active");$("challengeMode").classList.remove("active");};
 $("challengeMode").onclick=()=>{mode="challenge";renderLearning();$("challengeMode").classList.add("active");$("learnMode").classList.remove("active");};
-function setBusy(value){busy=value;$("runBtn").disabled=value;$("submitBtn").disabled=value;$("customBtn").disabled=value;$("stopBtn").hidden=!value;$("problemSelect").disabled=value;$("codeEditor").readOnly=value;document.body.classList.toggle("busy",value);}
+function setBusy(value){busy=value;$("runBtn").disabled=value;$("submitBtn").disabled=value;$("customBtn").disabled=value;$("stopBtn").hidden=!value;$("problemSelect").disabled=value;$("codeEditor").readOnly=value||!accountReady;document.body.classList.toggle("busy",value);}
 function stopRun(message="Run stopped. Your draft is saved."){
   runEpoch++;clearTimeout(watchdog);judge.stop();setBusy(false);$("runStatus").textContent="Real Java. Right here.";$("resultOutput").textContent=message;
 }
 async function run(submit){
-  if(busy)return;
+  if(busy||!current)return;
   const epoch=++runEpoch,p=current,source=$("codeEditor").value;
   const cases=submit?[...p.tests,...customCases]:allCases();
   setBusy(true);results=null;renderTests();$("resultOutput").textContent="Starting a real Java run…";
@@ -207,21 +205,22 @@ function completeQuest(p){
 }
 function celebrate(){
   if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;
-  const colors=["#a58ace","#c9dba7","#e6c682","#e4b8c6"];
+  const colors=["#69a0fa","#76cfbd","#f2d184","#c4aff3"];
   $("confetti").innerHTML=Array.from({length:30},(_,i)=>'<i style="left:'+Math.random()*100+'%;background:'+colors[i%4]+';animation-delay:'+Math.random()*.6+'s;transform:rotate('+Math.random()*180+'deg)"></i>').join("");
   setTimeout(()=>$("confetti").replaceChildren(),3800);
 }
-$("successNote").addEventListener("input",()=>{state.notes[current.id]=$("successNote").value.slice(0,4000);persist();});
-document.querySelectorAll("[data-confidence]").forEach(b=>b.onclick=()=>{state.confidence[current.id]=Number(b.dataset.confidence);document.querySelectorAll("[data-confidence]").forEach(x=>x.classList.toggle("selected",x===b));persist();});
+$("successNote").addEventListener("input",()=>{state.notes[current.id]=$("successNote").value.slice(0,4000);touch("notes",current.id);persist();});
+document.querySelectorAll("[data-confidence]").forEach(b=>b.onclick=()=>{state.confidence[current.id]=Number(b.dataset.confidence);touch("confidence",current.id);document.querySelectorAll("[data-confidence]").forEach(x=>x.classList.toggle("selected",x===b));persist();});
 $("runBtn").onclick=()=>run(false);$("submitBtn").onclick=()=>run(true);$("stopBtn").onclick=()=>stopRun();
 $("problemSelect").innerHTML=problems.map(p=>'<option value="'+p.id+'">'+html(p.title)+'</option>').join("");
 $("problemSelect").onchange=e=>changeProblem(e.target.value);
 function changeProblem(id){
   const target=problems.find(p=>p.id===id);if(!target)return;
   if(busy)stopRun();pauseTrace();clearInterval(timerTick);timerUsed=0;timerStarted=null;timerProblem=id;
-  current=target;state.current=id;customCases=[];selectedCase=0;results=null;tab="problem";referenceUsed=false;persist();renderPractice();location.hash="practice";
+  current=target;state.current=id;state.currentUpdated=Date.now();customCases=[];selectedCase=0;results=null;tab="problem";referenceUsed=false;persist();renderPractice();location.hash="practice";
 }
 function nextProblem(){
+  if(!problems.length)return;
   const review=problems.find(p=>due(p.id));
   if(review&&review.id!==current.id){changeProblem(review.id);return;}
   const position=problems.indexOf(current);
@@ -238,16 +237,16 @@ $("customForm").onsubmit=event=>{
   }catch(error){$("customError").textContent=error.message;}
 };
 $("resetCode").onclick=()=>$("resetDialog").showModal();
-$("confirmReset").onclick=()=>{state.drafts[current.id]=current.starter;$("codeEditor").value=current.starter;persist();updateEditor();results=null;renderTests();$("resultOutput").replaceChildren();$("resetDialog").close();notify("A fresh starter is ready.");};
+$("confirmReset").onclick=()=>{state.drafts[current.id]=current.starter;touch("drafts",current.id);$("codeEditor").value=current.starter;persist();updateEditor();results=null;renderTests();$("resultOutput").replaceChildren();$("resetDialog").close();notify("A fresh starter is ready.");};
 document.querySelectorAll(".dialog-close,.dialog-close-button").forEach(b=>b.onclick=()=>b.closest("dialog").close());
 document.querySelectorAll("dialog").forEach(d=>d.addEventListener("click",event=>{if(event.target===d){const r=d.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)d.close();}}));
 $("aboutBtn").onclick=()=>$("aboutDialog").showModal();
 function route(){
-  const view=["map","progress"].includes(location.hash.slice(1))?location.hash.slice(1):"practice";
-  ["practice","map","progress"].forEach(name=>$(name+"View").hidden=view!==name);
+  const view=["map","progress","studio"].includes(location.hash.slice(1))?location.hash.slice(1):"practice";
+  ["practice","map","progress","studio"].forEach(name=>$(name+"View").hidden=view!==name);
   document.querySelectorAll("[data-view]").forEach(a=>a.classList.toggle("active",a.dataset.view===view));
-  $("breadcrumb").textContent=({practice:"Practice lab",map:"Quest map",progress:"My progress"})[view];
-  if(view!=="practice")pauseTrace();if(view==="map")renderMap();if(view==="progress")renderProgress();
+  $("breadcrumb").textContent=({practice:"Practice",map:"Problem library",progress:"My progress",studio:"Problem studio"})[view];
+  if(view!=="practice"){pauseTrace();if(busy)stopRun();}if(view!=="studio")studio.stop();if(view==="studio")studio.open();if(view==="map")renderMap();if(view==="progress")renderProgress();
 }
 addEventListener("hashchange",route);
 $("topicFilter").innerHTML+=[...topics].map(t=>'<option>'+html(t)+'</option>').join("");
@@ -255,12 +254,12 @@ $("topicFilter").innerHTML+=[...topics].map(t=>'<option>'+html(t)+'</option>').j
 function renderMap(){
   const query=$("searchInput").value.toLowerCase(),topic=$("topicFilter").value,level=$("difficultyFilter").value,status=$("statusFilter").value;
   const list=problems.filter(p=>(p.title+" "+p.topic).toLowerCase().includes(query)&&(!topic||p.topic===topic)&&(!level||p.difficulty===level)&&(!status||(status==="solved"?state.solved[p.id]:status==="new"?!state.solved[p.id]:due(p.id))));
-  $("questGrid").innerHTML=list.length?list.map(p=>'<article class="quest-card">'+(state.solved[p.id]?'<span class="solved-badge">'+(due(p.id)?"↻ Review due":"✓ Solved")+"</span>":"")+'<div class="card-icon">'+topicEmoji[p.topic]+'</div><h3>'+html(p.title)+'</h3><p>'+html(p.topic)+'</p><div class="card-meta"><span class="difficulty'+(p.difficulty==="Medium"?" medium":"")+'">'+p.difficulty+'</span><span>~'+p.minutes+' min</span><span class="card-xp">✧ 100 XP</span></div><button data-problem="'+p.id+'">'+(state.solved[p.id]?"Revisit this quest":"Let's explore")+icon("arrow")+'</button></article>').join(""):'<div class="empty-state">No quests here yet. Try another filter.</div>';
+  $("questGrid").innerHTML=list.length?list.map(p=>'<article class="quest-card">'+(state.solved[p.id]?'<span class="solved-badge">'+(due(p.id)?"↻ Review due":"✓ Solved")+"</span>":"")+'<div class="card-icon">'+(topicEmoji[p.topic]||'✦')+'</div><h3>'+html(p.title)+'</h3><p>'+html(p.topic)+'</p><div class="card-meta"><span class="difficulty'+(' '+p.difficulty.toLowerCase())+'">'+p.difficulty+'</span><span>~'+p.minutes+' min</span><span class="card-xp">✧ 100 XP</span></div><button data-problem="'+p.id+'">'+(state.solved[p.id]?"Revisit this quest":"Let's explore")+icon("arrow")+'</button></article>').join(""):'<div class="empty-state">No quests here yet. Try another filter.</div>';
   $("questGrid").querySelectorAll("[data-problem]").forEach(b=>b.onclick=()=>changeProblem(b.dataset.problem));
 }
 function renderProgress(){
-  const solved=Object.keys(state.solved).length, dueCount=problems.filter(p=>due(p.id)).length;
-  const stats=[["QUESTS SOLVED",solved+" / 16","One idea at a time."],["XP EARNED",xp(),"Level "+(1+Math.floor(xp()/300))+" Java explorer"],["DAY STREAK",streak(),"A small daily win counts."],["READY TO REVISIT",dueCount,"Reviews at 2 / 7 / 21 days"]];
+  const solved=problems.filter(p=>state.solved[p.id]).length, dueCount=problems.filter(p=>due(p.id)).length;
+  const stats=[["QUESTS SOLVED",solved+" / "+problems.length,"One idea at a time."],["XP EARNED",xp(),"Level "+(1+Math.floor(xp()/300))+" Java explorer"],["DAY STREAK",streak(),"A small daily win counts."],["READY TO REVISIT",dueCount,"Reviews at 2 / 7 / 21 days"]];
   $("progressCards").innerHTML=stats.map(c=>'<div class="progress-stat"><small>'+c[0]+'</small><b>'+c[1]+'</b><p>'+c[2]+'</p></div>').join("");
   $("topicProgress").innerHTML=topics.map(topic=>{
     const list=problems.filter(p=>p.topic===topic),done=list.filter(p=>state.solved[p.id]).length;
@@ -272,7 +271,7 @@ function renderProgress(){
   $("reviewQueue").querySelectorAll("[data-review]").forEach(b=>b.onclick=()=>changeProblem(b.dataset.review));
   $("activityList").innerHTML=state.activity.length?[...state.activity].reverse().slice(0,12).map(a=>{
     const p=problems.find(p=>p.id===a.id);
-    return '<div class="activity-row"><span class="activity-icon">'+(a.type==="solved"?"✦":a.type==="review"?"↻":"⌘")+'</span><div><strong>'+html(p.title)+'</strong> · '+(a.type==="solved"?"Quest completed · +100 XP":a.type==="review"?"Review complete · +20 XP":a.passed+"/"+a.total+" tests passed")+'</div><time>'+new Date(a.at).toLocaleDateString(undefined,{month:"short",day:"numeric"})+'</time></div>';
+    return '<div class="activity-row"><span class="activity-icon">'+(a.type==="solved"?"✦":a.type==="review"?"↻":"⌘")+'</span><div><strong>'+html(p?.title||a.id)+'</strong> · '+(a.type==="solved"?"Quest completed · +100 XP":a.type==="review"?"Review complete · +20 XP":a.passed+"/"+a.total+" tests passed")+'</div><time>'+new Date(a.at).toLocaleDateString(undefined,{month:"short",day:"numeric"})+'</time></div>';
   }).join(""):'<div class="empty-state">Your story starts with one attempt. Head to the practice lab.</div>';
 }
 $("exportBtn").onclick=()=>{
@@ -285,11 +284,87 @@ $("importFile").onchange=async event=>{
   try{
     if(file.size>2000000)throw new Error("Choose a backup smaller than 2 MB.");
     const incoming=validateBackup(JSON.parse(await file.text()));
-    // Merge known records so restoring a backup cannot erase newer local work.
-    for(const p of problems){if(!state.drafts[p.id]&&incoming.drafts[p.id])state.drafts[p.id]=incoming.drafts[p.id];if(!state.notes[p.id]&&incoming.notes[p.id])state.notes[p.id]=incoming.notes[p.id];if(incoming.solved[p.id]&&!state.solved[p.id])state.solved[p.id]=incoming.solved[p.id];if(incoming.reviews[p.id]&&(!state.reviews[p.id]||incoming.reviews[p.id].step>state.reviews[p.id].step))state.reviews[p.id]=incoming.reviews[p.id];if(!state.confidence[p.id]&&incoming.confidence[p.id])state.confidence[p.id]=incoming.confidence[p.id];state.attempts[p.id]=Math.max(state.attempts[p.id]||0,incoming.attempts[p.id]||0);}
-    state.days=[...new Set([...state.days,...incoming.days])];state.activity=[...new Map([...state.activity,...incoming.activity].map(a=>[a.id+"-"+a.type+"-"+a.at,a])).values()].sort((a,b)=>a.at-b.at).slice(-200);
-    persist();updateStats();renderProgress();notify("Backup merged with your progress. Current drafts kept.");
+    state=mergeProgress(state,incoming);
+    persist();updateStats();renderProgress();notify("Backup merged with your progress. Newer edits kept.");
   }catch(error){notify("Could not restore: "+error.message);}event.target.value="";
 };
-renderPractice();updateStats();route();
+function setSyncStatus(kind,label){$("syncBadge").className="sync-badge "+kind;$("syncLabel").textContent=label;}
+function refreshAccountUi(){
+  const user=cloud.user,meta=user?.user_metadata||{},name=String(meta.full_name||meta.name||"Java explorer");
+  $("accountLabel").textContent=user?String(name).split(" ")[0]:"Sign in with Google";
+  $("profileName").textContent=user?name:"Java explorer";$("profileAvatar").textContent=user?name.charAt(0).toUpperCase():"J";
+  $("studioNav").hidden=!cloud.admin;
+  $("accountTitle").textContent=user?"Your learning, connected.":"A little more connected.";
+  $("accountDescription").textContent=user?"Your drafts, notes, and progress sync to this Google account.":"Sign in with Google to keep your progress, drafts, and review schedule across devices.";
+  $("googleSignInBtn").hidden=!!user;$("signOutBtn").hidden=!user;$("syncNowBtn").hidden=!user;$("importGuestBtn").hidden=!user;
+  $("guestContinue").hidden=!!user;$("accountIdentity").hidden=!user;
+  $("accountIdentity").className="account-identity";
+  $("accountIdentity").innerHTML=user?"<strong>"+html(name)+"</strong>"+html(user.email||""):"";
+  if(!cloud.enabled)$("authMessage").textContent="Cloud accounts are being connected. You can keep practising on this device.";
+  else if(!user&&cloud.client&&!cloud.googleEnabled)$("authMessage").textContent="Google sign-in is waiting for the site owner to finish activation. You can keep practising as a guest.";
+}
+async function changeAccount(user){
+  const owner=user?.id||null;if(owner===accountOwner&&accountReady)return;
+  const epoch=++accountEpoch;accountOwner=owner;accountReady=false;clearTimeout(syncTimer);syncing=false;syncAgain=false;
+  if(busy)stopRun();studio.accountChanged();storageKey=owner?"bytequest.user."+owner:guestStorageKey;
+  state=readLocal(storageKey);current=problems.find(p=>p.id===state.current)||problems[0]||null;
+  renderPractice();$("codeEditor").readOnly=true;updateStats();refreshAccountUi();
+  let needsSync=false;
+  if(owner){
+    setSyncStatus("syncing","Loading your progress");
+    const loaded=await Promise.allSettled([cloud.loadProgress(owner),cloud.checkAdmin(owner)]);
+    if(epoch!==accountEpoch)return;
+    if(loaded[0].status==="fulfilled"){
+      const remote=loaded[0].value;state=mergeProgress(state,remote.state);needsSync=JSON.stringify(state)!==JSON.stringify(remote.state);
+      setSyncStatus("synced",remote.revision?"Saved to cloud":"Cloud connected");
+    }else{setSyncStatus("failed","Saved on this device");$("authMessage").textContent="Could not load cloud progress. Your account’s local work is kept. Use Sync now to retry.";}
+    if(loaded[1].status==="rejected")cloud.admin=false;
+  }else setSyncStatus("","On this device");
+  if(epoch!==accountEpoch)return;
+  current=problems.find(p=>p.id===state.current)||problems[0]||null;
+  persist();accountReady=true;$("codeEditor").readOnly=false;refreshAccountUi();renderPractice();updateStats();route();
+  if(needsSync)syncTimer=setTimeout(()=>syncCloud(),500);
+}
+async function syncCloud(){
+  clearTimeout(syncTimer);if(!cloud.user||!accountReady)return;
+  if(syncing){syncAgain=true;return;}
+  if(!navigator.onLine){setSyncStatus("failed","Offline · saved here");return;}
+  const owner=cloud.user.id,epoch=accountEpoch,snapshot=JSON.stringify(state);syncing=true;setSyncStatus("syncing","Syncing progress");
+  try{
+    const merged=await cloud.syncProgress(owner,JSON.parse(snapshot),mergeProgress);if(epoch!==accountEpoch||cloud.user?.id!==owner)return;
+    const changedWhileSaving=JSON.stringify(state)!==snapshot;state=mergeProgress(state,merged);
+    try{localStorage.setItem(storageKey,JSON.stringify(state));}catch{}
+    if(current&&document.activeElement!==$("codeEditor")){$("codeEditor").value=state.drafts[current.id]??current.starter;updateEditor();}
+    updateStats();if(location.hash==="#progress")renderProgress();
+    $("saveStatus").textContent=changedWhileSaving?"New edits saved here · sync queued":"Draft saved to your account";
+    setSyncStatus("synced",changedWhileSaving?"New changes queued":"Saved to cloud");$("authMessage").textContent="";
+    if(changedWhileSaving)syncAgain=true;
+  }catch(error){if(epoch===accountEpoch){setSyncStatus("failed","Saved here · retry sync");$("authMessage").textContent=error.message;}}
+  finally{if(epoch===accountEpoch){syncing=false;if(syncAgain){syncAgain=false;syncTimer=setTimeout(()=>syncCloud(),1000);}}}
+}
+async function refreshCatalog(){
+  if(!cloud.client)return;
+  try{
+    const next=await cloud.publicCatalog();if(next===null)return;
+    const selected=current?.id;problems.splice(0,problems.length,...next);topics=[...new Set(problems.map(p=>p.topic))];
+    $("problemSelect").replaceChildren(...problems.map(p=>new Option(p.title,p.id)));
+    const oldTopic=$("topicFilter").value;$("topicFilter").replaceChildren(new Option("All patterns",""),...topics.map(t=>new Option(t,t)));if(topics.includes(oldTopic))$("topicFilter").value=oldTopic;
+    current=problems.find(p=>p.id===selected)||problems[0]||null;
+    renderPractice();updateStats();route();
+  }catch(error){notify("The offline library is available while the connection recovers.");}
+}
+function openAccount(){refreshAccountUi();$("accountDialog").showModal();}
+$("accountBtn").onclick=openAccount;$("profileBtn").onclick=openAccount;$("syncBadge").onclick=openAccount;$("studioSignIn").onclick=openAccount;
+$("googleSignInBtn").onclick=async()=>{try{$("authMessage").textContent="Opening Google sign-in…";await cloud.signIn();}catch(error){$("authMessage").textContent=error.message;}};
+$("syncNowBtn").onclick=async()=>{await syncCloud();};
+$("signOutBtn").onclick=async()=>{try{await syncCloud();await cloud.signOut();$("accountDialog").close();await changeAccount(null);notify("Signed out on this device. Your account progress is kept.");}catch(error){$("authMessage").textContent=error.message;}};
+$("importGuestBtn").onclick=()=>{if(!cloud.user)return;state=mergeProgress(state,readLocal(guestStorageKey));persist();renderPractice();updateStats();notify("Guest progress added to this account. Cloud sync queued.");};
+addEventListener("online",()=>{if(cloud.user)syncCloud();else setSyncStatus("","On this device");});
+addEventListener("offline",()=>setSyncStatus("failed",cloud.user?"Offline · saved here":"On this device"));
+async function bootCloud(){
+  refreshAccountUi();
+  try{await cloud.init();}catch(error){$("authMessage").textContent=error.message;setSyncStatus("failed","Account connection paused");}
+  await refreshCatalog();await changeAccount(cloud.user);
+}
+renderPractice();updateStats();route();bootCloud();
 if(!storageOK){$("saveStatus").textContent="Storage unavailable — use Save progress";notify("Local storage is unavailable. Export your progress before leaving.");}
