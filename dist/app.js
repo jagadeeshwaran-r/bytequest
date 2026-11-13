@@ -191,7 +191,7 @@ async function run(submit){
     renderTests();
     const passed=result.cases.filter(c=>c.passed).length, accepted=passed===cases.length;
     const output=$("resultOutput");output.replaceChildren();
-    const summary=document.createElement("div");summary.className="result-summary"+(accepted?"":" failed");summary.textContent=(accepted?"✓ ":"↻ ")+passed+" / "+cases.length+" cases passed · "+result.elapsedMs+" ms local execution";output.append(summary);
+    const summary=document.createElement("div");summary.className="result-summary"+(accepted?"":" failed");summary.textContent=(accepted?"✓ ":"↻ ")+passed+" / "+cases.length+" cases passed · "+result.elapsedMs+" ms "+(language==="java"?"browser execution":"online execution");output.append(summary);
     result.cases.filter(c=>!c.passed).slice(0,5).forEach(c=>{
       const detail=document.createElement("div");detail.textContent=c.name+"\nExpected: "+c.expected+"\nYour output: "+c.actual+"\n";output.append(detail);
     });
