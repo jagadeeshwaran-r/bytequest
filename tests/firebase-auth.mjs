@@ -33,8 +33,8 @@ const db={
   async progress(owner){events.push(["read",owner]);return progress.get(owner)||null;},
   async isEditor(owner){return editors.has(owner);},
   async sync(owner,payload,revision){const current=progress.get(owner)||{payload:blankProgress(),revision:0};if(current.revision!==revision)return {...current,applied:false};const row={payload,revision:revision+1};progress.set(owner,row);return {...row,applied:true};},
-  async problems(){return [];},
-  async saveProblem(p){events.push(["publish",p.id]);return {id:p.id,revision:1};}
+  async problems(owner,all){events.push(["studio-list",owner,all]);return [];},
+  async saveProblem(p,{owner}){events.push(["publish",p.id,owner]);return {id:p.id,revision:1};}
 };
 const handler=createHandler({projectId,allowedOrigins:[origin],verifyToken:verify,db});
 const request=(body,{jwt=goodToken,site=origin,method="POST",headers={}}={})=>handler(new Request("https://example.supabase.co/functions/v1/bytequest-firebase",{method,headers:{"Content-Type":"application/json",Origin:site,...(jwt?{Authorization:"Bearer "+jwt}:{}),...headers},body:method==="POST"?JSON.stringify(body):undefined}));
@@ -47,7 +47,7 @@ const anotherId="firebase:"+projectId+":learner-b";
 progress.set(anotherId,{payload:{...blankProgress(),notes:{"two-sum":"OTHER USER PRIVATE"}},revision:9});
 const accountResponse=await request({action:"account",user_id:anotherId,admin:true});
 assert.equal(accountResponse.headers.get("Access-Control-Allow-Origin"),origin);
-const account=await accountResponse.json();assert.equal(account.admin,false);assert.equal(account.user.id,goodIdentity.id);
+const account=await accountResponse.json();assert.equal(account.admin,false);assert.equal(account.canCreate,true);assert.equal(account.user.id,goodIdentity.id);
 assert.ok(!JSON.stringify(account).includes("OTHER USER PRIVATE"));
 const own={...blankProgress(),notes:{"two-sum":"own private note"}};
 assert.equal((await request({action:"sync",user_id:anotherId,payload:own,revision:0})).status,200);
@@ -55,13 +55,13 @@ assert.equal(progress.get(goodIdentity.id).payload.notes["two-sum"],"own private
 assert.equal(progress.get(anotherId).revision,9,"Forging a body user ID must not change its owner.");
 const stale=await (await request({action:"sync",payload:blankProgress(),revision:0})).json();assert.equal(stale.applied,false);assert.equal(stale.payload.notes["two-sum"],"own private note");
 assert.equal((await request({action:"sync",payload:own,revision:-1})).status,400);
-assert.equal((await request({action:"studio-list",admin:true})).status,403);
-assert.equal((await request({action:"studio-save",problem:problems[0],published:true,position:0,revision:0,admin:true})).status,403);
+assert.equal((await request({action:"studio-list",admin:true})).status,200);assert.deepEqual(events.at(-1),["studio-list",goodIdentity.id,false]);
+assert.equal((await request({action:"studio-save",problem:problems[0],published:true,position:0,revision:0,admin:true})).status,200);assert.equal(events.at(-1)[2],goodIdentity.id);
 editors.add(goodIdentity.id);
 assert.equal((await request({action:"studio-list"})).status,200);
 assert.equal((await request({action:"studio-save",problem:{...problems[0],method:"return"},published:true,position:0,revision:0})).status,400);
 assert.equal((await request({action:"studio-save",problem:problems[0],published:true,position:0,revision:0})).status,200);
-editors.delete(goodIdentity.id);assert.equal((await request({action:"studio-list"})).status,403,"Editor revocation applies immediately.");
+editors.delete(goodIdentity.id);assert.equal((await request({action:"studio-list"})).status,200);assert.deepEqual(events.at(-1),["studio-list",goodIdentity.id,false],"Revocation removes access to other authors immediately.");
 assert.ok(events.filter(e=>e[0]==="account"||e[0]==="read").every(e=>e[1]===goodIdentity.id));
 const oversized=await handler(new Request("https://example.supabase.co/functions/v1/bytequest-firebase",{method:"POST",headers:{Origin:origin,Authorization:"Bearer "+goodToken,"Content-Type":"application/json"},body:'{"data":"'+"x".repeat(1200000)+'"}'}));assert.equal(oversized.status,413);
 // Check the real Supabase adapter's owner filter and compare-and-swap arguments.

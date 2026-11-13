@@ -1,7 +1,7 @@
 import {cloudConfig} from "./config.js";
 import {firebaseConfig} from "./firebase-config.js";
 import {FirebaseSession} from "./firebase-session.js";
-import {validateProblem} from "./catalog.js?v=red-1";
+import {validateProblem} from "./catalog.js?v=green-final";
 import {blankProgress,validateProgress} from "./progress.js";
 export function validPublicConfig(config){
   try{
@@ -12,8 +12,8 @@ export function validPublicConfig(config){
 }
 export class Cloud {
   constructor(onChange=()=>{},{config=cloudConfig,firebase=firebaseConfig,fetchImpl=(...args)=>globalThis.fetch(...args),sessionFactory=(c,cb)=>new FirebaseSession(c,cb)}={}){
-    this.config=config;this.fetch=fetchImpl;this.user=null;this.admin=false;this.onChange=onChange;this.enabled=validPublicConfig(config);this.loginReady=false;this.bootstrap=null;
-    this.session=sessionFactory(firebase,user=>{this.user=user;this.admin=false;this.bootstrap=null;this.onChange(user);});
+    this.config=config;this.fetch=fetchImpl;this.user=null;this.admin=false;this.canCreate=false;this.onChange=onChange;this.enabled=validPublicConfig(config);this.loginReady=false;this.bootstrap=null;
+    this.session=sessionFactory(firebase,user=>{this.user=user;this.admin=false;this.canCreate=false;this.bootstrap=null;this.onChange(user);});
   }
   async init(){await this.session.init();this.user=this.session.user;this.loginReady=this.session.ready;}
   async signIn(){await this.session.signIn();}
@@ -33,7 +33,7 @@ export class Cloud {
       if(this.user?.id!==ownerId)throw new Error("Your account changed. Please retry saving.");
       const response=await this.fetch(this.config.url+"/functions/v1/bytequest-firebase",{
         method:"POST",headers:{"Content-Type":"application/json",apikey:this.config.publishableKey,Authorization:"Bearer "+token},
-        body:JSON.stringify({action,...body}),signal:AbortSignal.timeout(20000)
+        body:JSON.stringify({action,...body}),signal:AbortSignal.timeout(action==="native-run"?45000:20000)
       });
       if(this.user?.id!==ownerId)throw new Error("Your account changed. Please retry saving.");
       if(response.status===401&&attempt===0)continue;
@@ -50,7 +50,7 @@ export class Cloud {
     return this.bootstrap.promise;
   }
   async checkAdmin(userId){
-    const result=await this.account(userId);if(this.user?.id===userId)this.admin=result.admin===true;return result.admin===true;
+    const result=await this.account(userId);if(this.user?.id===userId){this.admin=result.admin===true;this.canCreate=result.canCreate===true;}return result.admin===true;
   }
   async loadProgress(userId){const result=await this.account(userId);return {state:validateProgress(result.progress?.payload||blankProgress()),revision:result.progress?.revision||0};}
   async syncProgress(userId,local,merge){

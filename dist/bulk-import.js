@@ -4,7 +4,7 @@ export function mountBulkImport({cloud,notify,onChanged}){
  const panel=document.getElementById('bulkImport');let stopped=false,running=false,judge;
  document.getElementById('bulkStop').onclick=()=>{stopped=true;judge?.stop();};
  document.getElementById('bulkRun').onclick=async()=>{
-  if(running||!cloud.admin)return;const output=document.getElementById('bulkStatus'),file=document.getElementById('bulkFile').files[0];
+  if(running||!cloud.canCreate)return;const output=document.getElementById('bulkStatus'),file=document.getElementById('bulkFile').files[0];
   try{
    if(!file||file.size>25000000)throw new Error('Choose a JSON problem pack under 25 MB.');
    const input=JSON.parse(await file.text());if(!Array.isArray(input)||!input.length||input.length>500)throw new Error('A pack must be an array of 1–500 original or licensed problem definitions.');

@@ -1,12 +1,14 @@
-import {mountShell} from "./shell.js?v=red-1";
-import {Dashboard} from "./dashboard.js?v=red-1";
-import {languages,starterFor,NativeJudge} from "./languages.js?v=red-1";
+import {companyIcon} from './companies.js';
+import {mountWorkspace} from './workspace.js';
+import {mountShell} from "./shell.js?v=green-final";
+import {Dashboard} from "./dashboard.js?v=green-final";
+import {languages,starterFor,NativeJudge} from "./languages.js?v=green-final";
 import {problems as bundledProblems} from "./problems.js";
-import {Cloud} from "./cloud.js?v=red-1";
+import {Cloud} from "./cloud.js?v=green-final";
 import {blankProgress, validateProgress, mergeProgress} from "./progress.js";
-import {Studio} from "./studio.js?v=community-1";
+import {Studio} from "./studio.js?v=green-final";
 const problems=[...bundledProblems];
-const shell=mountShell();let language="java";try{const v=localStorage.getItem("bytequest.language");if(languages[v])language=v;}catch{}
+const shell=mountShell();mountWorkspace();let language="java";try{const v=localStorage.getItem("bytequest.language");if(languages[v])language=v;}catch{}
 const draftId=(id=current.id)=>language==="java"?id:id+"--"+language;
 const currentStarter=()=>starterFor(current,language);
 let topics=[...new Set(problems.map(p=>p.topic))];
@@ -42,7 +44,7 @@ const javaJudge = new JavaJudge(message => {
     watchdog=setTimeout(()=>stopRun("The run reached its 30-second limit. Try a smaller input or check for an infinite loop."),30000);
   }
 });
-const nativeJudge=new NativeJudge(message=>{$("runStatus").textContent=message;});
+const nativeJudge=new NativeJudge(message=>{$("runStatus").textContent=message;},cloud);
 const judge={run:(source,p,cases)=>language==="java"?javaJudge.run(source,p,cases):nativeJudge.run(source,p,cases,language),stop:()=>{javaJudge.stop();nativeJudge.stop();}};
 function setLanguage(v){if(!languages[v])return;if(busy)stopRun();language=v;try{localStorage.setItem("bytequest.language",v);}catch{}renderPractice();}
 $("languageSelect").onchange=e=>setLanguage(e.target.value);
@@ -80,7 +82,7 @@ $("codeEditor").addEventListener("keydown",event=>{
 });
 function renderPractice() {
   pauseTrace();
-  $("languageSelect").value=language;$("languageSelect").disabled=busy;$("codeFilename").textContent=languages[language].file;$("runStatus").textContent=languages[language].name+" · runs on your device";
+  $("languageSelect").value=language;$("languageSelect").disabled=busy;$("codeFilename").textContent=languages[language].file;$("runStatus").textContent=languages[language].name+(language==="java"?" · browser compiler":" · online via Wandbox");
   $("practiceView").classList.toggle("empty-catalog",!current);$("catalogEmpty").hidden=!!current;
   if(!current)return;
   $("questTitle").textContent=current.title; $("questTopic").textContent=current.topic;
@@ -173,7 +175,7 @@ $("learnMode").onclick=()=>{mode="learn";if(timerStarted){timerUsed+=Date.now()-
 $("challengeMode").onclick=()=>{mode="challenge";renderLearning();$("challengeMode").classList.add("active");$("learnMode").classList.remove("active");};
 function setBusy(value){busy=value;$("runBtn").disabled=value;$("submitBtn").disabled=value;$("customBtn").disabled=value;$("stopBtn").hidden=!value;$("problemSelect").disabled=value;$("codeEditor").readOnly=value||!accountReady;document.body.classList.toggle("busy",value);}
 function stopRun(message="Run stopped. Your draft is saved."){
-  runEpoch++;clearTimeout(watchdog);judge.stop();setBusy(false);$("runStatus").textContent=languages[language].name+" · runs on your device";$("resultOutput").textContent=message;
+  runEpoch++;clearTimeout(watchdog);judge.stop();setBusy(false);$("runStatus").textContent=languages[language].name+(language==="java"?" · browser compiler":" · online via Wandbox");$("resultOutput").textContent=message;
 }
 async function run(submit){
   if(busy||!current)return;
@@ -202,7 +204,7 @@ async function run(submit){
     }else if(accepted&&submit)completeQuest(p);
     else if(accepted)notify("Samples passed! Submit quest to check every built-in edge case.");
   }catch(error){if(epoch===runEpoch)$("resultOutput").textContent=String(error.message||error);}
-  finally{if(epoch===runEpoch){clearTimeout(watchdog);setBusy(false);$("runStatus").textContent=languages[language].name+" · runs on your device";updateStats();persist();}}
+  finally{if(epoch===runEpoch){clearTimeout(watchdog);setBusy(false);$("runStatus").textContent=languages[language].name+(language==="java"?" · browser compiler":" · online via Wandbox");updateStats();persist();}}
 }
 function logAttempt(p,passed,total){
   state.attempts[p.id]=(state.attempts[p.id]||0)+1;
@@ -234,7 +236,7 @@ $("problemSelect").onchange=e=>changeProblem(e.target.value);
 function changeProblem(id){
   const target=problems.find(p=>p.id===id);if(!target)return;
   if(busy)stopRun();pauseTrace();clearInterval(timerTick);timerUsed=0;timerStarted=null;timerProblem=id;
-  current=target;state.current=id;state.currentUpdated=Date.now();customCases=[];selectedCase=0;results=null;tab="learn";referenceUsed=false;persist();renderPractice();location.hash="practice";
+  current=target;state.current=id;state.currentUpdated=Date.now();customCases=[];selectedCase=0;results=null;tab="problem";referenceUsed=false;persist();renderPractice();location.hash="practice";
 }
 function nextProblem(){
   if(!problems.length)return;
@@ -275,8 +277,8 @@ $("topicFilter").innerHTML+=[...topics].map(t=>'<option>'+html(t)+'</option>').j
 function renderMap(){
   const pattern=$("patternFilter").value,technique=$("techniqueFilter").value;
   const query=$("searchInput").value.toLowerCase(),topic=$("topicFilter").value,level=$("difficultyFilter").value,status=$("statusFilter").value;
-  const list=problems.filter(p=>(p.title+" "+p.topic+" "+(p.pattern||"")+" "+(p.techniques||[]).join(" ")).toLowerCase().includes(query)&&(!topic||p.topic===topic)&&(!pattern||(p.pattern||p.topic)===pattern)&&(!technique||(p.techniques||[]).includes(technique))&&(!level||p.difficulty===level)&&(!status||(status==="solved"?state.solved[p.id]:status==="new"?!state.solved[p.id]:due(p.id))));
-  $("questGrid").innerHTML=list.length?'<table class="problem-table"><thead><tr><th>No.</th><th>Title</th><th>Companies</th><th>Difficulty</th><th>Status</th></tr></thead><tbody>'+list.map(p=>'<tr><td>'+String(problems.indexOf(p)+1).padStart(2,'0')+'</td><td><button class="problem-title" data-problem="'+p.id+'">'+html(p.title)+'</button><small>'+html(p.pattern||p.topic)+'</small></td><td>'+((p.companies||[]).map(c=>'<span class="company-tag">'+html(c)+'</span>').join('')||'<span class="muted">—</span>')+'</td><td><span class="difficulty '+p.difficulty.toLowerCase()+'">'+html(p.difficulty)+'</span></td><td>'+ (state.solved[p.id]?'Solved':'Unsolved')+'</td></tr>').join('')+'</tbody></table><p class="company-note">Company tags are community-reported historical associations, not employer endorsements. <a href="https://github.com/duanehutchins/leetcode-questions-by-company" target="_blank" rel="noopener">Tag source</a></p>':'<p class="empty-state">No matching problems.</p>';
+  const list=problems.filter(p=>(p.title+" "+String(problems.indexOf(p)+1)).toLowerCase().includes(query)&&(!topic||p.topic===topic)&&(!pattern||(p.pattern||p.topic)===pattern)&&(!technique||(p.techniques||[]).includes(technique))&&(!level||p.difficulty===level)&&(!status||(status==="solved"?state.solved[p.id]:status==="new"?!state.solved[p.id]:due(p.id))));
+  $("questGrid").innerHTML=list.length?'<table class="problem-table"><thead><tr><th>No.</th><th>Title</th><th>Companies</th><th>Difficulty</th><th>Status</th></tr></thead><tbody>'+list.map(p=>'<tr><td>'+String(problems.indexOf(p)+1).padStart(2,'0')+'</td><td><button class="problem-title" data-problem="'+p.id+'">'+html(p.title)+'</button></td><td>'+((p.companies||[]).map(companyIcon).join('')||'<span class="muted">—</span>')+'</td><td><span class="difficulty '+p.difficulty.toLowerCase()+'">'+html(p.difficulty)+'</span></td><td>'+ (state.solved[p.id]?'Solved':'Unsolved')+'</td></tr>').join('')+'</tbody></table><p class="company-note">Company tags are community-reported historical associations, not employer endorsements. <a href="https://github.com/duanehutchins/leetcode-questions-by-company" target="_blank" rel="noopener">Tag source</a></p>':'<p class="empty-state">No matching problems.</p>';
   $("questGrid").querySelectorAll("[data-problem]").forEach(b=>b.onclick=()=>changeProblem(b.dataset.problem));
 }
 function renderProgress(){
@@ -316,7 +318,7 @@ function refreshAccountUi(){
   const user=cloud.user,meta=user?.user_metadata||{},name=String(meta.full_name||meta.name||"Java explorer");
   $("accountLabel").textContent=user?String(name).split(" ")[0]:"Sign in with Google";
   $("profileName").textContent=user?name:"Java explorer";$("profileAvatar").textContent=user?name.charAt(0).toUpperCase():"J";
-  $("studioNav").hidden=!cloud.admin;
+  $("studioNav").hidden=!cloud.canCreate;
   $("accountTitle").textContent=user?"Your learning, connected.":"A little more connected.";
   $("accountDescription").textContent=user?"Your drafts, notes, and progress sync to this Google account.":"Sign in with Google to keep your progress, drafts, and review schedule across devices.";
   $("googleSignInBtn").hidden=!!user;$("signOutBtn").hidden=!user;$("syncNowBtn").hidden=!user;$("importGuestBtn").hidden=!user;

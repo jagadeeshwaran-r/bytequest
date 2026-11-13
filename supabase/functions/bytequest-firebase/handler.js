@@ -15,7 +15,7 @@ async function readBody(req){
   if(!body||typeof body!=="object"||Array.isArray(body))throw new HttpError(400,"Send a JSON object.");return body;
 }
 function integer(value,max=Number.MAX_SAFE_INTEGER){return Number.isSafeInteger(value)&&value>=0&&value<=max;}
-export function createHandler({projectId,allowedOrigins,verifyToken,db,privateJudge}){
+export function createHandler({projectId,allowedOrigins,verifyToken,db,privateJudge,onlineJudge}){
   return async req=>{
     const origin=req.headers.get("origin");
     const headers={"Content-Type":"application/json","Cache-Control":"no-store","Vary":"Origin"};
@@ -30,11 +30,21 @@ export function createHandler({projectId,allowedOrigins,verifyToken,db,privateJu
     let identity;try{identity=await verifyToken(authorization.slice(7));}catch{return reply(401,{error:"Your sign-in expired or could not be verified. Please sign in again."});}
     try{
       const body=await readBody(req),action=body.action;
-      if(!["account","progress","sync","studio-list","studio-save","hidden-submit","avatar-upload",...communityActions].includes(action))throw new HttpError(400,"Unknown account action.");
+      if(!["account","progress","sync","studio-list","studio-save","hidden-submit","avatar-upload","native-run",...communityActions].includes(action))throw new HttpError(400,"Unknown account action.");
       // Identity always comes from the verified Firebase token, never from a body field.
       await db.touchAccount(identity);
       if(action==="avatar-upload"){await db.uploadAvatar(identity.id,avatarBytes(body.image));return reply(200,await db.community(identity.id,"self",{}));}
       if(communityActions.has(action))return reply(200,await db.community(identity.id,action,validateCommunity(action,body)));
+      if(action==="native-run"){
+        if(!onlineJudge)throw new HttpError(503,"Online compiler unavailable. Your code is saved.");
+        if(!['c','cpp','python'].includes(body.language)||typeof body.source!=="string"||body.source.length>60000||typeof body.problemId!=="string"||! /^[a-z][a-z0-9-]{1,63}$/.test(body.problemId))throw new HttpError(400,"Choose a problem, language and source under 60 KB.");
+        const row=await db.publicProblem(body.problemId);if(!row)throw new HttpError(404,"Problem not found.");
+        if(body.revision!==undefined&&body.revision!==row.revision)throw new HttpError(409,"This problem changed. Reload it before running.");
+        const cases=body.cases;if(!Array.isArray(cases)||!cases.length||cases.length>108||JSON.stringify(cases).length>200000)throw new HttpError(400,"Use 1–108 public practice cases under 200 KB.");
+        try{buildTests(row.content,cases);}catch{throw new HttpError(400,"Practice cases do not match the function contract.");}
+        if(!await db.claimOnlineRun(identity.id))throw new HttpError(429,"Wait 5 seconds between runs. Online compilation allows up to 60 runs per hour.");
+        return reply(200,await onlineJudge.run(body.source,row.content,cases,body.language));
+      }
       if(action==="hidden-submit"){
         if(!privateJudge?.ready)throw new HttpError(503,"Private Java judging is not connected yet. Use Run for public practice cases. Hidden inputs remain private.");
         if(typeof body.problemId!=="string"||! /^[a-z][a-z0-9-]{1,63}$/.test(body.problemId)||typeof body.source!=="string"||body.source.length>60000)throw new HttpError(400,"Choose a valid problem and Java solution.");
@@ -46,7 +56,7 @@ export function createHandler({projectId,allowedOrigins,verifyToken,db,privateJu
       }
       if(action==="account"){
         const [progress,admin]=await Promise.all([db.progress(identity.id),db.isEditor(identity.id)]);
-        return reply(200,{user:{id:identity.id,email:identity.email},admin,progress:progress||{payload:blankProgress(),revision:0}});
+        return reply(200,{user:{id:identity.id,email:identity.email},admin,canCreate:true,progress:progress||{payload:blankProgress(),revision:0}});
       }
       if(action==="progress")return reply(200,await db.progress(identity.id)||{payload:blankProgress(),revision:0});
       if(action==="sync"){
@@ -54,9 +64,8 @@ export function createHandler({projectId,allowedOrigins,verifyToken,db,privateJu
         let payload;try{payload=validateProgress(body.payload);}catch{throw new HttpError(400,"Invalid progress backup.");}
         return reply(200,await db.sync(identity.id,payload,body.revision));
       }
-      // Recheck the database allowlist for every editor request; profile data cannot grant this role.
-      if(!await db.isEditor(identity.id))throw new HttpError(403,"Publishing is reserved for problem-library editors.");
-      if(action==="studio-list")return reply(200,{problems:await db.problems()});
+      // Every verified learner can author; only editors can read or change other authors' private suites.
+      if(action==="studio-list")return reply(200,{problems:await db.problems(identity.id,await db.isEditor(identity.id))});
       if(typeof body.published!=="boolean"||!integer(body.position,1000000)||!integer(body.revision)||body.revision===Number.MAX_SAFE_INTEGER)throw new HttpError(400,"Invalid problem publishing settings.");
       let problem;try{problem=validateProblem(body.problem);}catch(error){throw new HttpError(400,error.message);}
       let hidden=body.hiddenTests??[];

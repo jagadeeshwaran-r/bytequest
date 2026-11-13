@@ -1,6 +1,7 @@
+import {mountCompanyPicker} from './companies.js';
 import {JavaJudge,buildTests} from "./judge.js";
-import {mountBulkImport} from "./bulk-import.js?v=community-1";
-import {validateProblem} from "./catalog.js?v=red-1";
+import {mountBulkImport} from "./bulk-import.js?v=green-final";
+import {validateProblem} from "./catalog.js?v=green-final";
 const $=id=>document.getElementById(id);
 const fields=["Title","Id","Topic","Difficulty","Minutes","Description","Constraints","Method","Returns","Params","Starter","Reference","Tests","Idea","Invariant","Time","Space","Tradeoff","Hints","Frames","Position","Pattern","Techniques","Companies","CompanySource","InputGuide","OutputGuide","HiddenTests","Correction"];
 const sample={
@@ -34,14 +35,15 @@ export class Studio{
   }
   message(message){$("studioStatus").textContent=message;}
   async open(){
-    const allowed=!!this.cloud.user&&this.cloud.admin;
+    this.companyPicker??=mountCompanyPicker();
+    const allowed=!!this.cloud.user&&this.cloud.canCreate;
     $("studioGate").hidden=allowed;$("studioWorkspace").hidden=!allowed;$("newProblemBtn").hidden=!allowed;
     $("studioSignIn").hidden=!!this.cloud.user;
-    if(!allowed){$("studioGate").querySelector("p").textContent=this.cloud.user?"Your account can practise and sync progress. Publishing is reserved for library editors.":"Sign in with an editor account to create and publish problems.";return;}
+    if(!allowed){$("studioGate").querySelector("p").textContent=this.cloud.user?"Your account can practise and sync progress. Sign in to publish your own problems.":"Sign in with Google to create and publish problems.";return;}
     if(this.loadedFor===this.cloud.user.id)return;
     const userId=this.cloud.user.id;this.message("Loading your problem library…");
     try{
-      const rows=await this.cloud.adminCatalog();if(this.cloud.user?.id!==userId||!this.cloud.admin)return;
+      const rows=await this.cloud.adminCatalog();if(this.cloud.user?.id!==userId||!this.cloud.canCreate)return;
       this.rows=rows;this.loadedFor=userId;this.fillSelect();this.row=null;this.fill(sample);
       try{
         const local=JSON.parse(localStorage.getItem("bytequest.studio."+userId));
@@ -49,7 +51,7 @@ export class Studio{
           $("pPublished").checked=!!local.published;this.row=this.rows.find(r=>r.id===local.rowId)||null;this.normalize=local.normalize||this.row?.content.normalize;
           $("pId").readOnly=!!this.row;$("studioSelect").value=this.row?.id||"";$("studioDirty").textContent="Draft restored from this device";}
       }catch{}
-      this.message("Edit the challenge, validate its reference solution, then save.");
+      this.companyPicker?.refresh();this.message("Create your problem, validate its reference solution, then publish.");
     }catch(error){this.message("Could not load the studio: "+error.message);this.loadedFor=null;}
   }
   accountChanged(){this.bulk.accountChanged();this.stop();this.loadedFor=null;this.rows=[];this.row=null;this.validated=null;this.fill(sample);$("studioSelect").replaceChildren();$("studioWorkspace").hidden=true;$("studioGate").hidden=false;}
@@ -60,7 +62,7 @@ export class Studio{
   fill(p,row=null){
     this.normalize=p.normalize;
     const values={Companies:(p.companies||[]).join(", "),CompanySource:p.companySource||"",InputGuide:p.inputGuide||"",OutputGuide:p.outputGuide||"",Title:p.title,Id:p.id,Topic:p.topic,Difficulty:p.difficulty,Minutes:p.minutes,Description:p.description,Constraints:p.constraints,Method:p.method,Returns:p.returns,Params:JSON.stringify(p.params),Starter:p.starter,Reference:p.reference,Tests:JSON.stringify(p.tests,null,2),Idea:p.idea,Invariant:p.invariant,Time:p.complexity.time,Space:p.complexity.space,Tradeoff:p.complexity.tradeoff,Hints:p.hints.join("\n"),Frames:JSON.stringify(p.frames||[],null,2),Position:row?.position??this.rows.length,Pattern:p.pattern||p.topic,Techniques:(p.techniques||[]).join(", "),HiddenTests:JSON.stringify(row?.hiddenTests||[],null,2),Correction:""};
-    for(const field of fields)$("p"+field).value=values[field];
+    for(const field of fields)$("p"+field).value=values[field];this.companyPicker?.refresh();
     $("pPublished").checked=!!row?.published;$("pId").readOnly=!!row;
     this.validated=null;$("studioValidation").replaceChildren();$("studioDirty").textContent=row?"Loaded from library":"New problem · not saved";
     this.message("Validate the reference solution before publishing.");
@@ -75,7 +77,7 @@ export class Studio{
   }
   hiddenTests(problem){let cases;try{cases=JSON.parse($("pHiddenTests").value||"[]");}catch{throw new Error("Hidden cases must contain valid JSON.");}if(!Array.isArray(cases)||cases.length>100)throw new Error("Provide up to 100 hidden cases.");buildTests(problem,cases);return cases;}
   async validateJava(){
-    if(this.running||!this.cloud.admin)return;
+    if(this.running||!this.cloud.canCreate)return;
     let problem;try{problem=this.read();}catch(e){this.message(e.message);return;}
     const epoch=++this.epoch;this.running=true;$("studioFields").disabled=true;$("validateProblemBtn").disabled=true;$("saveProblemBtn").disabled=true;$("stopStudioBtn").hidden=false;
     $("studioValidation").replaceChildren();this.watchdog=setTimeout(()=>this.stop("Java startup timed out. Your draft is kept."),120000);
@@ -95,7 +97,7 @@ export class Studio{
     if(message)this.message(message);
   }
   async save(){
-    if(!this.cloud.admin||!this.cloud.user||this.running)return;
+    if(!this.cloud.canCreate||!this.cloud.user||this.running)return;
     try{
       const problem=this.read(),published=$("pPublished").checked,userId=this.cloud.user.id;
       const position=Number($("pPosition").value);if(!Number.isInteger(position)||position<0||position>1000000)throw new Error("Library order must be a whole number from 0 to 1,000,000.");
