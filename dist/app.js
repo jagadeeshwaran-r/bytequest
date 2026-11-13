@@ -1,8 +1,8 @@
-import {mountShell} from "./shell.js?v=minimal-1";
-import {Dashboard} from "./dashboard.js?v=minimal-1";
-import {languages,starterFor,NativeJudge} from "./languages.js?v=minimal-1";
+import {mountShell} from "./shell.js?v=red-1";
+import {Dashboard} from "./dashboard.js?v=red-1";
+import {languages,starterFor,NativeJudge} from "./languages.js?v=red-1";
 import {problems as bundledProblems} from "./problems.js";
-import {Cloud} from "./cloud.js?v=minimal-1";
+import {Cloud} from "./cloud.js?v=red-1";
 import {blankProgress, validateProgress, mergeProgress} from "./progress.js";
 import {Studio} from "./studio.js?v=community-1";
 const problems=[...bundledProblems];
@@ -24,7 +24,7 @@ function readLocal(key){try{const saved=JSON.parse(localStorage.getItem(key));re
 state=readLocal(storageKey);
 let publicProfile=null;
 let syncTimer,syncing=false,syncAgain=false,accountEpoch=0,accountOwner,accountReady=false;
-const cloud=new Cloud(user=>changeAccount(user));
+const cloud=new Cloud(user=>changeAccount(user));shell.connect(cloud);
 const studio=new Studio({cloud,notify:message=>notify(message),onCatalogChanged:()=>refreshCatalog()});
 const dashboard=new Dashboard({cloud,getState:()=>state,getCatalog:()=>problems});
 function touch(field,id){state.modified[id]??={};state.modified[id][field]=Date.now();}
@@ -101,11 +101,11 @@ function renderLearning(){
   document.querySelectorAll("[data-tab]").forEach(b=>{b.classList.toggle("active",b.dataset.tab===tab);b.setAttribute("aria-selected",String(b.dataset.tab===tab));});
   let content=timerHtml();
   if(tab==="problem"){
-    content+='<span class="pattern-tag">'+html(current.topic)+'</span><h3>'+html(current.title)+'</h3><p class="body-copy">'+html(current.description)+'</p><h4>Let’s make it concrete <span>↙</span></h4>';
+    content+='<span class="pattern-tag">'+html(current.topic)+'</span><h3>'+html(current.title)+'</h3><p class="body-copy">'+html(current.description)+'</p><h4>Input</h4><p class="body-copy">'+html(current.inputGuide||current.params.map(p=>p.name+' ('+p.type+')').join(', '))+'</p><h4>Output</h4><p class="body-copy">'+html(current.outputGuide||('Return '+current.returns+' from '+current.method+'.'))+'</p><h4>Examples</h4>';
     current.tests.slice(0,2).forEach((c,i)=>{content+='<div class="example-card"><code>Input: <b>'+html(formatArgs(c.args))+'</b>\nOutput: <b>'+html(JSON.stringify(c.expected))+'</b></code><p>'+html(c.label)+'</p></div>';});
-    content+='<h4>A few ground rules</h4><div class="constraints">'+html(current.constraints)+'</div>';
+    content+='<h4>Constraints</h4><div class="constraints">'+html(current.constraints)+'</div>';
   } else if(tab==="learn"){
-    content+='<span class="pattern-tag">THE '+html(current.topic.toUpperCase())+' PATTERN</span><h3>Find the idea first.</h3><p class="body-copy">'+html(current.idea)+'</p><div class="pattern-callout"><strong>The thing that stays true</strong>'+html(current.invariant)+'</div><div class="complexity-row"><div class="complexity-box"><small>TIME</small><b>'+html(current.complexity.time)+'</b></div><div class="complexity-box"><small>EXTRA SPACE</small><b>'+html(current.complexity.space)+'</b></div></div><p class="tradeoff">'+html(current.complexity.tradeoff)+'</p><button id="referenceBtn" class="reference-button">Peek at the Java walkthrough ↗</button><div id="referenceContent"></div>';
+    content+='<span class="pattern-tag">THE '+html(current.topic.toUpperCase())+' PATTERN</span><h3>Approach</h3><p class="body-copy">'+html(current.idea)+'</p><div class="pattern-callout"><strong>Invariant</strong>'+html(current.invariant)+'</div><div class="complexity-row"><div class="complexity-box"><small>TIME</small><b>'+html(current.complexity.time)+'</b></div><div class="complexity-box"><small>EXTRA SPACE</small><b>'+html(current.complexity.space)+'</b></div></div><p class="tradeoff">'+html(current.complexity.tradeoff)+'</p><button id="referenceBtn" class="reference-button">Show Java solution</button><div id="referenceContent"></div>';
   } else {
     content+='<span class="pattern-tag">A LITTLE MOVING PICTURE</span><h3>Watch the idea click.</h3><p class="body-copy">A guided trace of the reference approach. Your code runs separately in the editor.</p><div id="traceBoard" class="trace-board"></div><p id="traceCaption" class="trace-caption"></p><div class="trace-controls"><button id="traceBack" aria-label="Previous animation step">←</button><button id="tracePlay" class="play-trace">▶ Play</button><button id="traceNext" aria-label="Next animation step">→</button><button id="traceReset" aria-label="Restart animation">↻</button><span id="traceCounter" class="trace-counter"></span></div><div class="code-note">Pause at any step. Say out loud: <i>“What do I know so far, and what changes next?”</i></div>';
   }
@@ -234,7 +234,7 @@ $("problemSelect").onchange=e=>changeProblem(e.target.value);
 function changeProblem(id){
   const target=problems.find(p=>p.id===id);if(!target)return;
   if(busy)stopRun();pauseTrace();clearInterval(timerTick);timerUsed=0;timerStarted=null;timerProblem=id;
-  current=target;state.current=id;state.currentUpdated=Date.now();customCases=[];selectedCase=0;results=null;tab="problem";referenceUsed=false;persist();renderPractice();location.hash="practice";
+  current=target;state.current=id;state.currentUpdated=Date.now();customCases=[];selectedCase=0;results=null;tab="learn";referenceUsed=false;persist();renderPractice();location.hash="practice";
 }
 function nextProblem(){
   if(!problems.length)return;
@@ -260,12 +260,12 @@ document.querySelectorAll("dialog").forEach(d=>d.addEventListener("click",event=
 $("aboutBtn").onclick=()=>$("aboutDialog").showModal();
 let previousView=null;
 function route(){
-  const view=document.body.dataset.page==="studio"?"studio":(["dashboard","practice","map","progress","studio"].includes(location.hash.slice(1))?location.hash.slice(1):"dashboard");
+  const view=document.body.dataset.page==="studio"?"studio":(["dashboard","practice","map","progress","studio"].includes(location.hash.slice(1))?location.hash.slice(1):"map");
   if(view==="studio"&&document.body.dataset.page!=="studio"){location.href="./studio.html";return;}
   ["dashboard","practice","map","progress","studio"].forEach(name=>$(name+"View").hidden=view!==name);
   document.querySelectorAll("[data-view]").forEach(a=>a.classList.toggle("active",a.dataset.view===view));
   $("breadcrumb").textContent=({dashboard:"Dashboard",practice:"Practice",map:"Problem library",progress:"My progress",studio:"Problem studio"})[view];
-  if(view!=="practice"){pauseTrace();if(busy)stopRun();}if(view!=="studio")studio.stop();if(view==="studio")studio.open();if(view==="dashboard")dashboard.open();if(view==="map")renderMap();if(view==="progress")renderProgress();
+  if(view!=="practice"){pauseTrace();if(busy)stopRun();}if(view!=="studio")studio.stop();if(view==="studio")studio.open();if(view==="dashboard"){location.hash="map";return;}if(view==="map")renderMap();if(view==="progress")renderProgress();
   if(previousView!==null&&previousView!==view)window.scrollTo({top:0,left:0,behavior:"instant"});previousView=view;
 }
 addEventListener("hashchange",route);
@@ -276,7 +276,7 @@ function renderMap(){
   const pattern=$("patternFilter").value,technique=$("techniqueFilter").value;
   const query=$("searchInput").value.toLowerCase(),topic=$("topicFilter").value,level=$("difficultyFilter").value,status=$("statusFilter").value;
   const list=problems.filter(p=>(p.title+" "+p.topic+" "+(p.pattern||"")+" "+(p.techniques||[]).join(" ")).toLowerCase().includes(query)&&(!topic||p.topic===topic)&&(!pattern||(p.pattern||p.topic)===pattern)&&(!technique||(p.techniques||[]).includes(technique))&&(!level||p.difficulty===level)&&(!status||(status==="solved"?state.solved[p.id]:status==="new"?!state.solved[p.id]:due(p.id))));
-  $("questGrid").innerHTML=list.length?list.map(p=>'<article class="quest-card">'+(state.solved[p.id]?'<span class="solved-badge">'+(due(p.id)?"↻ Review due":"✓ Solved")+"</span>":"")+'<div class="card-icon">'+(topicEmoji[p.topic]||'✦')+'</div><h3>'+html(p.title)+'</h3><p>'+html(p.topic)+'</p><div class="card-meta"><span class="difficulty'+(' '+p.difficulty.toLowerCase())+'">'+p.difficulty+'</span><span>~'+p.minutes+' min</span><span class="card-xp">✧ 100 XP</span></div><button data-problem="'+p.id+'">'+(state.solved[p.id]?"Revisit this quest":"Let's explore")+icon("arrow")+'</button></article>').join(""):'<div class="empty-state">No quests here yet. Try another filter.</div>';
+  $("questGrid").innerHTML=list.length?'<table class="problem-table"><thead><tr><th>No.</th><th>Title</th><th>Companies</th><th>Difficulty</th><th>Status</th></tr></thead><tbody>'+list.map(p=>'<tr><td>'+String(problems.indexOf(p)+1).padStart(2,'0')+'</td><td><button class="problem-title" data-problem="'+p.id+'">'+html(p.title)+'</button><small>'+html(p.pattern||p.topic)+'</small></td><td>'+((p.companies||[]).map(c=>'<span class="company-tag">'+html(c)+'</span>').join('')||'<span class="muted">—</span>')+'</td><td><span class="difficulty '+p.difficulty.toLowerCase()+'">'+html(p.difficulty)+'</span></td><td>'+ (state.solved[p.id]?'Solved':'Unsolved')+'</td></tr>').join('')+'</tbody></table><p class="company-note">Company tags are community-reported historical associations, not employer endorsements. <a href="https://github.com/duanehutchins/leetcode-questions-by-company" target="_blank" rel="noopener">Tag source</a></p>':'<p class="empty-state">No matching problems.</p>';
   $("questGrid").querySelectorAll("[data-problem]").forEach(b=>b.onclick=()=>changeProblem(b.dataset.problem));
 }
 function renderProgress(){
@@ -393,3 +393,5 @@ async function bootCloud(){
 }
 renderPractice();updateStats();route();bootCloud();
 if(!storageOK){$("saveStatus").textContent="Storage unavailable — use Save progress";notify("Local storage is unavailable. Export your progress before leaving.");}
+
+setInterval(()=>{if(cloud.user&&document.visibilityState==='visible')cloud.request('self').catch(()=>{});},60000);

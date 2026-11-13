@@ -9,7 +9,7 @@ export function validateCommunity(action,body){
   if(typeof body.bio!=='string'||body.bio.length>280||typeof body.discoverable!=='boolean')throw new HttpError(400,'Check your profile settings.');
   if(typeof body.avatar_url!=='string'||body.avatar_url.length>1000)throw new HttpError(400,'Use an HTTPS image URL.');
   if(body.avatar_url){let u;try{u=new URL(body.avatar_url);}catch{}if(!u||u.protocol!=='https:'||u.username||u.password)throw new HttpError(400,'Use an HTTPS image URL.');}
-  Object.assign(data,{username:body.username,display_name:body.display_name.trim(),bio:body.bio,avatar_url:body.avatar_url,discoverable:body.discoverable});
+  Object.assign(data,{username:body.username,display_name:body.display_name.trim(),bio:body.bio,avatar_url:body.avatar_url,discoverable:body.discoverable,show_presence:body.show_presence===true});
  }
  if(action==='search'){
   if(typeof body.query!=='string'||body.query.length<2||body.query.length>50||!/^[a-zA-Z0-9_-]+$/.test(body.query))throw new HttpError(400,'Search with at least two username characters, or an exact profile ID.');data.query=body.query.toLowerCase();

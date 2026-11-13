@@ -1,7 +1,7 @@
 import {cloudConfig} from "./config.js";
 import {firebaseConfig} from "./firebase-config.js";
 import {FirebaseSession} from "./firebase-session.js";
-import {validateProblem} from "./catalog.js";
+import {validateProblem} from "./catalog.js?v=red-1";
 import {blankProgress,validateProgress} from "./progress.js";
 export function validPublicConfig(config){
   try{

@@ -1,4 +1,4 @@
-import {validateProblem} from './catalog.js';
+import {validateProblem} from './catalog.js?v=red-1';
 import {JavaJudge,buildTests} from './judge.js';
 export function mountBulkImport({cloud,notify,onChanged}){
  const panel=document.getElementById('bulkImport');let stopped=false,running=false,judge;

@@ -1,8 +1,8 @@
 import {JavaJudge,buildTests} from "./judge.js";
 import {mountBulkImport} from "./bulk-import.js?v=community-1";
-import {validateProblem} from "./catalog.js";
+import {validateProblem} from "./catalog.js?v=red-1";
 const $=id=>document.getElementById(id);
-const fields=["Title","Id","Topic","Difficulty","Minutes","Description","Constraints","Method","Returns","Params","Starter","Reference","Tests","Idea","Invariant","Time","Space","Tradeoff","Hints","Frames","Position","Pattern","Techniques","HiddenTests","Correction"];
+const fields=["Title","Id","Topic","Difficulty","Minutes","Description","Constraints","Method","Returns","Params","Starter","Reference","Tests","Idea","Invariant","Time","Space","Tradeoff","Hints","Frames","Position","Pattern","Techniques","Companies","CompanySource","InputGuide","OutputGuide","HiddenTests","Correction"];
 const sample={
   id:"array-sum",title:"Array sum",topic:"Arrays",difficulty:"Easy",minutes:20,method:"sum",returns:"int",params:[{name:"nums",type:"int[]"}],
   description:"Return the sum of all integers in nums. An empty array has a sum of zero.",constraints:"0 ≤ nums.length ≤ 10,000. −1,000 ≤ nums[i] ≤ 1,000.",
@@ -59,7 +59,7 @@ export class Studio{
   }
   fill(p,row=null){
     this.normalize=p.normalize;
-    const values={Title:p.title,Id:p.id,Topic:p.topic,Difficulty:p.difficulty,Minutes:p.minutes,Description:p.description,Constraints:p.constraints,Method:p.method,Returns:p.returns,Params:JSON.stringify(p.params),Starter:p.starter,Reference:p.reference,Tests:JSON.stringify(p.tests,null,2),Idea:p.idea,Invariant:p.invariant,Time:p.complexity.time,Space:p.complexity.space,Tradeoff:p.complexity.tradeoff,Hints:p.hints.join("\n"),Frames:JSON.stringify(p.frames||[],null,2),Position:row?.position??this.rows.length,Pattern:p.pattern||p.topic,Techniques:(p.techniques||[]).join(", "),HiddenTests:JSON.stringify(row?.hiddenTests||[],null,2),Correction:""};
+    const values={Companies:(p.companies||[]).join(", "),CompanySource:p.companySource||"",InputGuide:p.inputGuide||"",OutputGuide:p.outputGuide||"",Title:p.title,Id:p.id,Topic:p.topic,Difficulty:p.difficulty,Minutes:p.minutes,Description:p.description,Constraints:p.constraints,Method:p.method,Returns:p.returns,Params:JSON.stringify(p.params),Starter:p.starter,Reference:p.reference,Tests:JSON.stringify(p.tests,null,2),Idea:p.idea,Invariant:p.invariant,Time:p.complexity.time,Space:p.complexity.space,Tradeoff:p.complexity.tradeoff,Hints:p.hints.join("\n"),Frames:JSON.stringify(p.frames||[],null,2),Position:row?.position??this.rows.length,Pattern:p.pattern||p.topic,Techniques:(p.techniques||[]).join(", "),HiddenTests:JSON.stringify(row?.hiddenTests||[],null,2),Correction:""};
     for(const field of fields)$("p"+field).value=values[field];
     $("pPublished").checked=!!row?.published;$("pId").readOnly=!!row;
     this.validated=null;$("studioValidation").replaceChildren();$("studioDirty").textContent=row?"Loaded from library":"New problem · not saved";
@@ -68,7 +68,7 @@ export class Studio{
   read(){
     const v=name=>$("p"+name).value;
     let params,tests,frames;try{params=JSON.parse(v("Params"));tests=JSON.parse(v("Tests"));frames=JSON.parse(v("Frames")||"[]");}catch{throw new Error("Parameters, tests, and animation steps must contain valid JSON.");}
-    return validateProblem({pattern:v("Pattern")||v("Topic"),techniques:v("Techniques").split(",").map(s=>s.trim()).filter(Boolean),id:v("Id"),title:v("Title"),topic:v("Topic"),difficulty:v("Difficulty"),minutes:Number(v("Minutes")),description:v("Description"),constraints:v("Constraints"),method:v("Method"),returns:v("Returns"),params,tests,frames,starter:v("Starter"),reference:v("Reference"),idea:v("Idea"),invariant:v("Invariant"),complexity:{time:v("Time"),space:v("Space"),tradeoff:v("Tradeoff")},hints:v("Hints").split("\n").map(s=>s.trim()).filter(Boolean),...(this.normalize?{normalize:this.normalize}:{})});
+    return validateProblem({companies:v("Companies").split(",").map(s=>s.trim()).filter(Boolean),companySource:v("CompanySource"),inputGuide:v("InputGuide"),outputGuide:v("OutputGuide"),pattern:v("Pattern")||v("Topic"),techniques:v("Techniques").split(",").map(s=>s.trim()).filter(Boolean),id:v("Id"),title:v("Title"),topic:v("Topic"),difficulty:v("Difficulty"),minutes:Number(v("Minutes")),description:v("Description"),constraints:v("Constraints"),method:v("Method"),returns:v("Returns"),params,tests,frames,starter:v("Starter"),reference:v("Reference"),idea:v("Idea"),invariant:v("Invariant"),complexity:{time:v("Time"),space:v("Space"),tradeoff:v("Tradeoff")},hints:v("Hints").split("\n").map(s=>s.trim()).filter(Boolean),...(this.normalize?{normalize:this.normalize}:{})});
   }
   saveLocalDraft(){
     if(!this.cloud.user)return;try{localStorage.setItem("bytequest.studio."+this.cloud.user.id,JSON.stringify({rowId:this.row?.id||null,normalize:this.normalize,published:$("pPublished").checked,fields:Object.fromEntries(fields.map(f=>[f,$("p"+f).value]))}));}catch{}

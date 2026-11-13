@@ -1,3 +1,4 @@
+import {problemDetails} from './problem-details.js';
 const make = (id, title, topic, method, returns, params, description, constraints, tests, body, idea, invariant, complexity, hints, trace, difficulty = "Easy") => ({
   id, title, topic, method, returns, params, description, constraints, tests, idea, invariant, complexity, hints, trace, difficulty,
   minutes: difficulty === "Easy" ? 20 : 30,
@@ -156,3 +157,5 @@ export const problems = [
 ];
 problems[0].normalize = "sort-int";
 export const topics = [...new Set(problems.map(p => p.topic))];
+
+for(const p of problems)Object.assign(p,problemDetails[p.id]||{});
