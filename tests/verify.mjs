@@ -49,7 +49,7 @@ try {
   assert.throws(()=>buildTests(problem,[{args:[[]],expected:[]}]));
   const index=readFileSync("dist/index.html","utf8");
   for(const f of ["style.css","app.js","judge.js","problems.js","runner.html","java-runner.jar","traces.js","favicon.svg"])assert.ok(existsSync(join("dist",f)),f+" is missing");
-  for(const src of [...index.matchAll(/(?:src|href)="\.\/([^"]+)"/g)].map(m=>m[1]))assert.ok(existsSync(join("dist",src)),src+" reference is broken");
+  for(const src of [...index.matchAll(/(?:src|href)="\.\/([^"]+)"/g)].map(m=>m[1]))assert.ok(existsSync(join("dist",decodeURIComponent(new URL(src,"https://bytequest.test/").pathname))),src+" reference is broken");
   console.log("✓ Compile diagnostics, wrong answers, runtime exceptions, index ordering, escaped strings, console capture, input validation and static assets.");
   console.log("PASS: "+problems.length+" real Java solutions / "+cases+" built-in test cases.");
 } finally {rmSync("build",{recursive:true,force:true});}
