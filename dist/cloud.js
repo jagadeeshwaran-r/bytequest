@@ -11,7 +11,7 @@ export function validPublicConfig(config){
   }catch{return false;}
 }
 export class Cloud {
-  constructor(onChange=()=>{},{config=cloudConfig,firebase=firebaseConfig,fetchImpl=globalThis.fetch,sessionFactory=(c,cb)=>new FirebaseSession(c,cb)}={}){
+  constructor(onChange=()=>{},{config=cloudConfig,firebase=firebaseConfig,fetchImpl=(...args)=>globalThis.fetch(...args),sessionFactory=(c,cb)=>new FirebaseSession(c,cb)}={}){
     this.config=config;this.fetch=fetchImpl;this.user=null;this.admin=false;this.onChange=onChange;this.enabled=validPublicConfig(config);this.loginReady=false;this.bootstrap=null;
     this.session=sessionFactory(firebase,user=>{this.user=user;this.admin=false;this.bootstrap=null;this.onChange(user);});
   }

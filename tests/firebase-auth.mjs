@@ -95,5 +95,15 @@ const cloud=new Cloud(()=>{},{sessionFactory:()=>({tokenFor:async(id,force)=>{as
   clientCalls.push(options.headers.Authorization);return new Response(JSON.stringify(clientCalls.length===1?{error:"expired"}:{payload:blankProgress(),revision:0}),{status:clientCalls.length===1?401:200,headers:{"Content-Type":"application/json"}});
 }});cloud.user={id:owner};await cloud.request("progress");assert.deepEqual(forceRefresh,[false,true]);assert.deepEqual(clientCalls,["Bearer old-token","Bearer fresh-token"]);
 assert.equal(mergeProgress(own,blankProgress()).notes["two-sum"],"own private note");
+// Browser fetch requires the Window receiver; a class method call must not rebind it.
+const originalFetch=globalThis.fetch;
+let browserFetchCalls=0;
+try{
+  globalThis.fetch=async function(){assert.equal(this,globalThis);browserFetchCalls++;return new Response("[]",{headers:{"Content-Type":"application/json"}});};
+  const browserCloud=new Cloud(()=>{},{sessionFactory:()=>({tokenFor:async()=>"fixture-token"})});
+  browserCloud.user={id:owner};
+  await browserCloud.publicCatalog();await browserCloud.request("progress");
+  assert.equal(browserFetchCalls,2);
+}finally{globalThis.fetch=originalFetch;}
 for(const file of ["catalog.js","judge.js","progress.js"])assert.equal(readFileSync("dist/"+file,"utf8"),readFileSync("supabase/functions/bytequest-firebase/domain/"+file,"utf8"),"Server validation must match the published problem/backup contract.");
 console.log("PASS: Firebase signature/issuer/audience/expiry/provider checks, forged owner rejection, private progress, editor enforcement, revision conflicts, token refresh and account switching.");
