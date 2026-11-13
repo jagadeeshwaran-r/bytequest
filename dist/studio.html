@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f8ff">
+  <meta name="description" content="Learn problem-solving in Java, one small adventure at a time. Animated patterns, a real Java compiler, and friendly practice quests.">
+  <title>ByteQuest — Problem studio</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./theme.css?v=community-1">
+  <script type="module" src="./app.js?v=community-1"></script>
+</head>
+<body data-page="studio">
+<svg class="sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-3-14-2 18"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><path d="m9 18-6 3V6l6-3 6 3 6-3v15l-6 3-6-3Zm0 0V3m6 18V6"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 3v17h17M8 16v-5m5 5V7m5 9V4"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3Z"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M20 4C5 1 1 14 9 19s14-4 11-15ZM5 21 16 10"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 6c-4-3-8-2-9-1v14c3-2 6-1 9 1 3-2 6-3 9-1V5c-3-2-6-1-9 1Zm0 0v14"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="m13 2-9 12h7l-1 8 10-13h-7l1-7Z"/></symbol>
+  <symbol id="i-reset" viewBox="0 0 24 24"><path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/></symbol>
+</svg>
+<aside class="sidebar">
+  <a class="brand" href="./index.html#practice" aria-label="ByteQuest home"><span class="brand-mark">{<b>•</b>}</span>ByteQuest<span class="brand-dot">.</span></a>
+  <div class="workspace-label">YOUR JAVA WORKSPACE</div>
+  <nav aria-label="Main navigation">
+    <a class="nav-link active" href="./index.html#practice" data-view="practice"><svg><use href="#i-code"/></svg>Practice<span class="nav-tag">JAVA 17</span></a>
+    <a class="nav-link" href="./index.html#map" data-view="map"><svg><use href="#i-map"/></svg>Problem library</a>
+    <a class="nav-link" href="./index.html#progress" data-view="progress"><svg><use href="#i-chart"/></svg>My progress</a>
+    <a class="nav-link" id="studioNav" href="./studio.html" data-view="studio" hidden><svg><use href="#i-grid"/></svg>Problem studio</a>
+  <a class="nav-link" href="./community.html#me"><span>◉</span> My profile</a><a class="nav-link" href="./community.html#discover"><span>♧</span> Find explorers</a><a class="nav-link" href="./community.html#inbox"><span>♧</span> Quest inbox</a></nav>
+  <div class="sidebar-card">
+    <span class="little-star">✳</span>
+    <h3>Grow at your pace.</h3>
+    <p>Understand the pattern.<br>Explain your thinking.<br>Then chase the clock.</p>
+    <span class="handwritten">you've got this ↗</span>
+  </div>
+  <div class="sidebar-bottom">
+    <button id="aboutBtn" class="text-button"><svg><use href="#i-book"/></svg>How it works</button>
+    <button class="profile" id="profileBtn"><span class="avatar" id="profileAvatar">J</span><span><strong id="profileName">Java explorer</strong><small>Level <span id="level">1</span> · Keep growing</small></span><span class="online-dot"></span></button>
+  </div>
+</aside>
+<main>
+  <header class="topbar">
+    <div class="breadcrumb"><span class="mobile-brand">{•} ByteQuest</span><span class="desktop-crumb">Your playground <span>/</span> <strong id="breadcrumb">Practice lab</strong></span></div>
+    <div class="top-actions"><button id="syncBadge" class="sync-badge"><span></span><span id="syncLabel">On this device</span></button><span class="streak-pill"><svg><use href="#i-bolt"/></svg><b id="streak">0</b> day streak</span><button id="exportBtn" class="icon-text" title="Download your progress backup">Backup</button><button id="accountBtn" class="google-button"><span class="google-symbol" aria-hidden="true">G</span><span id="accountLabel">Sign in with Google</span></button></div>
+  </header>
+  <section class="hero">
+    <div class="hero-copy"><div class="eyebrow"><span></span> YOUR NEXT BREAKTHROUGH STARTS HERE</div><h1>Learn the pattern.<br><span>Find your flow.</span></h1><p>Build interview confidence with hands-on Java, visual explanations, and one good problem at a time.</p>
+      <div class="hero-stats"><span><b id="solvedCount">0</b><small>/ <span id="solvedTotal">16</span> problems solved</small></span><i></i><span class="xp-text"><svg><use href="#i-spark"/></svg><b id="xpCount">0</b><small>XP earned</small></span><i></i><span><span class="green-dot"></span><small>Beginner friendly</small></span></div>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+      <span class="floating-tag tag-one">while (curious)</span><span class="floating-tag tag-two">keepGrowing();</span>
+      <svg class="mascot" viewBox="0 0 210 170"><ellipse cx="110" cy="152" rx="54" ry="8" fill="#a9d6fa" opacity=".4"/><g class="bot"><path d="M108 35V18" stroke="#233e69" stroke-width="5" stroke-linecap="round"/><circle cx="108" cy="15" r="7" fill="#8be0c8" stroke="#233e69" stroke-width="3"/><path d="M56 98 34 112m128-14 18-21" stroke="#233e69" stroke-width="9" stroke-linecap="round"/><path d="m75 134-3 13m62-13 5 13" stroke="#233e69" stroke-width="12" stroke-linecap="round"/><rect x="55" y="36" width="108" height="101" rx="30" fill="#ffffff" stroke="#233e69" stroke-width="4"/><rect x="67" y="52" width="84" height="53" rx="18" fill="#2563eb"/><ellipse cx="90" cy="76" rx="6" ry="9" fill="#d9fbff"/><ellipse cx="129" cy="76" rx="6" ry="9" fill="#d9fbff"/><path d="M103 89q7 7 14-1" stroke="#d9fbff" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="93" y="116" width="29" height="6" rx="3" fill="#bed9ff"/><circle cx="75" cy="95" r="7" fill="#90c9f9" opacity=".6"/><circle cx="145" cy="95" r="7" fill="#90c9f9" opacity=".6"/></g><path d="m176 28 3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" fill="#f6d076"/><path d="m30 48 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" fill="#6ba6f4"/></svg>
+    </div>
+  </section>
+  <section id="practiceView" class="view"><div class="catalog-empty empty-state" hidden id="catalogEmpty">New challenges are on their way. Check back soon.</div>
+    <div class="section-heading"><div><h2>Your practice space <span class="heading-arrow"><svg><use href="#i-arrow"/></svg></span></h2><p>Understand first. Code with confidence.</p></div><a href="./index.html#map" class="subtle-link">Browse problems <svg><use href="#i-arrow"/></svg></a></div>
+    <div class="quest-strip"><span class="quest-number" id="questNumber">01</span><div class="quest-info"><strong id="questTitle">Two Sum</strong><span><span class="difficulty" id="difficulty">Easy</span><span id="questTopic">Hash maps</span><span>·</span><svg><use href="#i-clock"/></svg><span id="questMinutes">15–25 min</span></span></div><label class="select-label"><span class="sr-only">Choose a problem</span><select id="problemSelect"></select></label><div class="mode-toggle" aria-label="Practice mode"><button class="active" id="learnMode">🌱 Learn</button><button id="challengeMode">⚡ Challenge</button></div></div>
+    <div class="lab">
+      <section class="problem-pane" aria-label="Problem and learning materials">
+        <div class="pane-tabs" role="tablist" aria-label="Learning materials"><button role="tab" aria-selected="true" class="active" data-tab="problem"><svg><use href="#i-book"/></svg>Problem</button><button role="tab" aria-selected="false" data-tab="learn"><svg><use href="#i-leaf"/></svg>Pattern guide</button><button role="tab" aria-selected="false" data-tab="visual"><svg><use href="#i-play"/></svg>Visualize</button></div>
+        <div id="learningContent" class="learning-content"></div>
+        <div class="hint-bar"><span class="hint-icon">✧</span><div><strong>A nudge, not a spoiler.</strong><p id="hintText">Stuck? Take one small hint.</p></div><button id="hintBtn">Get a hint <span>↗</span></button></div>
+      </section>
+      <section class="editor-pane" aria-label="Java editor and test results">
+        <div class="editor-top"><span class="file-tab"><span class="java-dot">J</span>Solution.java <span class="file-dot"></span></span><div><span class="java-version">Java 17</span><button id="resetCode" class="mini-icon" aria-label="Reset code to starter" title="Reset code"><svg><use href="#i-reset"/></svg></button></div></div>
+        <div class="editor-container"><div id="lineNumbers" class="line-numbers" aria-hidden="true"></div><div class="code-scroll"><pre id="codeHighlight" aria-hidden="true"><code></code></pre><textarea id="codeEditor" aria-label="Java solution code" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" wrap="off"></textarea></div></div>
+        <div class="editor-status"><span><span class="green-dot"></span><span id="saveStatus">Draft saved on this device</span></span><span>Spaces: 4 <span class="divider">|</span> UTF-8</span></div>
+        <div class="test-panel"><div class="test-header"><strong><svg><use href="#i-check"/></svg>Test playground</strong><button id="customBtn">+ Custom case</button></div><div class="test-tabs" id="testTabs"></div><div id="testDetail" class="test-detail"></div><div id="resultOutput" class="result-output" aria-live="polite"></div></div>
+        <div class="runbar"><span id="runStatus"><span class="runtime-dot"></span>Real Java. Right here.</span><button id="stopBtn" class="button stop" hidden>Stop</button><button id="runBtn" class="button secondary"><svg><use href="#i-play"/></svg>Run</button><button id="submitBtn" class="button primary"><svg><use href="#i-check"/></svg>Submit solution</button></div>
+      </section>
+    </div>
+    <div class="below-lab"><span>✳ Progress over perfection. Every attempt counts.</span><button id="nextBtn">Next problem <svg><use href="#i-arrow"/></svg></button></div>
+  </section>
+  <section id="mapView" class="view" hidden>
+    <div class="section-heading"><div><h2>Find your next challenge.</h2><p>Explore patterns, practise deliberately, and make every attempt count.</p></div><span class="soft-pill" id="catalogCount">16 problems · 9 topics</span></div>
+    <div class="filters"><label class="search-box"><svg><use href="#i-grid"/></svg><input id="searchInput" placeholder="Search problems or patterns…" aria-label="Search problems"></label><select id="topicFilter" aria-label="Filter by topic"><option value="">All patterns</option></select><select id="patternFilter" aria-label="Filter by problem pattern"><option value="">All problem patterns</option></select><select id="techniqueFilter" aria-label="Filter by technique"><option value="">All techniques</option></select><select id="difficultyFilter" aria-label="Filter by difficulty"><option value="">All levels</option><option>Easy</option><option>Medium</option><option>Hard</option></select><select id="statusFilter" aria-label="Filter by completion"><option value="">All problems</option><option value="new">To explore</option><option value="solved">Solved</option><option value="review">Review due</option></select></div>
+    <div class="map-intro"><div class="map-icon">🌿</div><div><strong>Your path, your pace.</strong><p>Try hash maps → two pointers → binary search → sliding windows → stacks → dynamic programming. Math quests are a great side adventure.</p></div></div>
+    <div id="questGrid" class="quest-grid"></div>
+  </section>
+  <section id="progressView" class="view" hidden>
+    <div class="section-heading"><div><h2>Look how far you're growing.</h2><p>Small sessions add up. Make the patterns stick.</p></div><button id="importBtn" class="button secondary">Restore backup</button><input id="importFile" type="file" accept=".json,application/json" hidden></div>
+    <div id="progressCards" class="progress-cards"></div>
+    <div class="progress-grid"><section class="white-card"><h3>Your pattern garden <span>✿</span></h3><p class="muted">A pattern grows each time you solve one of its quests.</p><div id="topicProgress"></div></section><section class="white-card"><h3>Make it stick <span>↻</span></h3><p class="muted">Revisit after 2, 7 and 21 days. Solve again to complete a review.</p><div id="reviewQueue"></div></section></div>
+    <section class="white-card activity-card"><h3>Your recent adventures</h3><div id="activityList"></div></section>
+  </section>
+
+  <section id="studioView" class="view" hidden>
+    <div class="section-heading"><div><span class="eyebrow">FOR CURIOUS TEACHERS</span><h2>Problem studio</h2><p>Create a challenge, check its Java solution, then publish it to the library.</p></div><button id="newProblemBtn" class="button primary">+ New problem</button></div>
+    <div id="studioGate" class="white-card studio-gate"><span class="studio-lock">✦</span><h3>A space for your problem library.</h3><p>Sign in with an editor account to create and publish problems.</p><button id="studioSignIn" class="button primary">Sign in with Google</button></div>
+    <div id="studioWorkspace" hidden>
+      <details id="bulkImport" class="white-card"><summary>Import a verified problem pack · up to 500 problems</summary><p>Import original or licensed ByteQuest definitions. Every Java reference solution must pass its public and private cases before saving. Existing IDs are rejected; use the editor for corrections. Packs save sequentially and can be stopped.</p><input id="bulkFile" type="file" accept=".json,application/json" aria-label="Problem pack JSON"><label class="checkbox-label"><input id="bulkPublished" type="checkbox">Publish successful problems and announce them in the inbox</label><button type="button" id="bulkRun" class="button primary">Validate and import pack</button><button type="button" id="bulkStop" class="button stop" hidden>Stop importing</button><p id="bulkStatus" role="status">The library currently contains its validated native problems. No placeholder records count toward the 500-problem target.</p></details>
+      <div class="studio-banner">Publish a new quest to notify every signed-in learner in their inbox. Corrections create a new revision and a correction announcement. <a class="nav-link" href="./community.html#roles">Manage creator access →</a></div><div class="studio-toolbar"><label>Open a problem<select id="studioSelect"><option value="">New problem</option></select></label><button id="importProblemBtn" class="button secondary">Import JSON</button><input type="file" accept=".json,application/json" id="importProblemFile" hidden><button id="exportProblemBtn" class="button secondary">Export JSON</button></div>
+      <form id="problemForm"><fieldset id="studioFields">
+        <div class="studio-grid"><div class="white-card studio-form">
+          <h3>The challenge <span class="step-dot">01</span></h3>
+          <div class="form-row"><label>Title<input id="pTitle" required maxlength="100" placeholder="Array sum"></label><label>Problem ID<input id="pId" required pattern="[a-z][a-z0-9-]{1,63}" placeholder="array-sum"></label></div>
+          <div class="form-row"><label>Pattern<input id="pTopic" required maxlength="60" placeholder="Arrays"></label><label>Difficulty<select id="pDifficulty"><option>Easy</option><option>Medium</option><option>Hard</option></select></label><label>Minutes<input id="pMinutes" type="number" min="5" max="120" value="20"></label></div>
+          <label>Problem statement<textarea id="pDescription" required rows="4" placeholder="Describe the task in your own words."></textarea></label>
+          <label>Constraints<textarea id="pConstraints" required rows="2" placeholder="Input ranges, ordering, and edge cases."></textarea></label>
+          <h3 class="form-section">The Java contract <span class="step-dot">02</span></h3>
+          <div class="form-row"><label>Method name<input id="pMethod" required placeholder="sum"></label><label>Return type<select id="pReturns"><option>int</option><option>int[]</option><option>boolean</option><option>String</option></select></label></div>
+          <label>Parameters · JSON<textarea id="pParams" required rows="2" spellcheck="false">[{"name":"nums","type":"int[]"}]</textarea></label>
+          <label>Starter code<textarea id="pStarter" required rows="7" spellcheck="false"></textarea></label>
+          <label>Reference solution<textarea id="pReference" required rows="9" spellcheck="false"></textarea></label>
+          <label>Test cases · JSON<textarea id="pTests" required rows="8" spellcheck="false"></textarea></label><small class="field-help">The first two cases become examples. Add boundary and edge cases after them.</small>
+        </div><div class="white-card studio-form">
+          <h3>The learning experience <span class="step-dot">03</span></h3>
+          <label>Pattern explanation<textarea id="pIdea" required rows="4" placeholder="Help the learner see why the approach works."></textarea></label>
+          <label>Problem pattern<input id="pPattern" maxlength="60" placeholder="Sliding window, binary search on answer…"></label><label>Techniques · comma separated<input id="pTechniques" maxlength="400" placeholder="Hash map, two pointers…"></label><label>Invariant<textarea id="pInvariant" required rows="3" placeholder="What stays true throughout the algorithm?"></textarea></label>
+          <div class="form-row"><label>Time complexity<input id="pTime" required placeholder="O(n)"></label><label>Extra space<input id="pSpace" required placeholder="O(1)"></label></div>
+          <label>Trade-off<textarea id="pTradeoff" required rows="3"></textarea></label>
+          <label>Hints · one per line<textarea id="pHints" required rows="4"></textarea></label>
+          <details class="animation-details"><summary>Optional animation steps · JSON</summary><p class="muted">Each step has values, active indices, a message, and an optional note.</p><textarea id="pFrames" rows="8" spellcheck="false">[]</textarea></details>
+          <label>Private hidden cases · JSON<textarea id="pHiddenTests" rows="7" spellcheck="false">[]</textarea></label><p class="studio-banner">Hidden cases are stored privately and never included in the public library. Learner execution needs the separate server judge; until connected, these problems cannot earn a hidden-test acceptance.</p><label>Correction note<textarea id="pCorrection" rows="3" maxlength="1000" placeholder="Required when correcting a published problem. Learners see this in their inbox."></textarea></label><label>Library order<input id="pPosition" type="number" min="0" max="1000000" value="16"></label>
+          <label class="checkbox-label"><input type="checkbox" id="pPublished">Published in the public library</label>
+          <div class="publish-note">A published problem must pass every test using its reference solution. Drafts stay visible to editors only.</div>
+          <div id="studioStatus" class="studio-status" role="status">Your next great challenge starts here.</div>
+          <div id="studioValidation" class="studio-validation" aria-live="polite"></div>
+        </div></div>
+      </fieldset><div class="studio-actions"><button type="button" id="validateProblemBtn" class="button secondary">▶ Validate Java solution</button><button type="button" id="stopStudioBtn" class="button stop" hidden>Stop</button><span id="studioDirty">No unsaved changes</span><button type="submit" id="saveProblemBtn" class="button primary">Save problem</button></div></form>
+    </div>
+  </section>
+  <footer><span>Keep learning. Keep building. <a href="./privacy.html">Privacy</a></span><a href="https://cheerpj.com/" target="_blank" rel="noreferrer">Built with CheerpJ ↗</a></footer>
+</main>
+<dialog id="aboutDialog"><button class="dialog-close" aria-label="Close">×</button><div class="dialog-emoji">🌱</div><h2>Your learning playground.</h2><p>Pick a quest, read the pattern guide, and play its animation. Write a real Java solution, then <b>Run</b> the sample cases or <b>Submit solution</b> against every built-in case.</p><p>Earn 100 XP for your first accepted solution. Review it after 2, 7 and 21 days. Challenge mode adds an optional timer when you feel ready.</p><p>The first Java run downloads a browser JDK from CheerpJ. It needs internet and may take a minute. Your code executes on this device. Public cases run on your device. Problems with private hidden tests require the server judge before acceptance. Execution times shown here are local measurements.</p><p>Practise as a guest on this device, or sign in with Google to sync your progress across devices when cloud accounts are enabled. Your drafts and notes are private to your account. Use <b>Backup</b> for a download. Test results and XP are practice records, not competition rankings.</p><button class="button primary dialog-close-button">Let's explore <span>↗</span></button></dialog>
+<dialog id="customDialog"><button class="dialog-close" aria-label="Close">×</button><span class="dialog-emoji">🧪</span><h2>Your own little experiment.</h2><p>Enter arguments as a JSON array and an expected result. Keep your inputs within the problem's constraints.</p><form id="customForm"><label>Arguments (JSON array)<textarea id="customArgs" rows="3" required></textarea></label><label>Expected result (JSON)<textarea id="customExpected" rows="2" required></textarea></label><p id="customError" class="error-text" role="alert"></p><button class="button primary" type="submit">Add test case</button></form></dialog>
+<dialog id="successDialog"><button class="dialog-close" aria-label="Close">×</button><span class="dialog-emoji success-star">✦</span><span class="eyebrow">A LITTLE BREAKTHROUGH!</span><h2 id="successTitle">Quest complete.</h2><p id="successCopy"></p><label class="explain-label">Explain it back in one sentence<textarea id="successNote" rows="3" placeholder="I used a map because…"></textarea></label><p class="muted">How did that feel?</p><div class="confidence-options"><button data-confidence="1">Need a revisit</button><button data-confidence="2">Getting there</button><button data-confidence="3">Feeling good ✨</button></div><button id="successNext" class="button primary">On to the next adventure <span>→</span></button></dialog>
+<dialog id="resetDialog"><button class="dialog-close" aria-label="Close">×</button><h2>A fresh page?</h2><p>This replaces the current quest's draft with its starter code.</p><div class="dialog-actions"><button class="button secondary dialog-close-button">Keep my code</button><button id="confirmReset" class="button primary">Reset this draft</button></div></dialog>
+
+<dialog id="accountDialog" class="account-dialog"><button class="dialog-close" aria-label="Close">×</button><div class="account-illustration">{ <span>✓</span> }</div><span class="eyebrow">YOUR PROGRESS, WHEREVER YOU GO</span><h2 id="accountTitle">A little more connected.</h2><p id="accountDescription">Sign in with Google to keep your progress, drafts, and review schedule across devices.</p><p class="auth-provider-label">Secure Google sign-in with Firebase</p><div class="account-benefits"><span>✓ Private drafts and notes</span><span>✓ Your progress across devices</span><span>✓ One account, every breakthrough</span></div><div id="accountIdentity" hidden></div><p id="authMessage" class="auth-message" aria-live="polite"></p><button id="googleSignInBtn" class="google-button wide"><span class="google-symbol" aria-hidden="true">G</span>Continue with Google</button><button id="syncNowBtn" class="button primary wide" hidden>Sync now</button><button id="importGuestBtn" class="button secondary wide" hidden>Bring this device’s guest progress</button><button id="signOutBtn" class="text-button wide" hidden>Sign out on this device</button><button class="text-button wide dialog-close-button" id="guestContinue">Continue as guest</button><small class="account-privacy">Your progress belongs to you. <a href="./privacy.html">How we use your data ↗</a></small></dialog>
+<div id="toast" class="toast" role="status"></div>
+<div id="confetti" class="confetti" aria-hidden="true"></div>
+</body>
+</html>

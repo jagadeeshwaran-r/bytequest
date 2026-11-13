@@ -24,7 +24,7 @@ export class Cloud {
     const response=await this.fetch(this.config.url+"/rest/v1/bytequest_problems"+query,{headers:{apikey:this.config.publishableKey},signal:AbortSignal.timeout(12000)});
     if(!response.ok)throw new Error("Could not load the problem library.");
     const rows=await response.json();if(!Array.isArray(rows))throw new Error("Invalid problem library response.");
-    return rows.map(row=>validateProblem(row.content));
+    return rows.map(row=>({...validateProblem(row.content),revision:row.revision}));
   }
   async request(action,body={},ownerId=this.user?.id){
     if(!this.enabled||!ownerId||this.user?.id!==ownerId)throw new Error("Sign in to sync your progress.");
@@ -64,7 +64,7 @@ export class Cloud {
     throw new Error("Another device is saving. Your changes are kept here; try Sync again.");
   }
   async adminCatalog(){const result=await this.request("studio-list");return result.problems;}
-  async saveProblem(problem,{published=false,revision=0,position=0}={}){
-    const result=await this.request("studio-save",{problem:validateProblem(problem),published,revision,position});return result.problem;
+  async saveProblem(problem,{published=false,revision=0,position=0,hiddenTests=[],correction=""}={}){
+    const result=await this.request("studio-save",{problem:validateProblem(problem),published,revision,position,hiddenTests,correction});return result.problem;
   }
 }

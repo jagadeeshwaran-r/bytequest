@@ -137,3 +137,22 @@ Official references (checked November 13, 2026):
 - [Firebase ID token verification](https://firebase.google.com/docs/auth/admin/verify-id-tokens)
 - [Supabase Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security)
 - [Supabase pricing and free-plan limits](https://supabase.com/pricing)
+
+### Profiles, community and authoring
+
+- **My profile / Find explorers:** `community.html`. Optional discoverability,
+  username and profile ID, editable name/image/bio, year activity grid, streaks,
+  active days, following and followers. Private account data stays private.
+- **Quest inbox:** new-problem and correction announcements, with unread counts
+  and an account-specific read cursor. In-app delivery; no email/push service.
+- **Problem studio:** `studio.html`. Creator-only problem management, original
+  Java references, public/private cases, pattern/technique/difficulty metadata,
+  correction history and optimistic revision checks. Library admins can delegate
+  creator access; the initial admin enrollment still needs owner authorization.
+- **Problem packs:** imports up to 500 definitions and validates real Java before
+  each save. This release still has the original 16 runnable problems, not 500.
+- **Private judge:** attachments and the server adapter are implemented. A trusted
+  sandboxed Judge0 instance must be configured before hidden-case acceptance can
+  run. Until then private-suite submissions fail closed; public practice works.
+
+See `DATABASE.md` for deployment, privacy, role enrollment and judge configuration.

@@ -26,3 +26,12 @@ dialog{border-color:#dce8f7;background:#fff;box-shadow:0 28px 120px #1e4c8528;co
 @media(max-width:400px){main{padding-left:13px;padding-right:13px}.hero h1{font-size:29px}.hero-art{width:85px;height:116px}.hero-art .orbit{display:none}.hero p{max-width:210px}.hero-stats{gap:8px}.hero-stats small{font-size:8px}.hero-stats b{font-size:15px}.mode-toggle button{padding:5px;font-size:8px}.quest-strip{gap:7px}.quest-info>span{font-size:8px}.quest-info strong{font-size:15px}.pane-tabs{gap:17px}.hint-bar p{max-width:175px}.top-actions .streak-pill{font-size:8px}.google-button{gap:4px}.runbar .button{padding:8px 7px;font-size:9px}.runbar>span{max-width:81px}.nav-link{font-size:8px}.topbar .mobile-brand{font-size:17px}.form-row{flex-wrap:wrap}.form-row>label{min-width:105px}.studio-toolbar .button{flex:1}}
 
 .auth-provider-label{font-size:11px;color:#537094;margin:-4px 0 18px}.google-button:disabled{opacity:.65;cursor:wait}
+
+body[data-page="studio"] .hero { display: none; }
+body[data-page="studio"] #studioView { padding-top: 36px; }
+.studio-banner { margin: 18px 0; padding: 16px 20px; border: 1px solid #dce7fb; border-radius: 14px; background: #f3f7ff; color: #506c94; font-size: 13px; line-height: 1.7; }
+#bulkImport { margin: 18px 0; line-height: 1.7; }
+#bulkImport summary { cursor: pointer; font-weight: 700; color: #2e589b; }
+#bulkImport input[type="file"] { max-width: 100%; margin: 12px 0; }
+.filters { flex-wrap: wrap; }
+.filters select { max-width: 210px; }

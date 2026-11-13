@@ -72,7 +72,7 @@ const adapter=createDatabase("https://example.supabase.co","fixture-service-key"
 }});
 await adapter.progress(goodIdentity.id);await adapter.isEditor(goodIdentity.id);await adapter.sync(goodIdentity.id,own,0);
 for(const call of httpCalls.slice(0,2))assert.equal(new URL(call.url).searchParams.get("user_id"),"eq."+goodIdentity.id);
-assert.equal(httpCalls[2].body.owner_id,goodIdentity.id);assert.equal(httpCalls[2].body.expected_revision,0);
+assert.equal(httpCalls[3].body.owner_id,goodIdentity.id);assert.equal(httpCalls[3].body.expected_revision,0);
 // Simulate an auth SDK event and an account switch during an asynchronous token refresh.
 assert.equal(validFirebaseConfig(firebaseConfig),true);assert.equal(validFirebaseConfig({...firebaseConfig,authDomain:"evil.example"}),false);
 assert.equal(firebaseIdentity({uid:"a"},projectId).id,"firebase:"+projectId+":a");

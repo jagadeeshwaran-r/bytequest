@@ -16,6 +16,9 @@ export function validateProblem(input) {
   if(!Array.isArray(input.tests)||input.tests.length<2||input.tests.length>100)throw new Error("Provide 2–100 test cases. The first two are examples.");
   const p={
     id:input.id,title:text(input.title,"Title",100),topic:text(input.topic,"Topic",60),
+    pattern:typeof input.pattern==="string"&&input.pattern.trim()?text(input.pattern,"Pattern",60):text(input.topic,"Topic",60),
+    techniques:(Array.isArray(input.techniques)?input.techniques:[]).slice(0,8).map(t=>text(t,"Technique",50)),
+    hiddenCount:Number.isInteger(input.hiddenCount)&&input.hiddenCount>=0&&input.hiddenCount<=100?input.hiddenCount:0,
     method:input.method,returns:input.returns,params,difficulty:input.difficulty,
     description:text(input.description,"Description",10000),constraints:text(input.constraints,"Constraints",5000),
     starter:text(input.starter,"Java starter",60000),reference:text(input.reference,"Reference solution",60000),

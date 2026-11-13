@@ -1,7 +1,7 @@
 import {problems as bundledProblems} from "./problems.js";
-import {Cloud} from "./cloud.js?v=20261113-fetch";
+import {Cloud} from "./cloud.js?v=community-1";
 import {blankProgress, validateProgress, mergeProgress} from "./progress.js";
-import {Studio} from "./studio.js";
+import {Studio} from "./studio.js?v=community-1";
 const problems=[...bundledProblems];
 let topics=[...new Set(problems.map(p=>p.topic))];
 import {JavaJudge, buildTests} from "./judge.js";
@@ -182,7 +182,10 @@ async function run(submit){
     });
     if(result.stdout){const stdout=document.createElement("div");stdout.className="stdout";stdout.textContent="Console\n"+result.stdout;output.append(stdout);}
     logAttempt(p,passed,cases.length);
-    if(accepted&&submit)completeQuest(p);
+    if(accepted&&submit&&p.hiddenCount){
+      if(!cloud.user){notify("Public checks passed. Sign in for private-test submissions.");output.append(document.createTextNode(" Private tests are not checked; this quest is not yet accepted."));}
+      else{try{const verdict=await cloud.request("hidden-submit",{problemId:p.id,source,revision:p.revision});output.append(document.createTextNode(" "+verdict.message));if(verdict.accepted)completeQuest(p);}catch(error){output.append(document.createTextNode(" "+error.message));}}
+    }else if(accepted&&submit)completeQuest(p);
     else if(accepted)notify("Samples passed! Submit quest to check every built-in edge case.");
   }catch(error){if(epoch===runEpoch)$("resultOutput").textContent=String(error.message||error);}
   finally{if(epoch===runEpoch){clearTimeout(watchdog);setBusy(false);$("runStatus").textContent="Real Java. Right here.";updateStats();persist();}}
@@ -243,7 +246,8 @@ document.querySelectorAll("dialog").forEach(d=>d.addEventListener("click",event=
 $("aboutBtn").onclick=()=>$("aboutDialog").showModal();
 let previousView=null;
 function route(){
-  const view=["map","progress","studio"].includes(location.hash.slice(1))?location.hash.slice(1):"practice";
+  const view=document.body.dataset.page==="studio"?"studio":(["map","progress","studio"].includes(location.hash.slice(1))?location.hash.slice(1):"practice");
+  if(view==="studio"&&document.body.dataset.page!=="studio"){location.href="./studio.html";return;}
   ["practice","map","progress","studio"].forEach(name=>$(name+"View").hidden=view!==name);
   document.querySelectorAll("[data-view]").forEach(a=>a.classList.toggle("active",a.dataset.view===view));
   $("breadcrumb").textContent=({practice:"Practice",map:"Problem library",progress:"My progress",studio:"Problem studio"})[view];
@@ -251,11 +255,13 @@ function route(){
   if(previousView!==null&&previousView!==view)window.scrollTo({top:0,left:0,behavior:"instant"});previousView=view;
 }
 addEventListener("hashchange",route);
+$("patternFilter").replaceChildren(new Option("All problem patterns",""),...[...new Set(problems.map(p=>p.pattern||p.topic))].sort().map(v=>new Option(v,v)));
 $("topicFilter").innerHTML+=[...topics].map(t=>'<option>'+html(t)+'</option>').join("");
-["topicFilter","difficultyFilter","statusFilter"].forEach(id=>$(id).onchange=renderMap);$("searchInput").oninput=renderMap;
+["topicFilter","patternFilter","techniqueFilter","difficultyFilter","statusFilter"].forEach(id=>$(id).onchange=renderMap);$("searchInput").oninput=renderMap;
 function renderMap(){
+  const pattern=$("patternFilter").value,technique=$("techniqueFilter").value;
   const query=$("searchInput").value.toLowerCase(),topic=$("topicFilter").value,level=$("difficultyFilter").value,status=$("statusFilter").value;
-  const list=problems.filter(p=>(p.title+" "+p.topic).toLowerCase().includes(query)&&(!topic||p.topic===topic)&&(!level||p.difficulty===level)&&(!status||(status==="solved"?state.solved[p.id]:status==="new"?!state.solved[p.id]:due(p.id))));
+  const list=problems.filter(p=>(p.title+" "+p.topic+" "+(p.pattern||"")+" "+(p.techniques||[]).join(" ")).toLowerCase().includes(query)&&(!topic||p.topic===topic)&&(!pattern||(p.pattern||p.topic)===pattern)&&(!technique||(p.techniques||[]).includes(technique))&&(!level||p.difficulty===level)&&(!status||(status==="solved"?state.solved[p.id]:status==="new"?!state.solved[p.id]:due(p.id))));
   $("questGrid").innerHTML=list.length?list.map(p=>'<article class="quest-card">'+(state.solved[p.id]?'<span class="solved-badge">'+(due(p.id)?"↻ Review due":"✓ Solved")+"</span>":"")+'<div class="card-icon">'+(topicEmoji[p.topic]||'✦')+'</div><h3>'+html(p.title)+'</h3><p>'+html(p.topic)+'</p><div class="card-meta"><span class="difficulty'+(' '+p.difficulty.toLowerCase())+'">'+p.difficulty+'</span><span>~'+p.minutes+' min</span><span class="card-xp">✧ 100 XP</span></div><button data-problem="'+p.id+'">'+(state.solved[p.id]?"Revisit this quest":"Let's explore")+icon("arrow")+'</button></article>').join(""):'<div class="empty-state">No quests here yet. Try another filter.</div>';
   $("questGrid").querySelectorAll("[data-problem]").forEach(b=>b.onclick=()=>changeProblem(b.dataset.problem));
 }
@@ -350,13 +356,14 @@ async function refreshCatalog(){
     const next=await cloud.publicCatalog();if(next===null)return;
     const selected=current?.id;problems.splice(0,problems.length,...next);topics=[...new Set(problems.map(p=>p.topic))];
     $("problemSelect").replaceChildren(...problems.map(p=>new Option(p.title,p.id)));
+    for(const [id,values,label] of [["patternFilter",[...new Set(problems.map(p=>p.pattern||p.topic))],"All problem patterns"],["techniqueFilter",[...new Set(problems.flatMap(p=>p.techniques||[]))],"All techniques"]]){const selected=$(id).value;$(id).replaceChildren(new Option(label,""),...values.sort().map(v=>new Option(v,v)));if(values.includes(selected))$(id).value=selected;}
     const oldTopic=$("topicFilter").value;$("topicFilter").replaceChildren(new Option("All patterns",""),...topics.map(t=>new Option(t,t)));if(topics.includes(oldTopic))$("topicFilter").value=oldTopic;
     current=problems.find(p=>p.id===selected)||problems[0]||null;
     renderPractice();updateStats();route();
   }catch(error){notify("The offline library is available while the connection recovers.");}
 }
 function openAccount(){refreshAccountUi();$("accountDialog").showModal();}
-$("accountBtn").onclick=openAccount;$("profileBtn").onclick=openAccount;$("syncBadge").onclick=openAccount;$("studioSignIn").onclick=openAccount;
+$("accountBtn").onclick=openAccount;$("profileBtn").onclick=()=>{location.href="./community.html#me";};$("syncBadge").onclick=openAccount;$("studioSignIn").onclick=openAccount;
 $("googleSignInBtn").onclick=async()=>{const button=$("googleSignInBtn");button.disabled=true;try{$("authMessage").textContent="Opening Google sign-in…";await cloud.signIn();$("authMessage").textContent="";$("accountDialog").close();}catch(error){$("authMessage").textContent=error.message;}finally{button.disabled=false;}};
 $("syncNowBtn").onclick=async()=>{await syncCloud();};
 $("signOutBtn").onclick=async()=>{try{await syncCloud();await cloud.signOut();$("accountDialog").close();await changeAccount(null);notify("Signed out on this device. Your account progress is kept.");}catch(error){$("authMessage").textContent=error.message;}};
@@ -366,7 +373,7 @@ addEventListener("offline",()=>setSyncStatus("failed",cloud.user?"Offline · sav
 async function bootCloud(){
   refreshAccountUi();
   try{await cloud.init();$("authMessage").textContent="";}catch(error){$("authMessage").textContent=error.message;setSyncStatus("failed","Account connection paused");}
-  await refreshCatalog();await changeAccount(cloud.user);
+  await refreshCatalog();await changeAccount(cloud.user);const requested=new URLSearchParams(location.search).get("problem");if(requested&&problems.some(p=>p.id===requested))changeProblem(requested);
 }
 renderPractice();updateStats();route();bootCloud();
 if(!storageOK){$("saveStatus").textContent="Storage unavailable — use Save progress";notify("Local storage is unavailable. Export your progress before leaving.");}

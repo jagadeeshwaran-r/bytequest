@@ -102,3 +102,81 @@ This runs 16 real Java reference solutions / 81 cases, existing catalog and back
 For end-to-end testing, sign in on the actual website, add a note or edit a draft, choose **Sync now**, reload and confirm it returns. Sign out and verify guest work stays separate. Test another browser/device for an independent cloud round trip.
 
 Firebase Spark and Supabase Free quotas still apply. No paid plan was enabled for this implementation. Monitor usage in the actual project dashboards and keep exported backups.
+
+## Community and creator workflow (November 2026)
+
+Apply `database/community.sql` and `database/private-judge.sql` once. Both are
+already applied to the hosted ByteQuest database. All new tables enable RLS and
+are denied to direct `anon` and `authenticated` access. The verified Firebase
+Edge Function calls the service-only RPCs with the token's account ID.
+
+`community.html` provides opt-in profiles, username/exact public-ID search,
+follow/unfollow, followers/following, an activity calendar, and the quest inbox.
+Public profile responses contain no account email, Firebase UID, drafts, notes,
+or raw progress. Activity and solve totals are self-reported practice records.
+Turning discoverability off removes a profile from other learners' views and
+search. Existing follow rows are retained, but undiscoverable users are omitted
+from follower lists and counts. The activity calendar uses the learner's synced
+local day strings; streak calculations use the viewing device's local day.
+
+`studio.html` is the separate creator workspace. `bytequest_library_admins`
+contains administrators, who can delegate/revoke creator access through the
+Community → Manage creators page using an exact public profile ID. Existing
+`bytequest_firebase_editors` rows are creator grants. Creators can manage the
+entire library and its private test suites. No client field can grant either
+role. **No real administrator or creator has been enrolled automatically.**
+An administrator must be deliberately enrolled by the owner after they confirm
+the exact verified Firebase account. Never grant the first visitor admin access.
+
+Saving uses `bytequest_save_problem`: role check, revision comparison, public
+content update, private-suite update, history and announcement are one transaction.
+A correction note is mandatory when updating a published challenge. Newly
+published challenges announce once per revision; corrections create a correction
+announcement. The inbox loads the latest 50 published-problem announcements when
+opened or focused. It is an in-app feed, not email or push delivery. Read cursors
+belong to the verified account. Unpublishing hides a problem's announcements.
+
+### Private Java judging
+
+Private cases are in `bytequest_problem_private`, never the browser catalog,
+bundled source, anonymous REST response, or announcement. Editors can attach and
+validate them using their authoring browser. Learner `Run` remains public-case
+practice. A problem with `hiddenCount > 0` cannot complete until private judging
+returns acceptance. The hosted server judge is **not configured yet**.
+
+The Edge Function has an optional Judge0 adapter. Configure a trusted isolated
+Judge0 provider with **server-side** environment secrets:
+
+- `BYTEQUEST_JUDGE0_URL`: HTTPS API base of the trusted provider.
+- `BYTEQUEST_JUDGE0_KEY`: optional `X-Auth-Token` secret (never in `dist/`).
+- `BYTEQUEST_JAVA_LANGUAGE_ID`: the provider's actual Java 17 language ID. Query
+  its `/languages` endpoint; do not assume IDs match between providers.
+
+The provider must support synchronous `POST /submissions?wait=true`, enforce
+network isolation and resource limits, and keep its submission API private to
+the backend. Provider credentials and provisioning are deliberately not guessed
+or activated. No paid plan was started. Each account is limited to one private
+submission per 30 seconds. Expected outputs are sent to the provider's output
+comparison, not included in the user's Java program. Learner responses contain
+only an aggregate verdict: stdout, hidden inputs, compile diagnostics and
+expected outputs are never returned. The server denies acceptance if the judge
+is unconfigured, queued, unavailable, or the problem revision changed.
+
+### The 500-problem target
+
+The shipped library currently contains **16 validated native Java problems / 81
+public checks**. A 500-problem content pack has **not** been created or imported.
+There are no link-only entries or duplicate filler problems counted toward 500.
+The creator workspace can import arrays of up to 500 original/licensed problem
+definitions. Each item is `{ "problem": <ByteQuest problem>, "hiddenTests": [] }`
+(or a bare problem without private cases). It validates contracts and duplicates,
+rejects existing IDs, compiles and executes each reference solution against every
+case, then saves successful items sequentially. A stopped/failed batch retains
+prior successful saves; it does not overwrite an existing problem. Publishing is
+optional and announces each successfully published item. Do not import proprietary
+problem text or test suites without permission.
+
+`database/verify-community.sql` is a rollback-only hosted integration check.
+`tests/community.mjs` verifies identity binding, input validation, date/streak
+edge cases, and judge payload/response isolation. Native Java tests remain in
+`tests/verify.mjs`.

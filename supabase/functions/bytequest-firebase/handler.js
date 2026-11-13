@@ -1,3 +1,5 @@
+import {communityActions,validateCommunity} from "./community.js";
+import {buildTests} from "./domain/judge.js";
 import {validateProblem} from "./domain/catalog.js";
 import {validateProgress,blankProgress} from "./domain/progress.js";
 export class HttpError extends Error{constructor(status,message){super(message);this.status=status;}}
@@ -12,7 +14,7 @@ async function readBody(req){
   if(!body||typeof body!=="object"||Array.isArray(body))throw new HttpError(400,"Send a JSON object.");return body;
 }
 function integer(value,max=Number.MAX_SAFE_INTEGER){return Number.isSafeInteger(value)&&value>=0&&value<=max;}
-export function createHandler({projectId,allowedOrigins,verifyToken,db}){
+export function createHandler({projectId,allowedOrigins,verifyToken,db,privateJudge}){
   return async req=>{
     const origin=req.headers.get("origin");
     const headers={"Content-Type":"application/json","Cache-Control":"no-store","Vary":"Origin"};
@@ -27,9 +29,19 @@ export function createHandler({projectId,allowedOrigins,verifyToken,db}){
     let identity;try{identity=await verifyToken(authorization.slice(7));}catch{return reply(401,{error:"Your sign-in expired or could not be verified. Please sign in again."});}
     try{
       const body=await readBody(req),action=body.action;
-      if(!["account","progress","sync","studio-list","studio-save"].includes(action))throw new HttpError(400,"Unknown account action.");
+      if(!["account","progress","sync","studio-list","studio-save","hidden-submit",...communityActions].includes(action))throw new HttpError(400,"Unknown account action.");
       // Identity always comes from the verified Firebase token, never from a body field.
       await db.touchAccount(identity);
+      if(communityActions.has(action))return reply(200,await db.community(identity.id,action,validateCommunity(action,body)));
+      if(action==="hidden-submit"){
+        if(!privateJudge?.ready)throw new HttpError(503,"Private Java judging is not connected yet. Use Run for public practice cases. Hidden inputs remain private.");
+        if(typeof body.problemId!=="string"||! /^[a-z][a-z0-9-]{1,63}$/.test(body.problemId)||typeof body.source!=="string"||body.source.length>60000)throw new HttpError(400,"Choose a valid problem and Java solution.");
+        const row=await db.privateProblem(body.problemId);
+        if(!row||!row.hidden?.length)throw new HttpError(404,"No private test suite exists for this published problem.");
+        if(body.revision!==row.revision)throw new HttpError(409,"This problem was corrected. Reload it before submitting.");
+        if(!await db.claimJudge(identity.id))throw new HttpError(429,"Please wait 30 seconds between private submissions.");
+        return reply(200,await privateJudge.run(body.source,row.content,row.hidden));
+      }
       if(action==="account"){
         const [progress,admin]=await Promise.all([db.progress(identity.id),db.isEditor(identity.id)]);
         return reply(200,{user:{id:identity.id,email:identity.email},admin,progress:progress||{payload:blankProgress(),revision:0}});
@@ -45,7 +57,13 @@ export function createHandler({projectId,allowedOrigins,verifyToken,db}){
       if(action==="studio-list")return reply(200,{problems:await db.problems()});
       if(typeof body.published!=="boolean"||!integer(body.position,1000000)||!integer(body.revision)||body.revision===Number.MAX_SAFE_INTEGER)throw new HttpError(400,"Invalid problem publishing settings.");
       let problem;try{problem=validateProblem(body.problem);}catch(error){throw new HttpError(400,error.message);}
-      return reply(200,{problem:await db.saveProblem(problem,{published:body.published,position:body.position,revision:body.revision})});
+      let hidden=body.hiddenTests??[];
+      if(!Array.isArray(hidden)||hidden.length>100||JSON.stringify(hidden).length>250000)throw new HttpError(400,"Use at most 100 hidden tests under 250 KB.");
+      try{buildTests(problem,hidden);}catch{throw new HttpError(400,"Hidden cases do not match the Java contract.");}
+      problem.hiddenCount=hidden.length;
+      const correction=typeof body.correction==="string"?body.correction.trim():"";
+      if(correction.length>1000)throw new HttpError(400,"Keep the correction note under 1,000 characters.");
+      return reply(200,{problem:await db.saveProblem(problem,{owner:identity.id,published:body.published,position:body.position,revision:body.revision,hidden,correction})});
     }catch(error){
       if(error instanceof HttpError)return reply(error.status,{error:error.message});
       return reply(503,{error:"Cloud progress is temporarily unavailable. Your local work is kept."});
