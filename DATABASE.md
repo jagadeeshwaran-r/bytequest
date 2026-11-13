@@ -1,85 +1,104 @@
-# ByteQuest database and account setup
+# ByteQuest: Firebase login and Supabase data
 
-The website stays on GitHub Pages. Supabase supplies Postgres, Google authentication and private cross-device progress. Java runs locally in the visitor's browser using the existing real Java runner.
+Google login is implemented with Firebase Authentication. GitHub Pages remains the host, and Supabase retains the problem library and learning progress. Java compilation and execution remain local to the visitor's browser.
 
-## Installed now
+## Project configuration
 
-- Project: **ByteQuest**, ref `zwubrziriuppkldrdoos`, Mumbai (`ap-south-1`), Free plan.
-- API URL: `https://zwubrziriuppkldrdoos.supabase.co`.
-- Three RLS-protected tables: `bytequest_problems`, `bytequest_progress`, `bytequest_admins`.
-- 16 published problems, including Java templates, cases, teaching notes and animation steps.
-- Owner-only progress, separate editor permissions, optimistic revision checks and no public write grants.
-- `dist/config.js` includes the publishable key. This key is designed for the browser; it is not a secret. Never replace it with a secret or service-role key.
+| Component | Actual project / configuration |
+| --- | --- |
+| Website | https://jagadeeshwaran-r.github.io/bytequest/ |
+| Firebase | ByteQuest, project ID `bytequest-7b841`, Spark plan |
+| Firebase web app | ByteQuest web, app ID `1:25442282451:web:7b188546eadc81adb75d26` |
+| Firebase auth domain | `bytequest-7b841.firebaseapp.com` |
+| Supabase | ByteQuest, ref `zwubrziriuppkldrdoos`, Mumbai |
+| Account API | `https://zwubrziriuppkldrdoos.supabase.co/functions/v1/bytequest-firebase` |
+| Authentication | Google provider enabled in Firebase Authentication |
+| Login domains | `jagadeeshwaran-r.github.io` and the existing private Sites preview domain |
 
-Google OAuth is **not activated yet**. No learner or editor account has been enrolled. The site remains usable in guest mode. Google Cloud Console was unavailable in the setup browser, so the following activation is still outstanding.
+`dist/firebase-config.js` is the public Firebase web configuration. `dist/config.js` is the public Supabase project configuration. These identifiers are intended to be included in a browser. Do not replace them with a service account, private key, OAuth client secret, or Supabase service-role credential.
 
-## Activate Google sign-in
+The browser imports Firebase SDK **13.3.0** from Google's CDN. The backend pins **jose 6.2.17** and **supabase-js 2.119.0**. Test dependencies are pinned in `package-lock.json` and installed by CI.
 
-1. In [Google Cloud Console](https://console.cloud.google.com/auth/overview), select or create a project for ByteQuest and configure Google Auth Platform. Choose **External** audience if learners outside your organisation should sign in. Set the app name to **ByteQuest** and your own support/developer email.
-2. Request only basic sign-in scopes: `openid`, `email`, `profile`. Use these branding URLs where requested:
+## How private data is protected
 
-   - Homepage: `https://jagadeeshwaran-r.github.io/bytequest/`
-   - Privacy: `https://jagadeeshwaran-r.github.io/bytequest/privacy.html`
+1. A learner chooses **Sign in with Google**. Firebase performs the Google sign-in flow and persists the session on that browser.
+2. For every private account request, the browser obtains a current Firebase ID token and sends it over HTTPS to the Supabase Edge Function.
+3. The function validates the token signature against Google's fixed public-certificate endpoint, RS256 algorithm, exact project issuer and audience, expiration, issued/authenticated times, Google provider, and verified email.
+4. The account owner is derived from that verified token as `firebase:<projectId>:<uid>`. User IDs or role flags in a request body cannot select another account or grant editor access.
+5. The backend reads or writes only that owner's progress. Publishing requires a row for that exact owner in `bytequest_firebase_editors`, checked again on each editor request.
 
-3. Create an OAuth client of type **Web application**:
+The private account tables have RLS enabled and no direct grants to `anon` or `authenticated`. Only the backend's service-role client can access them. That credential comes from Supabase's built-in Edge Function environment; it is never returned to the browser or written into source.
 
-   - Name: **ByteQuest web**
-   - Authorised JavaScript origin: `https://jagadeeshwaran-r.github.io`
-   - Authorised redirect URI: `https://zwubrziriuppkldrdoos.supabase.co/auth/v1/callback`
+The gateway's `verify_jwt` is disabled **only for this function** because it receives Firebase JWTs, rather than Supabase JWTs. The function itself performs the required authentication before all private actions. Only the public `/health` GET and CORS preflight are unauthenticated. CORS accepts the two configured site origins, not a wildcard.
 
-4. Open [Supabase Authentication settings](https://supabase.com/dashboard/project/zwubrziriuppkldrdoos/auth/providers). Under **Sign In / Providers → Google**, enable Google and copy the client ID and client secret directly from Google into the Supabase fields. Save them there. Do not paste the client secret into ChatGPT, a GitHub issue, source code, a browser URL or the public repository.
-5. Under **Authentication → URL Configuration**, set **Site URL** to `https://jagadeeshwaran-r.github.io/bytequest/` and allow that same exact redirect URL, including the project path and trailing slash. Avoid broad wildcard redirects. A private preview needs its own exact redirect entry if you decide to enable sign-in there.
-6. If Google's audience is still in Testing, add the intended test accounts. For public access, complete Google's publishing steps and any verification it requires. Reload ByteQuest and choose **Sign in with Google**. Confirm the correct Google account; the app only requests basic identity information.
-7. Verify that the account dialog shows the signed-in email, edit a draft, choose **Sync now**, then reload and confirm the draft returns. Check another browser/device for cross-device sync. These final OAuth checks have not been completed while the provider is inactive.
+The implementation verifies signed, unexpired ID tokens. It does not perform an Admin SDK revocation lookup on each request; existing Firebase tokens can remain valid until they expire. Editor removal takes effect on the next editor API request because the database allowlist is checked each time.
 
-No site redeployment is required when the provider settings change. The app checks the provider status each time it loads.
+No Firebase Cloud Function or custom JWT-role claim is needed for this integration. The account API runs on the existing Supabase project.
 
-## Enrol the owner as an editor
+## Tables and migrations
 
-Sign in to ByteQuest once with your intended Google account. In the Supabase SQL editor, inspect authenticated identities:
+The original Supabase-auth schema and records are retained. New Firebase accounts use separate namespaced records and are never matched to legacy accounts just by email.
+
+| Table | Purpose |
+| --- | --- |
+| `bytequest_problems` | Existing public published catalog and private editor drafts |
+| `bytequest_firebase_profiles` | Verified Firebase identity, email, creation and last-seen dates |
+| `bytequest_firebase_progress` | Private learning backup and monotonically increasing revision |
+| `bytequest_firebase_editors` | Explicit editor allowlist |
+
+`database/schema.sql` remains the initial Supabase-auth schema snapshot. `database/firebase.sql` is the additive Firebase migration, applied to the hosted project as `bytequest_firebase_accounts`. Do not reapply these files to an already configured project. Make a new reviewed migration for later schema changes.
+
+Progress saves use a database row lock and expected revision. A stale device receives the current row, merges changes by field timestamp, and retries. Requests from a previous account are bound to that account's captured token and are discarded by the UI after an account switch. Local caches include the Firebase project and UID. Guest progress is imported only through **Bring this device’s guest progress**.
+
+## Enrol an editor
+
+Sign in to ByteQuest once with the intended Google account. In the Supabase SQL editor, inspect the verified account records:
 
 ```sql
-select id, email, created_at
-from auth.users
+select user_id, email, created_at
+from public.bytequest_firebase_profiles
 order by created_at desc;
 ```
 
-Verify the intended owner's exact email and UUID. Then insert that verified UUID (replace the placeholder) into the editor allowlist:
+Verify the intended owner email and its exact namespaced user ID. Then insert only that verified ID:
 
 ```sql
-insert into public.bytequest_admins (user_id)
-values ('REPLACE_WITH_VERIFIED_AUTH_USER_UUID'::uuid)
-on conflict (user_id) do nothing;
+insert into public.bytequest_firebase_editors(user_id)
+values ('REPLACE_WITH_VERIFIED_FIREBASE_USER_ID')
+on conflict(user_id) do nothing;
 ```
 
-Sign out/in or reload the website. **Problem studio** appears for that account. Ordinary learners cannot grant themselves this role, change their account owner ID, read another learner's progress or write problems. Do not derive authorisation from editable profile metadata and do not automatically make the first visitor an editor.
+Reload ByteQuest. **Problem studio** appears for that editor. Do not make the first visitor an editor, derive permissions from editable profile data, or grant the editor role based on a request body's email or admin flag.
 
-To revoke an editor while retaining their learner account, remove only that verified UUID from `bytequest_admins` in the owner dashboard.
+To revoke an editor, remove only that exact ID from `bytequest_firebase_editors` in the owner dashboard. This retains the learner's progress.
 
 ## Add problems later
 
-1. Open **Problem studio → New problem**, or import a problem JSON file.
-2. Enter a unique lowercase ID such as `array-sum`, title, topic, difficulty, estimate and statement.
-3. Define the Java method, parameter list and result type. Supply full `class Solution` starter and reference source. Parameters and returns support `int`, `int[]`, `boolean`, and ASCII `String`.
-4. Add 2–100 cases as JSON objects with `args`, `expected`, and `label`. The first two are public examples; all cases are public inspectable learning checks.
-5. Add pattern/invariant/complexity notes, at least one hint and optional animation frames. Frames illustrate the reference approach and do not trace arbitrary submitted code.
-6. Choose **Validate Java** to compile the reference and run all cases in the browser. Fix failures before publication. Keep the tab open for the initial JVM download.
-7. Save a draft or enable **Published** and save. The next library refresh includes the problem without a GitHub deployment. Edit and save existing items to update them; stale editor revisions are rejected instead of overwriting another editor's changes. Unpublish to retain an item privately.
+Open **Problem studio → New problem**, or import a JSON definition. Supply a unique lowercase problem ID, statement, constraints, Java contract, starter/reference classes, 2–100 cases, pattern notes, complexity, hints and optional animation frames. The first two cases are examples; all cases remain public learning checks.
 
-Array results normally use ordered equality. An imported `int[]` problem can set `"normalize": "sort-int"` when element order should be ignored, as with Two Sum indices. Preserve this field when importing/exporting definitions.
+Choose **Validate Java** to run the reference against its cases. Save a private draft or enable **Published** and save. The live database library updates without redeploying GitHub Pages. Unpublish to keep an item privately. Stale editor revisions are rejected to prevent overwriting another editor's changes.
 
-The studio saves unfinished forms to a local cache per editor account. Saving the form to Supabase is explicit. Reference validation in the UI is a trusted editor workflow, not a server-enforced adversarial judge.
+Supported Java values are `int`, `int[]`, `boolean`, and ASCII `String`. An imported `int[]` problem may use `"normalize":"sort-int"` when result order does not matter. The studio preserves this on import, editing, and export. Animations illustrate the reference algorithm and do not trace arbitrary submitted code. The publisher is a trusted editor; browser reference validation is a learning-content workflow, not a server-enforced adversarial judge.
 
-## Schema and verification
+## Deploy the account function
 
-`database/schema.sql` is the current schema snapshot. Two migrations have been applied to the hosted project: `bytequest_initial_schema` and `bytequest_progress_payload_guards`. Do not execute the snapshot again over an existing project. Use a new reviewed migration for schema changes.
+The deployed function source is `supabase/functions/bytequest-firebase/`. Include its `deno.json` and all `domain/` dependencies. The domain files are copies of the public problem/progress validation contracts; tests ensure they match. Update both when deliberately changing a contract.
 
-`database/seed.json` contains the initial catalog. `database/seed.sql` inserts only missing IDs and never overwrites existing editor content. Changing these files alone does not update the live catalog.
+Deploy as **bytequest-firebase** to project `zwubrziriuppkldrdoos`, with entrypoint `index.ts`, import map `deno.json`, and `verify_jwt=false`. The source is pinned to Firebase project `bytequest-7b841`. Changing the Firebase project requires a reviewed update of both the public config and backend issuer/audience settings.
 
-`database/verify-access.sql` runs disposable fixtures inside a transaction and rolls them back. It checks public/draft access, editor permissions, owner-only progress, blocked self-promotion and stale revision handling. It passed on the installed hosted database. Supabase's security advisor returned no findings at setup time. `node tests/verify.mjs` checks the 16 Java references / 81 cases, catalog validation, progress merge conflicts and browser config guards.
+The platform supplies `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. Do not expose these secret environment values through UI forms or the repository. A health request to `/health` returns only the Firebase project ID and provider. A private request without a valid Firebase token must return 401.
 
-Progress is private to its owner through the Data API. Project owners with database administration access can still inspect hosted records. XP and completions are self-reported study information. This is not a competition service with secret tests or trusted scores.
+## Verify changes
 
-## Free operation
+```sh
+npm ci --ignore-scripts
+node tests/verify.mjs
+```
 
-GitHub Pages hosts the static app; Supabase is on its Free plan. Monitor the actual [Supabase dashboard usage](https://supabase.com/dashboard/project/zwubrziriuppkldrdoos) and [current limits](https://supabase.com/pricing). Free projects may pause after inactivity, and quotas can change. Keep exported backups. If Supabase cannot be reached, the bundled catalog and guest practice remain available; account work is cached locally until sync succeeds.
+This runs 16 real Java reference solutions / 81 cases, existing catalog and backup checks, and Firebase security tests. Firebase tests cover real signed JWTs, tampered signatures, wrong projects, expired tokens, fake request-body owners, editor allowlists and revocation, stale progress revisions, token refresh and account switching. The native tests use disposable signing keys; those keys are never trusted by the deployed function.
+
+`database/verify-firebase-access.sql` runs rollback-only fixtures to verify that browser roles cannot read private account tables, call privileged account functions or promote themselves. It also checks revision conflicts and payload validation. The existing `database/verify-access.sql` covers the retained legacy access model.
+
+For end-to-end testing, sign in on the actual website, add a note or edit a draft, choose **Sync now**, reload and confirm it returns. Sign out and verify guest work stays separate. Test another browser/device for an independent cloud round trip.
+
+Firebase Spark and Supabase Free quotas still apply. No paid plan was enabled for this implementation. Monitor usage in the actual project dashboards and keep exported backups.

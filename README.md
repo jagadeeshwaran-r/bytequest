@@ -14,7 +14,7 @@ A small, playful problem-solving playground for learning Java. Made for a Java /
 - Learn mode first, optional 20- or 30-minute focus timer in Challenge mode.
 - 100 XP per first accepted quest, confidence notes, activity history, streaks and topic progress.
 - 2 / 7 / 21-day reviews after first completion; 20 XP for a completed due review.
-- Guest practice without an account, plus Google sign-in and private progress sync through Supabase once OAuth is activated.
+- Guest practice without an account, plus Google sign-in through Firebase and private progress sync in Supabase.
 - A live database problem library and editor-only studio for adding, validating, drafting and publishing challenges without redeploying.
 - JSON backup export and merge restore, including older ByteQuest backups.
 - A clean blue-and-white interface with playful topic colours and a responsive practice workspace.
@@ -44,7 +44,7 @@ Replace YOUR_USERNAME with your GitHub username. Use your normal GitHub sign-in/
 
 ## Run locally
 
-Requirements: Node 22+ and a full JDK 17+.
+Requirements: Node 22+ and a full JDK 17+. Install the pinned verification dependencies with `npm ci --ignore-scripts` first.
 
     node scripts/build-java.mjs
     node tests/verify.mjs
@@ -71,9 +71,13 @@ JavaRunner.run writes Solution.java and a generated test harness into a temporar
 
 ## Database and Google sign-in
 
-The connected Supabase project is **ByteQuest** (`zwubrziriuppkldrdoos`, Mumbai). Its database schema and 16 published problems are installed. `dist/config.js` contains only the public project URL and publishable key; Row Level Security controls access.
+Firebase Authentication handles Google login using project **bytequest-7b841**. The connected Supabase project remains **ByteQuest** (`zwubrziriuppkldrdoos`, Mumbai), with 16 published problems.
 
-**Google OAuth activation is still required.** The app detects whether the provider is enabled and explains the pending activation while keeping guest practice available. See [DATABASE.md](DATABASE.md) for the exact Google Cloud and Supabase configuration, editor enrolment and future problem publishing workflow. No client secret or service key belongs in this repository.
+The browser calls the `bytequest-firebase` Supabase Edge Function with its Firebase ID token. The function verifies Google's signature, the exact Firebase issuer/audience, expiry, Google provider and verified email before reading or writing the account's records. It derives the owner from that verified token. Users cannot select another account by submitting a user ID. An explicit database allowlist controls editor access.
+
+`dist/firebase-config.js` contains only Firebase's public web configuration. `dist/config.js` contains only the Supabase URL and publishable key. The service-role credential is available only inside Supabase's function environment. No service account, Google client secret or private API key belongs in the static site or repository.
+
+See [DATABASE.md](DATABASE.md) for deployment, editor enrolment, future problem publishing and security checks. GitHub Pages continues to host the website; visitors' Java still executes locally.
 
 ## Privacy and persistence
 
@@ -81,13 +85,13 @@ Guest drafts, notes, solved state and practice history stay in localStorage on t
 
 Guest progress is imported only when you choose **Bring guest progress** in the account dialog. Signing out returns to guest mode and leaves the account cache on that browser; clear site data on a shared device after exporting any work you need. **Backup** and **My progress → Restore backup** still work without an account. Restoring merges records rather than deleting current progress.
 
-Signed-in source drafts and notes are stored in Supabase for sync; Java compilation/execution still happens locally in the browser. The page also loads the Supabase SDK from a pinned esm.sh URL, CheerpJ's runtime from its official CDN, and fonts from Google Fonts. See the site's [privacy notice](https://jagadeeshwaran-r.github.io/bytequest/privacy.html).
+Signed-in source drafts and notes are stored in Supabase for sync; Java compilation/execution still happens locally in the browser. The page also loads the Firebase SDK from a pinned Google CDN URL, CheerpJ's runtime from its official CDN, and fonts from Google Fonts. See the site's [privacy notice](https://jagadeeshwaran-r.github.io/bytequest/privacy.html).
 
 Reviews are computed when you open the site. There are no background notifications. Reviews target day 2, day 7 and day 21 from first completion; a late review advances its stage, so another overdue stage may become immediately due.
 
 ## Add a problem
 
-After OAuth activation and owner editor enrolment, open **Problem studio**. Create or import a definition, supply examples and edge cases, teaching notes, Java starter/reference code and optional animation steps. Validate the reference solution in real Java before checking **Published** and saving. Drafts are visible only to editors. Uncheck Published to remove a challenge from the public library while retaining it in the database. Counts and topic filters update automatically.
+After signing in with an enrolled editor account, open **Problem studio**. Create or import a definition, supply examples and edge cases, teaching notes, Java starter/reference code and optional animation steps. Validate the reference solution in real Java before checking **Published** and saving. Drafts are visible only to editors. Uncheck Published to remove a challenge from the public library while retaining it in the database. Counts and topic filters update automatically.
 
 Problems support `int`, `int[]`, `boolean` and ASCII `String` parameters/results. Linked lists, trees, graphs and interactive stdin are not part of the current judge protocol. Published cases and reference solutions are public and inspectable.
 
@@ -99,10 +103,12 @@ The bundled `dist/problems.js` catalog is a connection-failure fallback. To upda
 | --- | --- |
 | dist/index.html, dist/style.css, dist/theme.css | Interface, blue/white theme, responsive layout and animations |
 | dist/app.js, dist/progress.js | Practice, account-aware progress, merges, backups and reviews |
-| dist/cloud.js, dist/config.js | Supabase client, Google OAuth and cloud sync |
+| dist/cloud.js, dist/config.js | Public catalog and authenticated progress API |
+| dist/firebase-session.js, dist/firebase-config.js | Firebase login, persistence and safe account switching |
+| supabase/functions/bytequest-firebase/ | Firebase token verification and private account/editor API |
 | dist/studio.js, dist/catalog.js | Editor studio and validated problem definitions |
 | database/ | Schema snapshot, seed catalog and transactional access checks |
-| DATABASE.md | OAuth activation and editor setup |
+| DATABASE.md | Firebase configuration, backend deployment and editor setup |
 | dist/problems.js | Quest content, Java templates and test data |
 | dist/traces.js | Guided reference-algorithm traces |
 | dist/judge.js, dist/runner.html | Browser-JVM orchestration |
@@ -127,6 +133,7 @@ Official references (checked November 13, 2026):
 - [CheerpJ documentation](https://cheerpj.com/docs/overview)
 - [CheerpJ licensing](https://cheerpj.com/docs/licensing.html)
 
-- [Supabase Google OAuth configuration](https://supabase.com/docs/guides/auth/social-login/auth-google)
+- [Firebase Google sign-in](https://firebase.google.com/docs/auth/web/google-signin)
+- [Firebase ID token verification](https://firebase.google.com/docs/auth/admin/verify-id-tokens)
 - [Supabase Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security)
 - [Supabase pricing and free-plan limits](https://supabase.com/pricing)

@@ -1,0 +1,4 @@
+# Firebase tokens are verified inside the function with Google's public certificates.
+# The Supabase gateway's own JWT check cannot validate Firebase-issued tokens.
+[functions.bytequest-firebase]
+verify_jwt = false

@@ -15,5 +15,6 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+      - run: npm ci --ignore-scripts
       - run: node scripts/build-java.mjs
       - run: node tests/verify.mjs

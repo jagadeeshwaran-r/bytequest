@@ -303,7 +303,7 @@ function refreshAccountUi(){
   $("accountIdentity").className="account-identity";
   $("accountIdentity").innerHTML=user?"<strong>"+html(name)+"</strong>"+html(user.email||""):"";
   if(!cloud.enabled)$("authMessage").textContent="Cloud accounts are being connected. You can keep practising on this device.";
-  else if(!user&&cloud.client&&!cloud.googleEnabled)$("authMessage").textContent="Google sign-in is waiting for the site owner to finish activation. You can keep practising as a guest.";
+  else if(!user&&!cloud.loginReady&&!$("authMessage").textContent)$("authMessage").textContent="Loading secure sign-in…";
 }
 async function changeAccount(user){
   const owner=user?.id||null;if(owner===accountOwner&&accountReady)return;
@@ -345,7 +345,7 @@ async function syncCloud(){
   finally{if(epoch===accountEpoch){syncing=false;if(syncAgain){syncAgain=false;syncTimer=setTimeout(()=>syncCloud(),1000);}}}
 }
 async function refreshCatalog(){
-  if(!cloud.client)return;
+  if(!cloud.enabled)return;
   try{
     const next=await cloud.publicCatalog();if(next===null)return;
     const selected=current?.id;problems.splice(0,problems.length,...next);topics=[...new Set(problems.map(p=>p.topic))];
@@ -357,7 +357,7 @@ async function refreshCatalog(){
 }
 function openAccount(){refreshAccountUi();$("accountDialog").showModal();}
 $("accountBtn").onclick=openAccount;$("profileBtn").onclick=openAccount;$("syncBadge").onclick=openAccount;$("studioSignIn").onclick=openAccount;
-$("googleSignInBtn").onclick=async()=>{try{$("authMessage").textContent="Opening Google sign-in…";await cloud.signIn();}catch(error){$("authMessage").textContent=error.message;}};
+$("googleSignInBtn").onclick=async()=>{const button=$("googleSignInBtn");button.disabled=true;try{$("authMessage").textContent="Opening Google sign-in…";await cloud.signIn();$("authMessage").textContent="";$("accountDialog").close();}catch(error){$("authMessage").textContent=error.message;}finally{button.disabled=false;}};
 $("syncNowBtn").onclick=async()=>{await syncCloud();};
 $("signOutBtn").onclick=async()=>{try{await syncCloud();await cloud.signOut();$("accountDialog").close();await changeAccount(null);notify("Signed out on this device. Your account progress is kept.");}catch(error){$("authMessage").textContent=error.message;}};
 $("importGuestBtn").onclick=()=>{if(!cloud.user)return;state=mergeProgress(state,readLocal(guestStorageKey));persist();renderPractice();updateStats();notify("Guest progress added to this account. Cloud sync queued.");};
@@ -365,7 +365,7 @@ addEventListener("online",()=>{if(cloud.user)syncCloud();else setSyncStatus("","
 addEventListener("offline",()=>setSyncStatus("failed",cloud.user?"Offline · saved here":"On this device"));
 async function bootCloud(){
   refreshAccountUi();
-  try{await cloud.init();}catch(error){$("authMessage").textContent=error.message;setSyncStatus("failed","Account connection paused");}
+  try{await cloud.init();$("authMessage").textContent="";}catch(error){$("authMessage").textContent=error.message;setSyncStatus("failed","Account connection paused");}
   await refreshCatalog();await changeAccount(cloud.user);
 }
 renderPractice();updateStats();route();bootCloud();
