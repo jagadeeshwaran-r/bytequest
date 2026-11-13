@@ -180,3 +180,18 @@ problem text or test suites without permission.
 `tests/community.mjs` verifies identity binding, input validation, date/streak
 edge cases, and judge payload/response isolation. Native Java tests remain in
 `tests/verify.mjs`.
+
+## Photos and comparison release
+
+`database/profile-photos-dashboard.sql` records the already-applied profile RPC update:
+`avatar_path` and discoverable profile date/topic solve aggregates. Comparisons receive
+UTC dates/topics for published problems only; no raw drafts, notes, account email or owner
+ID. `database/verify-minimal.sql` verifies this in a rollback-only fixture transaction.
+
+The verified `avatar-upload` action accepts resized JPEG bytes, finds the caller's profile,
+and upserts only `<public_profile_uuid>/avatar.jpg` in private bucket `bytequest-avatars`.
+Storage's SDK creates that private bucket on first use with MIME/size restrictions. The
+service credential stays in the Edge Function; no public read/write policy is added.
+Existing external HTTPS avatars still work. If a public profile is made private, already
+issued image links can remain valid for up to ten minutes. Normal profile reads generate
+fresh links. `tests/minimal.mjs` covers owner binding and adapter path restrictions.

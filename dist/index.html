@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<head>
+<head><script src="./theme-mode.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f5f8ff">
@@ -9,8 +9,8 @@
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./style.css">
   <link rel="stylesheet" href="./theme.css?v=community-1">
-  <script type="module" src="./app.js?v=community-1"></script>
-</head>
+  <script type="module" src="./app.js?v=minimal-1"></script>
+<link rel="stylesheet" href="./minimal.css?v=minimal-1"></head>
 <body>
 <svg class="sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></symbol>
@@ -27,42 +27,13 @@
   <symbol id="i-bolt" viewBox="0 0 24 24"><path d="m13 2-9 12h7l-1 8 10-13h-7l1-7Z"/></symbol>
   <symbol id="i-reset" viewBox="0 0 24 24"><path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/></symbol>
 </svg>
-<aside class="sidebar">
-  <a class="brand" href="#practice" aria-label="ByteQuest home"><span class="brand-mark">{<b>•</b>}</span>ByteQuest<span class="brand-dot">.</span></a>
-  <div class="workspace-label">YOUR JAVA WORKSPACE</div>
-  <nav aria-label="Main navigation">
-    <a class="nav-link active" href="#practice" data-view="practice"><svg><use href="#i-code"/></svg>Practice<span class="nav-tag">JAVA 17</span></a>
-    <a class="nav-link" href="#map" data-view="map"><svg><use href="#i-map"/></svg>Problem library</a>
-    <a class="nav-link" href="#progress" data-view="progress"><svg><use href="#i-chart"/></svg>My progress</a>
-    <a class="nav-link" id="studioNav" href="./studio.html" data-view="studio" hidden><svg><use href="#i-grid"/></svg>Problem studio</a>
-  <a class="nav-link" href="./community.html#me"><span>◉</span> My profile</a><a class="nav-link" href="./community.html#discover"><span>♧</span> Find explorers</a><a class="nav-link" href="./community.html#inbox"><span>♧</span> Quest inbox</a></nav>
-  <div class="sidebar-card">
-    <span class="little-star">✳</span>
-    <h3>Grow at your pace.</h3>
-    <p>Understand the pattern.<br>Explain your thinking.<br>Then chase the clock.</p>
-    <span class="handwritten">you've got this ↗</span>
-  </div>
-  <div class="sidebar-bottom">
-    <button id="aboutBtn" class="text-button"><svg><use href="#i-book"/></svg>How it works</button>
-    <button class="profile" id="profileBtn"><span class="avatar" id="profileAvatar">J</span><span><strong id="profileName">Java explorer</strong><small>Level <span id="level">1</span> · Keep growing</small></span><span class="online-dot"></span></button>
-  </div>
-</aside>
+<header class="minimal-header"><a class="minimal-brand" href="./index.html#dashboard"><span>{✓}</span> ByteQuest</a><nav class="minimal-nav" aria-label="Main navigation"><a href="./index.html#dashboard" data-view="dashboard">Dashboard</a><a href="./index.html#map" data-view="map">Problems</a><a href="./index.html#practice" data-view="practice">Practice</a></nav><div class="profile-dropdown"><button id="profileMenuToggle" aria-expanded="false" aria-controls="profileMenu"><span id="menuAvatar">J</span><span id="menuName">Explorer</span>⌄</button><div id="profileMenu" hidden><a href="./community.html#me">My profile</a><a href="./community.html#discover">Find people</a><a href="./community.html#inbox">Quest inbox</a><a href="./studio.html">Problem studio</a><a href="./community.html#roles">Manage creators</a><div class="theme-choices"><button data-theme-choice="light">☀ Light</button><button data-theme-choice="dark">☾ Dark</button><button data-theme-choice="system">System</button></div><div id="menuAccountSlot"></div></div></div></header><div hidden><span id="profileAvatar"></span><span id="profileName"></span><span id="level"></span><button id="profileBtn">My profile</button><button id="aboutBtn">Help</button><a id="studioNav" href="./studio.html">Studio</a><span id="solvedCount"></span><span id="solvedTotal"></span><span id="xpCount"></span></div>
 <main>
   <header class="topbar">
     <div class="breadcrumb"><span class="mobile-brand">{•} ByteQuest</span><span class="desktop-crumb">Your playground <span>/</span> <strong id="breadcrumb">Practice lab</strong></span></div>
     <div class="top-actions"><button id="syncBadge" class="sync-badge"><span></span><span id="syncLabel">On this device</span></button><span class="streak-pill"><svg><use href="#i-bolt"/></svg><b id="streak">0</b> day streak</span><button id="exportBtn" class="icon-text" title="Download your progress backup">Backup</button><button id="accountBtn" class="google-button"><span class="google-symbol" aria-hidden="true">G</span><span id="accountLabel">Sign in with Google</span></button></div>
   </header>
-  <section class="hero">
-    <div class="hero-copy"><div class="eyebrow"><span></span> YOUR NEXT BREAKTHROUGH STARTS HERE</div><h1>Learn the pattern.<br><span>Find your flow.</span></h1><p>Build interview confidence with hands-on Java, visual explanations, and one good problem at a time.</p>
-      <div class="hero-stats"><span><b id="solvedCount">0</b><small>/ <span id="solvedTotal">16</span> problems solved</small></span><i></i><span class="xp-text"><svg><use href="#i-spark"/></svg><b id="xpCount">0</b><small>XP earned</small></span><i></i><span><span class="green-dot"></span><small>Beginner friendly</small></span></div>
-    </div>
-    <div class="hero-art" aria-hidden="true">
-      <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
-      <span class="floating-tag tag-one">while (curious)</span><span class="floating-tag tag-two">keepGrowing();</span>
-      <svg class="mascot" viewBox="0 0 210 170"><ellipse cx="110" cy="152" rx="54" ry="8" fill="#a9d6fa" opacity=".4"/><g class="bot"><path d="M108 35V18" stroke="#233e69" stroke-width="5" stroke-linecap="round"/><circle cx="108" cy="15" r="7" fill="#8be0c8" stroke="#233e69" stroke-width="3"/><path d="M56 98 34 112m128-14 18-21" stroke="#233e69" stroke-width="9" stroke-linecap="round"/><path d="m75 134-3 13m62-13 5 13" stroke="#233e69" stroke-width="12" stroke-linecap="round"/><rect x="55" y="36" width="108" height="101" rx="30" fill="#ffffff" stroke="#233e69" stroke-width="4"/><rect x="67" y="52" width="84" height="53" rx="18" fill="#2563eb"/><ellipse cx="90" cy="76" rx="6" ry="9" fill="#d9fbff"/><ellipse cx="129" cy="76" rx="6" ry="9" fill="#d9fbff"/><path d="M103 89q7 7 14-1" stroke="#d9fbff" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="93" y="116" width="29" height="6" rx="3" fill="#bed9ff"/><circle cx="75" cy="95" r="7" fill="#90c9f9" opacity=".6"/><circle cx="145" cy="95" r="7" fill="#90c9f9" opacity=".6"/></g><path d="m176 28 3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" fill="#f6d076"/><path d="m30 48 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" fill="#6ba6f4"/></svg>
-    </div>
-  </section>
-  <section id="practiceView" class="view"><div class="catalog-empty empty-state" hidden id="catalogEmpty">New challenges are on their way. Check back soon.</div>
+<section id="dashboardView" class="view"><div class="dashboard-heading"><div><span class="eyebrow">YOUR PRACTICE, IN PERSPECTIVE</span><h1>Small steps. Real progress.</h1><p>Make a little room for one good problem today.</p></div><a class="button primary" href="#practice">Continue practice ↗</a></div><div class="dashboard-totals"><div><span>Problems solved</span><b id="dashboardSolved">0</b></div><div><span>Active days</span><b id="dashboardActive">0</b></div><div><span>Solves in this view</span><b id="dashboardPeriod">0</b></div></div><section class="dashboard-chart white-card"><div class="chart-heading"><div><h2>Your solving rhythm</h2><p>First accepted solves, grouped by date.</p></div><div class="chart-filters"><select id="graphMode" aria-label="Chart frequency"><option value="daily">Daily</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select><input id="graphMonth" type="month" aria-label="Chart month"><input id="graphYear" type="number" min="2000" max="2200" aria-label="Chart year" hidden><select id="graphTopic" aria-label="Chart topic"><option value="">All topics</option></select></div></div><div id="graphLegend" class="graph-legend"></div><div class="graph-scroll"><svg id="frequencyChart" viewBox="0 0 900 225" role="img" aria-label="Problem solving frequency comparison"></svg></div><div class="comparison-controls"><span>Compare with friends</span><select id="compareOne" aria-label="First friend"><option value="">Choose a friend</option></select><select id="compareTwo" aria-label="Second friend"><option value="">Choose a friend</option></select></div><p id="dashboardMessage" class="muted" role="status"></p><details class="chart-data"><summary>View chart data</summary><div id="chartTable"></div></details><p class="chart-footnote">Dates use UTC for consistent comparisons. Practice records are self-reported.</p></section><section class="white-card topic-summary"><div><h2>Patterns you’re growing</h2><p>Your solved topics in the selected period.</p></div><div id="topicBreakdown"></div></section></section>  <section id="practiceView" class="view"><div class="catalog-empty empty-state" hidden id="catalogEmpty">New challenges are on their way. Check back soon.</div>
     <div class="section-heading"><div><h2>Your practice space <span class="heading-arrow"><svg><use href="#i-arrow"/></svg></span></h2><p>Understand first. Code with confidence.</p></div><a href="#map" class="subtle-link">Browse problems <svg><use href="#i-arrow"/></svg></a></div>
     <div class="quest-strip"><span class="quest-number" id="questNumber">01</span><div class="quest-info"><strong id="questTitle">Two Sum</strong><span><span class="difficulty" id="difficulty">Easy</span><span id="questTopic">Hash maps</span><span>·</span><svg><use href="#i-clock"/></svg><span id="questMinutes">15–25 min</span></span></div><label class="select-label"><span class="sr-only">Choose a problem</span><select id="problemSelect"></select></label><div class="mode-toggle" aria-label="Practice mode"><button class="active" id="learnMode">🌱 Learn</button><button id="challengeMode">⚡ Challenge</button></div></div>
     <div class="lab">
@@ -71,9 +42,9 @@
         <div id="learningContent" class="learning-content"></div>
         <div class="hint-bar"><span class="hint-icon">✧</span><div><strong>A nudge, not a spoiler.</strong><p id="hintText">Stuck? Take one small hint.</p></div><button id="hintBtn">Get a hint <span>↗</span></button></div>
       </section>
-      <section class="editor-pane" aria-label="Java editor and test results">
-        <div class="editor-top"><span class="file-tab"><span class="java-dot">J</span>Solution.java <span class="file-dot"></span></span><div><span class="java-version">Java 17</span><button id="resetCode" class="mini-icon" aria-label="Reset code to starter" title="Reset code"><svg><use href="#i-reset"/></svg></button></div></div>
-        <div class="editor-container"><div id="lineNumbers" class="line-numbers" aria-hidden="true"></div><div class="code-scroll"><pre id="codeHighlight" aria-hidden="true"><code></code></pre><textarea id="codeEditor" aria-label="Java solution code" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" wrap="off"></textarea></div></div>
+      <section class="editor-pane" aria-label="Code editor and test results">
+        <div class="editor-top"><span class="file-tab"><span class="java-dot">J</span><span id="codeFilename">Solution.java</span> <span class="file-dot"></span></span><div><span class="java-version">Java 17</span><button id="resetCode" class="mini-icon" aria-label="Reset code to starter" title="Reset code"><svg><use href="#i-reset"/></svg></button></div><select id="languageSelect" aria-label="Programming language"><option value="java">Java 17</option><option value="python">Python 3.11</option><option value="cpp">C++</option><option value="c">C</option></select></div>
+        <div class="editor-container"><div id="lineNumbers" class="line-numbers" aria-hidden="true"></div><div class="code-scroll"><pre id="codeHighlight" aria-hidden="true"><code></code></pre><textarea id="codeEditor" aria-label="Solution code" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" wrap="off"></textarea></div></div>
         <div class="editor-status"><span><span class="green-dot"></span><span id="saveStatus">Draft saved on this device</span></span><span>Spaces: 4 <span class="divider">|</span> UTF-8</span></div>
         <div class="test-panel"><div class="test-header"><strong><svg><use href="#i-check"/></svg>Test playground</strong><button id="customBtn">+ Custom case</button></div><div class="test-tabs" id="testTabs"></div><div id="testDetail" class="test-detail"></div><div id="resultOutput" class="result-output" aria-live="polite"></div></div>
         <div class="runbar"><span id="runStatus"><span class="runtime-dot"></span>Real Java. Right here.</span><button id="stopBtn" class="button stop" hidden>Stop</button><button id="runBtn" class="button secondary"><svg><use href="#i-play"/></svg>Run</button><button id="submitBtn" class="button primary"><svg><use href="#i-check"/></svg>Submit solution</button></div>

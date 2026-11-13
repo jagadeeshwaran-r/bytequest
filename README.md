@@ -156,3 +156,28 @@ Official references (checked November 13, 2026):
   run. Until then private-suite submissions fail closed; public practice works.
 
 See `DATABASE.md` for deployment, privacy, role enrollment and judge configuration.
+
+### Compact dashboard and multiple languages
+
+The default page is now a compact dashboard with daily, monthly and yearly first-solve charts,
+a topic filter and topic breakdown. Compare with up to two followed, discoverable profiles;
+private code and notes are never part of comparison responses. Dates use UTC consistently.
+A small top navigation replaces the sidebar, with profile, community, creator and theme
+options in the profile dropdown. Light, dark and system modes persist on this device.
+
+The editor supports Java 17, Python 3.11, C and C++. Java keeps the CheerpJ runner. Other
+languages use pinned `@runno/runtime@0.10.3` with a WASI Python/Clang toolchain in a separate
+compiler window. `runtime-sw.js` adds COOP/COEP only to `native-runner.html`; the main page
+and Firebase popup remain outside that isolation boundary. Results travel through a
+random per-run BroadcastChannel. Stop/timeout closes the compiler context. Allow the
+compiler popup and keep it open while running; first launch downloads the toolchain.
+C array parameters have a pointer plus `<name>_len`; array returns use `IntArray`.
+C++ exceptions are unsupported by the WASI compiler. Guides/reference solutions remain
+Java, and private hidden-case submissions still require the separate Java server judge.
+Each language keeps its own account/guest draft; Java drafts keep their existing keys.
+
+Profile photos can be selected from a device (JPG/PNG/WebP up to 10 MB). The client crops
+and resizes to 256×256 JPEG, stripping original metadata. The Firebase-verified backend
+limits uploads to 192 KB and the caller's profile path in a private `bytequest-avatars`
+Supabase Storage bucket. Profile responses use ten-minute signed links, with no public
+bucket policy. The bucket is provisioned lazily at the first upload through Storage's API.

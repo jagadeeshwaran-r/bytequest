@@ -1,8 +1,14 @@
+import {mountShell} from "./shell.js?v=minimal-1";
+import {Dashboard} from "./dashboard.js?v=minimal-1";
+import {languages,starterFor,NativeJudge} from "./languages.js?v=minimal-1";
 import {problems as bundledProblems} from "./problems.js";
-import {Cloud} from "./cloud.js?v=community-1";
+import {Cloud} from "./cloud.js?v=minimal-1";
 import {blankProgress, validateProgress, mergeProgress} from "./progress.js";
 import {Studio} from "./studio.js?v=community-1";
 const problems=[...bundledProblems];
+const shell=mountShell();let language="java";try{const v=localStorage.getItem("bytequest.language");if(languages[v])language=v;}catch{}
+const draftId=(id=current.id)=>language==="java"?id:id+"--"+language;
+const currentStarter=()=>starterFor(current,language);
 let topics=[...new Set(problems.map(p=>p.topic))];
 import {JavaJudge, buildTests} from "./judge.js";
 import {traceFor} from "./traces.js";
@@ -19,6 +25,7 @@ state=readLocal(storageKey);
 let syncTimer,syncing=false,syncAgain=false,accountEpoch=0,accountOwner,accountReady=false;
 const cloud=new Cloud(user=>changeAccount(user));
 const studio=new Studio({cloud,notify:message=>notify(message),onCatalogChanged:()=>refreshCatalog()});
+const dashboard=new Dashboard({cloud,getState:()=>state,getCatalog:()=>problems});
 function touch(field,id){state.modified[id]??={};state.modified[id][field]=Date.now();}
 let current = problems.find(p => p.id === state.current) || problems[0];
 let tab = "problem", mode = "learn", hints = 0, selectedCase = 0, customCases = [], results = null;
@@ -27,13 +34,17 @@ let timerStarted = null, timerUsed = 0, timerProblem = current.id, timerTick;
 let referenceUsed = false;
 const reviewDays = [2,7,21];
 const topicEmoji = {"Hash maps":"🗂️","Strings":"🔤","Binary search":"🔎","Two pointers":"👉","Arrays":"🌿","Sliding window":"🪟","Stacks":"🧱","Dynamic programming":"🌱","Math":"✳️"};
-const judge = new JavaJudge(message => {
+const javaJudge = new JavaJudge(message => {
   $("runStatus").textContent = message;
   if (message.startsWith("Compiling")) {
     clearTimeout(watchdog);
     watchdog=setTimeout(()=>stopRun("The run reached its 30-second limit. Try a smaller input or check for an infinite loop."),30000);
   }
 });
+const nativeJudge=new NativeJudge(message=>{$("runStatus").textContent=message;});
+const judge={run:(source,p,cases)=>language==="java"?javaJudge.run(source,p,cases):nativeJudge.run(source,p,cases,language),stop:()=>{javaJudge.stop();nativeJudge.stop();}};
+function setLanguage(v){if(!languages[v])return;if(busy)stopRun();language=v;try{localStorage.setItem("bytequest.language",v);}catch{}renderPractice();}
+$("languageSelect").onchange=e=>setLanguage(e.target.value);
 function persist() {
   try { localStorage.setItem(storageKey,JSON.stringify(state)); storageOK=true; $("saveStatus").textContent=cloud.user?"Draft saved · cloud sync queued":"Draft saved on this device"; }
   catch { storageOK=false; $("saveStatus").textContent="Storage full or unavailable — export a backup"; }
@@ -59,7 +70,7 @@ function highlight(source) {
 }
 function updateEditor() { $("codeHighlight").firstElementChild.innerHTML=highlight($("codeEditor").value); $("lineNumbers").textContent=$("codeEditor").value.split("\n").map((_,i)=>i+1).join("\n"); syncScroll(); }
 function syncScroll(){ $("codeHighlight").scrollTop=$("codeEditor").scrollTop; $("codeHighlight").scrollLeft=$("codeEditor").scrollLeft; $("lineNumbers").scrollTop=$("codeEditor").scrollTop; }
-function saveDraft(){state.drafts[current.id]=$("codeEditor").value;touch("drafts",current.id);persist();updateEditor();if(results){results=null;renderTests();$("resultOutput").replaceChildren();}}
+function saveDraft(){state.drafts[draftId()]=$("codeEditor").value;touch("drafts",draftId());persist();updateEditor();if(results){results=null;renderTests();$("resultOutput").replaceChildren();}}
 $("codeEditor").addEventListener("input",saveDraft);
 $("codeEditor").addEventListener("scroll",syncScroll);
 $("codeEditor").addEventListener("keydown",event=>{
@@ -68,6 +79,7 @@ $("codeEditor").addEventListener("keydown",event=>{
 });
 function renderPractice() {
   pauseTrace();
+  $("languageSelect").value=language;$("languageSelect").disabled=busy;$("codeFilename").textContent=languages[language].file;$("runStatus").textContent=languages[language].name+" · runs on your device";
   $("practiceView").classList.toggle("empty-catalog",!current);$("catalogEmpty").hidden=!!current;
   if(!current)return;
   $("questTitle").textContent=current.title; $("questTopic").textContent=current.topic;
@@ -76,7 +88,7 @@ function renderPractice() {
   $("questMinutes").textContent=current.difficulty==="Easy"?"15–25 min":current.difficulty==="Medium"?"25–35 min":"35–50 min";
   $("problemSelect").value=current.id;
   $("learnMode").classList.toggle("active",mode==="learn"); $("challengeMode").classList.toggle("active",mode==="challenge");
-  $("codeEditor").value=state.drafts[current.id]??current.starter; updateEditor();
+  $("codeEditor").value=state.drafts[draftId()]??currentStarter(); updateEditor();
   $("hintText").textContent="Stuck? Take one small hint."; hints=0;
   $("hintBtn").textContent="Get a hint ↗"; $("hintBtn").disabled=false;
   renderLearning(); renderTests();
@@ -102,7 +114,7 @@ function renderLearning(){
     referenceUsed=true;
     $("referenceContent").innerHTML='<p class="reference-reveal-note">Trace the idea, then close this and try it yourself.</p><pre class="reference-code">'+html(current.reference)+'</pre><button id="copyReference" class="reference-button">Try this code in the editor</button>';
     $("referenceBtn").hidden=true;
-    $("copyReference").onclick=()=>{state.drafts[current.id]=current.reference;touch("drafts",current.id);$("codeEditor").value=current.reference;persist();updateEditor();notify("Walkthrough loaded. Try changing one line and predict what happens.");};
+    $("copyReference").onclick=()=>{if(language!=="java")setLanguage("java");state.drafts[current.id]=current.reference;touch("drafts",current.id);$("codeEditor").value=current.reference;persist();updateEditor();notify("Walkthrough loaded. Try changing one line and predict what happens.");};
   };
   if(tab==="visual"){
     traceStep=0;renderTrace();
@@ -160,13 +172,13 @@ $("learnMode").onclick=()=>{mode="learn";if(timerStarted){timerUsed+=Date.now()-
 $("challengeMode").onclick=()=>{mode="challenge";renderLearning();$("challengeMode").classList.add("active");$("learnMode").classList.remove("active");};
 function setBusy(value){busy=value;$("runBtn").disabled=value;$("submitBtn").disabled=value;$("customBtn").disabled=value;$("stopBtn").hidden=!value;$("problemSelect").disabled=value;$("codeEditor").readOnly=value||!accountReady;document.body.classList.toggle("busy",value);}
 function stopRun(message="Run stopped. Your draft is saved."){
-  runEpoch++;clearTimeout(watchdog);judge.stop();setBusy(false);$("runStatus").textContent="Real Java. Right here.";$("resultOutput").textContent=message;
+  runEpoch++;clearTimeout(watchdog);judge.stop();setBusy(false);$("runStatus").textContent=languages[language].name+" · runs on your device";$("resultOutput").textContent=message;
 }
 async function run(submit){
   if(busy||!current)return;
   const epoch=++runEpoch,p=current,source=$("codeEditor").value;
   const cases=submit?[...p.tests,...customCases]:allCases();
-  setBusy(true);results=null;renderTests();$("resultOutput").textContent="Starting a real Java run…";
+  setBusy(true);results=null;renderTests();$("resultOutput").textContent="Starting your code…";
   watchdog=setTimeout(()=>stopRun("Java startup timed out. Check your connection and allow cjrtnc.leaningtech.com, then try again."),120000);
   try{
     const result=await judge.run(source,p,cases);
@@ -183,12 +195,13 @@ async function run(submit){
     if(result.stdout){const stdout=document.createElement("div");stdout.className="stdout";stdout.textContent="Console\n"+result.stdout;output.append(stdout);}
     logAttempt(p,passed,cases.length);
     if(accepted&&submit&&p.hiddenCount){
+      if(language!=="java"){output.append(document.createTextNode(" Private submissions currently support Java only. No acceptance recorded."));return;}
       if(!cloud.user){notify("Public checks passed. Sign in for private-test submissions.");output.append(document.createTextNode(" Private tests are not checked; this quest is not yet accepted."));}
       else{try{const verdict=await cloud.request("hidden-submit",{problemId:p.id,source,revision:p.revision});output.append(document.createTextNode(" "+verdict.message));if(verdict.accepted)completeQuest(p);}catch(error){output.append(document.createTextNode(" "+error.message));}}
     }else if(accepted&&submit)completeQuest(p);
     else if(accepted)notify("Samples passed! Submit quest to check every built-in edge case.");
   }catch(error){if(epoch===runEpoch)$("resultOutput").textContent=String(error.message||error);}
-  finally{if(epoch===runEpoch){clearTimeout(watchdog);setBusy(false);$("runStatus").textContent="Real Java. Right here.";updateStats();persist();}}
+  finally{if(epoch===runEpoch){clearTimeout(watchdog);setBusy(false);$("runStatus").textContent=languages[language].name+" · runs on your device";updateStats();persist();}}
 }
 function logAttempt(p,passed,total){
   state.attempts[p.id]=(state.attempts[p.id]||0)+1;
@@ -240,18 +253,18 @@ $("customForm").onsubmit=event=>{
   }catch(error){$("customError").textContent=error.message;}
 };
 $("resetCode").onclick=()=>$("resetDialog").showModal();
-$("confirmReset").onclick=()=>{state.drafts[current.id]=current.starter;touch("drafts",current.id);$("codeEditor").value=current.starter;persist();updateEditor();results=null;renderTests();$("resultOutput").replaceChildren();$("resetDialog").close();notify("A fresh starter is ready.");};
+$("confirmReset").onclick=()=>{state.drafts[draftId()]=currentStarter();touch("drafts",draftId());$("codeEditor").value=currentStarter();persist();updateEditor();results=null;renderTests();$("resultOutput").replaceChildren();$("resetDialog").close();notify("A fresh starter is ready.");};
 document.querySelectorAll(".dialog-close,.dialog-close-button").forEach(b=>b.onclick=()=>b.closest("dialog").close());
 document.querySelectorAll("dialog").forEach(d=>d.addEventListener("click",event=>{if(event.target===d){const r=d.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)d.close();}}));
 $("aboutBtn").onclick=()=>$("aboutDialog").showModal();
 let previousView=null;
 function route(){
-  const view=document.body.dataset.page==="studio"?"studio":(["map","progress","studio"].includes(location.hash.slice(1))?location.hash.slice(1):"practice");
+  const view=document.body.dataset.page==="studio"?"studio":(["dashboard","practice","map","progress","studio"].includes(location.hash.slice(1))?location.hash.slice(1):"dashboard");
   if(view==="studio"&&document.body.dataset.page!=="studio"){location.href="./studio.html";return;}
-  ["practice","map","progress","studio"].forEach(name=>$(name+"View").hidden=view!==name);
+  ["dashboard","practice","map","progress","studio"].forEach(name=>$(name+"View").hidden=view!==name);
   document.querySelectorAll("[data-view]").forEach(a=>a.classList.toggle("active",a.dataset.view===view));
-  $("breadcrumb").textContent=({practice:"Practice",map:"Problem library",progress:"My progress",studio:"Problem studio"})[view];
-  if(view!=="practice"){pauseTrace();if(busy)stopRun();}if(view!=="studio")studio.stop();if(view==="studio")studio.open();if(view==="map")renderMap();if(view==="progress")renderProgress();
+  $("breadcrumb").textContent=({dashboard:"Dashboard",practice:"Practice",map:"Problem library",progress:"My progress",studio:"Problem studio"})[view];
+  if(view!=="practice"){pauseTrace();if(busy)stopRun();}if(view!=="studio")studio.stop();if(view==="studio")studio.open();if(view==="dashboard")dashboard.open();if(view==="map")renderMap();if(view==="progress")renderProgress();
   if(previousView!==null&&previousView!==view)window.scrollTo({top:0,left:0,behavior:"instant"});previousView=view;
 }
 addEventListener("hashchange",route);
@@ -298,6 +311,7 @@ $("importFile").onchange=async event=>{
 };
 function setSyncStatus(kind,label){$("syncBadge").className="sync-badge "+kind;$("syncLabel").textContent=label;}
 function refreshAccountUi(){
+  shell.setAccount(cloud.user);
   const user=cloud.user,meta=user?.user_metadata||{},name=String(meta.full_name||meta.name||"Java explorer");
   $("accountLabel").textContent=user?String(name).split(" ")[0]:"Sign in with Google";
   $("profileName").textContent=user?name:"Java explorer";$("profileAvatar").textContent=user?name.charAt(0).toUpperCase():"J";
@@ -314,7 +328,7 @@ function refreshAccountUi(){
 async function changeAccount(user){
   const owner=user?.id||null;if(owner===accountOwner&&accountReady)return;
   const epoch=++accountEpoch;accountOwner=owner;accountReady=false;clearTimeout(syncTimer);syncing=false;syncAgain=false;
-  if(busy)stopRun();studio.accountChanged();storageKey=owner?"bytequest.user."+owner:guestStorageKey;
+  if(busy)stopRun();studio.accountChanged();dashboard.accountChanged();storageKey=owner?"bytequest.user."+owner:guestStorageKey;
   state=readLocal(storageKey);current=problems.find(p=>p.id===state.current)||problems[0]||null;
   renderPractice();$("codeEditor").readOnly=true;updateStats();refreshAccountUi();
   let needsSync=false;
@@ -342,7 +356,7 @@ async function syncCloud(){
     const merged=await cloud.syncProgress(owner,JSON.parse(snapshot),mergeProgress);if(epoch!==accountEpoch||cloud.user?.id!==owner)return;
     const changedWhileSaving=JSON.stringify(state)!==snapshot;state=mergeProgress(state,merged);
     try{localStorage.setItem(storageKey,JSON.stringify(state));}catch{}
-    if(current&&document.activeElement!==$("codeEditor")){$("codeEditor").value=state.drafts[current.id]??current.starter;updateEditor();}
+    if(current&&document.activeElement!==$("codeEditor")){$("codeEditor").value=state.drafts[draftId()]??currentStarter();updateEditor();}
     updateStats();if(location.hash==="#progress")renderProgress();
     $("saveStatus").textContent=changedWhileSaving?"New edits saved here · sync queued":"Draft saved to your account";
     setSyncStatus("synced",changedWhileSaving?"New changes queued":"Saved to cloud");$("authMessage").textContent="";

@@ -1,5 +1,6 @@
 import "./firebase-auth.mjs";
 import "./community.mjs";
+import "./minimal.mjs";
 import "./cloud-models.mjs";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";

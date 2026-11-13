@@ -1,3 +1,4 @@
+import {avatarBytes} from "./avatar.js";
 import {communityActions,validateCommunity} from "./community.js";
 import {buildTests} from "./domain/judge.js";
 import {validateProblem} from "./domain/catalog.js";
@@ -29,9 +30,10 @@ export function createHandler({projectId,allowedOrigins,verifyToken,db,privateJu
     let identity;try{identity=await verifyToken(authorization.slice(7));}catch{return reply(401,{error:"Your sign-in expired or could not be verified. Please sign in again."});}
     try{
       const body=await readBody(req),action=body.action;
-      if(!["account","progress","sync","studio-list","studio-save","hidden-submit",...communityActions].includes(action))throw new HttpError(400,"Unknown account action.");
+      if(!["account","progress","sync","studio-list","studio-save","hidden-submit","avatar-upload",...communityActions].includes(action))throw new HttpError(400,"Unknown account action.");
       // Identity always comes from the verified Firebase token, never from a body field.
       await db.touchAccount(identity);
+      if(action==="avatar-upload"){await db.uploadAvatar(identity.id,avatarBytes(body.image));return reply(200,await db.community(identity.id,"self",{}));}
       if(communityActions.has(action))return reply(200,await db.community(identity.id,action,validateCommunity(action,body)));
       if(action==="hidden-submit"){
         if(!privateJudge?.ready)throw new HttpError(503,"Private Java judging is not connected yet. Use Run for public practice cases. Hidden inputs remain private.");

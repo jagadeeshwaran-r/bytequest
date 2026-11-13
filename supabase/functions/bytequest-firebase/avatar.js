@@ -1,0 +1,2 @@
+import {HttpError} from './handler.js';
+export function avatarBytes(base64){if(typeof base64!=='string'||base64.length>262144||! /^[A-Za-z0-9+/]+={0,2}$/.test(base64))throw new HttpError(400,'Choose a valid resized JPEG photo.');let bytes;try{bytes=Uint8Array.from(atob(base64),c=>c.charCodeAt(0));}catch{throw new HttpError(400,'Invalid image data.');}if(bytes.length<8||bytes.length>196608||bytes[0]!==255||bytes[1]!==216||bytes[2]!==255||bytes.at(-2)!==255||bytes.at(-1)!==217)throw new HttpError(400,'Use a JPEG photo under 192 KB.');return bytes;}

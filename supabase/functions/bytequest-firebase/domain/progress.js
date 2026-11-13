@@ -1,4 +1,4 @@
-const idPattern=/^[a-z][a-z0-9-]{1,63}$/;
+const idPattern=/^[a-z][a-z0-9-]{1,79}$/;
 const maps=["drafts","solved","notes","confidence","reviews","attempts","modified"];
 const object=value=>value&&typeof value==="object"&&!Array.isArray(value);
 const time=value=>Number.isFinite(value)&&value>=0?value:0;
@@ -6,7 +6,7 @@ export function blankProgress(){return{version:1,current:"two-sum",currentUpdate
 export function validateProgress(value) {
   if(!object(value)||value.version!==1)throw new Error("This is not a ByteQuest progress backup.");
   const clean=blankProgress();
-  const ids=new Set(maps.flatMap(m=>object(value[m])?Object.keys(value[m]):[]).filter(id=>idPattern.test(id)).slice(0,1000));
+  const ids=new Set(maps.flatMap(m=>object(value[m])?Object.keys(value[m]):[]).filter(id=>idPattern.test(id)).slice(0,4000));
   for(const id of ids){
     if(typeof value.drafts?.[id]==="string"&&value.drafts[id].length<=60000)clean.drafts[id]=value.drafts[id];
     if(typeof value.notes?.[id]==="string")clean.notes[id]=value.notes[id].slice(0,4000);
