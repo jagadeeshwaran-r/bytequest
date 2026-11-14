@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<head><script src="./theme-mode.js"></script>
+<head><script>document.documentElement.dataset.accountPending="";</script><script src="./theme-mode.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f5f8ff">
@@ -9,8 +9,8 @@
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./style.css">
   <link rel="stylesheet" href="./theme.css?v=community-1">
-  <script type="module" src="./app.js?v=green-final2"></script>
-<link rel="stylesheet" href="./minimal.css?v=green-final"><link rel="stylesheet" href="./red.css?v=green-final"><link rel="stylesheet" href="./green.css?v=green-final"></head>
+  <script type="module" src="./app.js?v=presence-1"></script>
+<link rel="stylesheet" href="./minimal.css?v=presence-1"><link rel="stylesheet" href="./red.css?v=presence-1"><link rel="stylesheet" href="./green.css?v=presence-1"><link rel="stylesheet" href="./presence.css?v=presence-1"></head>
 <body data-page="studio">
 <svg class="sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></symbol>
@@ -27,7 +27,7 @@
   <symbol id="i-bolt" viewBox="0 0 24 24"><path d="m13 2-9 12h7l-1 8 10-13h-7l1-7Z"/></symbol>
   <symbol id="i-reset" viewBox="0 0 24 24"><path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/></symbol>
 </svg>
-<header class="minimal-header"><a class="minimal-brand" href="./index.html#map"><span>B.</span> ByteQuest</a><nav class="minimal-nav" aria-label="Main navigation"><a href="./index.html#map" data-view="map">Problems</a></nav><div class="profile-dropdown"><button id="profileMenuToggle" aria-expanded="false" aria-controls="profileMenu"><span id="menuAvatar">J</span><span id="menuName">Explorer</span>⌄</button><div id="profileMenu" hidden><a href="./community.html#me">My profile</a><a href="./studio.html">Problem studio</a><a href="./community.html#roles">Manage creators</a><div class="theme-choices"><button data-theme-choice="light">☀ Light</button><button data-theme-choice="dark">☾ Dark</button><button data-theme-choice="system">System</button></div><div id="menuAccountSlot"></div></div></div></header><div hidden><span id="profileAvatar"></span><span id="profileName"></span><span id="level"></span><button id="profileBtn">My profile</button><button id="aboutBtn">Help</button><a id="studioNav" href="./studio.html">Studio</a><span id="solvedCount"></span><span id="solvedTotal"></span><span id="xpCount"></span></div>
+<header class="minimal-header"><a class="minimal-brand" href="./index.html#map"><span>B.</span> ByteQuest</a><nav class="minimal-nav" aria-label="Main navigation"><a href="./index.html#map" data-view="map">Problems</a></nav><div class="profile-dropdown"><button id="profileMenuToggle" aria-expanded="false" aria-controls="profileMenu"><span id="menuAvatar">A</span><span id="menuName">Account</span>⌄</button><div id="profileMenu" hidden><a href="./community.html#me">My profile</a><a href="./studio.html">Problem studio</a><a href="./community.html#roles">Manage creators</a><div class="theme-choices"><button data-theme-choice="light">☀ Light</button><button data-theme-choice="dark">☾ Dark</button><button data-theme-choice="system">System</button></div><div id="menuAccountSlot"></div></div></div></header><div hidden><span id="profileAvatar"></span><span id="profileName"></span><span id="level"></span><button id="profileBtn">My profile</button><button id="aboutBtn">Help</button><a id="studioNav" href="./studio.html">Studio</a><span id="solvedCount"></span><span id="solvedTotal"></span><span id="xpCount"></span></div>
 <main>
   <header class="topbar">
     <div class="breadcrumb"><span class="mobile-brand">{•} ByteQuest</span><span class="desktop-crumb">Your playground <span>/</span> <strong id="breadcrumb">Practice lab</strong></span></div>

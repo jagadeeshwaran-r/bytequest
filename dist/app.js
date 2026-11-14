@@ -1,18 +1,18 @@
 import {companyIcon} from './companies.js';
 import {mountWorkspace} from './workspace.js';
-import {mountShell} from "./shell.js?v=green-final";
-import {Dashboard} from "./dashboard.js?v=green-final";
-import {languages,starterFor,NativeJudge} from "./languages.js?v=green-final";
+import {mountShell} from "./shell.js?v=presence-1";
+import {Dashboard} from "./dashboard.js?v=presence-1";
+import {languages,starterFor,NativeJudge} from "./languages.js?v=presence-1";
 import {problems as bundledProblems} from "./problems.js";
-import {Cloud} from "./cloud.js?v=green-final";
+import {Cloud} from "./cloud.js?v=presence-1";
 import {blankProgress, validateProgress, mergeProgress} from "./progress.js";
-import {Studio} from "./studio.js?v=green-final";
+import {Studio} from "./studio.js?v=presence-1";
 const problems=[...bundledProblems];
 const shell=mountShell();mountWorkspace();let language="java";try{const v=localStorage.getItem("bytequest.language");if(languages[v])language=v;}catch{}
 const draftId=(id=current.id)=>language==="java"?id:id+"--"+language;
 const currentStarter=()=>starterFor(current,language);
 let topics=[...new Set(problems.map(p=>p.topic))];
-import {JavaJudge, buildTests} from "./judge.js";
+import {JavaJudge, buildTests} from "./judge.js?v=presence-1";
 import {traceFor} from "./traces.js";
 const $ = id => document.getElementById(id);
 const html = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
@@ -38,12 +38,17 @@ let referenceUsed = false;
 const reviewDays = [2,7,21];
 const topicEmoji = {"Hash maps":"🗂️","Strings":"🔤","Binary search":"🔎","Two pointers":"👉","Arrays":"🌿","Sliding window":"🪟","Stacks":"🧱","Dynamic programming":"🌱","Math":"✳️"};
 const javaJudge = new JavaJudge(message => {
-  $("runStatus").textContent = message;
-  if (message.startsWith("Compiling")) {
+  $("runStatus").textContent = message;refreshJavaStatus();
+  if (busy && message.startsWith("Compiling")) {
     clearTimeout(watchdog);
     watchdog=setTimeout(()=>stopRun("The run reached its 30-second limit. Try a smaller input or check for an infinite loop."),30000);
   }
 });
+let javaWarmScheduled=false;
+const javaAvailability=document.createElement("span");javaAvailability.id="javaLoadStatus";javaAvailability.className="java-preload-status";javaAvailability.setAttribute("role","status");document.querySelector(".editor-status").append(javaAvailability);
+function refreshJavaStatus(){if(!document.getElementById("javaLoadStatus"))return;javaAvailability.hidden=language!=="java";javaAvailability.classList.toggle("ready",javaJudge.phase==="ready");javaAvailability.textContent=javaJudge.phase==="ready"?"Java ready":javaJudge.phase==="loading"?"Preparing Java…":javaJudge.phase==="error"?"Run to retry Java":"Java loads on Run";}
+function warmJavaSoon(){refreshJavaStatus();if(language!=="java"||javaWarmScheduled||javaJudge.phase!=="cold"||document.body.dataset.page==="studio"||navigator.connection?.saveData)return;javaWarmScheduled=true;const prepare=()=>{javaWarmScheduled=false;if(language==="java"&&document.visibilityState==="visible"&&javaJudge.phase==="cold")javaJudge.preload();};if(window.requestIdleCallback)requestIdleCallback(prepare,{timeout:1500});else setTimeout(prepare,500);}
+addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")warmJavaSoon();});
 const nativeJudge=new NativeJudge(message=>{$("runStatus").textContent=message;},cloud);
 const judge={run:(source,p,cases)=>language==="java"?javaJudge.run(source,p,cases):nativeJudge.run(source,p,cases,language),stop:()=>{javaJudge.stop();nativeJudge.stop();}};
 function setLanguage(v){if(!languages[v])return;if(busy)stopRun();language=v;try{localStorage.setItem("bytequest.language",v);}catch{}renderPractice();}
@@ -81,6 +86,7 @@ $("codeEditor").addEventListener("keydown",event=>{
   if((event.ctrlKey||event.metaKey)&&event.key==="Enter"){event.preventDefault();run(false);}
 });
 function renderPractice() {
+  warmJavaSoon();
   pauseTrace();
   $("languageSelect").value=language;$("languageSelect").disabled=busy;$("codeFilename").textContent=languages[language].file;$("runStatus").textContent=languages[language].name+(language==="java"?" · browser compiler":" · online via Wandbox");
   $("practiceView").classList.toggle("empty-catalog",!current);$("catalogEmpty").hidden=!!current;
@@ -396,4 +402,4 @@ async function bootCloud(){
 renderPractice();updateStats();route();bootCloud();
 if(!storageOK){$("saveStatus").textContent="Storage unavailable — use Save progress";notify("Local storage is unavailable. Export your progress before leaving.");}
 
-setInterval(()=>{if(cloud.user&&document.visibilityState==='visible')cloud.request('self').catch(()=>{});},60000);
+

@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><title>ByteQuest Java runtime</title></head>
+<head><link rel="preconnect" href="https://cjrtnc.leaningtech.com" crossorigin><meta charset="utf-8"><title>ByteQuest Java runtime</title></head>
 <body>
 <script src="https://cjrtnc.leaningtech.com/5.0/loader.js"></script>
 <script type="module">
@@ -15,6 +15,10 @@ try {
   const jar = "/app" + new URL("java-runner.jar", location.href).pathname;
   const lib = await cheerpjRunLibrary(jar);
   Runner = await lib.quest.JavaRunner;
+  // Warm javac too: loading the JVM alone leaves the compiler's first-use download on Run.
+  send({type:"status",message:"Preparing the Java compiler in the background…"});
+  const warm=JSON.parse(await Runner.run("class Solution { public int warmup() { return 0; } }",'check("Compiler warm-up", () -> new Solution().warmup(), 0);'));
+  if(warm.status!=="ok"||!warm.cases.every(c=>c.passed))throw new Error("Compiler warm-up failed.");
   send({id:"boot",type:"ready",result:true});
 } catch (error) {
   send({id:"boot",type:"error",message:"Java could not start: " + String(error.message || error)});

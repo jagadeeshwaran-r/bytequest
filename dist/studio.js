@@ -1,7 +1,7 @@
 import {mountCompanyPicker} from './companies.js';
-import {JavaJudge,buildTests} from "./judge.js";
-import {mountBulkImport} from "./bulk-import.js?v=green-final";
-import {validateProblem} from "./catalog.js?v=green-final";
+import {JavaJudge,buildTests} from "./judge.js?v=presence-1";
+import {mountBulkImport} from "./bulk-import.js?v=presence-1";
+import {validateProblem} from "./catalog.js?v=presence-1";
 const $=id=>document.getElementById(id);
 const fields=["Title","Id","Topic","Difficulty","Minutes","Description","Constraints","Method","Returns","Params","Starter","Reference","Tests","Idea","Invariant","Time","Space","Tradeoff","Hints","Frames","Position","Pattern","Techniques","Companies","CompanySource","InputGuide","OutputGuide","HiddenTests","Correction"];
 const sample={
@@ -40,6 +40,7 @@ export class Studio{
     $("studioGate").hidden=allowed;$("studioWorkspace").hidden=!allowed;$("newProblemBtn").hidden=!allowed;
     $("studioSignIn").hidden=!!this.cloud.user;
     if(!allowed){$("studioGate").querySelector("p").textContent=this.cloud.user?"Your account can practise and sync progress. Sign in to publish your own problems.":"Sign in with Google to create and publish problems.";return;}
+    if(!navigator.connection?.saveData&&this.judge.phase==="cold")this.judge.preload();
     if(this.loadedFor===this.cloud.user.id)return;
     const userId=this.cloud.user.id;this.message("Loading your problem library…");
     try{

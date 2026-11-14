@@ -1,8 +1,13 @@
 import {HttpError} from './handler.js';
-const actions=new Set(['self','profile-save','search','profile','follow','followers','following','notifications','notifications-read','roles','role-set']);
+const actions=new Set(['presence','profile-presence','self','profile-save','search','profile','follow','followers','following','notifications','notifications-read','roles','role-set']);
 export const communityActions=actions;
 export function validateCommunity(action,body){
  const data={};
+ if(action==='presence'){
+  if(typeof body.page!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(body.page)||typeof body.active!=='boolean'||!Number.isSafeInteger(body.sequence)||body.sequence<1||!Number.isInteger(body.idleForMs)||body.idleForMs<0||body.idleForMs>30000)throw new HttpError(400,'Invalid presence update.');
+  Object.assign(data,{page:body.page,active:body.active,sequence:body.sequence,idleForMs:body.idleForMs});
+ }
+
  if(action==='profile-save'){
   if(!/^[a-z][a-z0-9_]{2,23}$/.test(body.username||''))throw new HttpError(400,'Username: 3–24 lowercase letters, numbers or underscores; start with a letter.');
   if(typeof body.display_name!=='string'||!body.display_name.trim()||body.display_name.trim().length>60)throw new HttpError(400,'Add a name under 60 characters.');
@@ -14,7 +19,7 @@ export function validateCommunity(action,body){
  if(action==='search'){
   if(typeof body.query!=='string'||body.query.length<2||body.query.length>50||!/^[a-zA-Z0-9_-]+$/.test(body.query))throw new HttpError(400,'Search with at least two username characters, or an exact profile ID.');data.query=body.query.toLowerCase();
  }
- if(['profile','follow','followers','following','role-set'].includes(action)){
+ if(['profile-presence','profile','follow','followers','following','role-set'].includes(action)){
   if(typeof body.target!=='string'||body.target.length>50||!/^[a-zA-Z0-9_-]+$/.test(body.target))throw new HttpError(400,'Choose a valid username or profile ID.');data.target=body.target.toLowerCase();
  }
  if(action==='follow'){if(typeof body.following!=='boolean')throw new HttpError(400,'Choose follow or unfollow.');data.following=body.following;}

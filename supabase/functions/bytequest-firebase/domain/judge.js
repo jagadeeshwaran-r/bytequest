@@ -33,12 +33,12 @@ export function buildTests(problem, cases) {
 }
 
 export class JavaJudge {
-  constructor(onStatus = () => {}) { this.onStatus = onStatus; this.frame = null; this.waiters = new Map(); this.sequence = 0; }
+  constructor(onStatus = () => {}) { this.onStatus = onStatus; this.frame = null; this.waiters = new Map(); this.sequence = 0; this.phase="cold"; }
   async boot() {
     if (this.ready) return this.ready;
-    this.onStatus("Starting Java 17… First launch downloads the browser JDK.");
+    this.phase="loading";this.onStatus("Preparing Java 17 in the background…");
     this.frame = document.createElement("iframe");
-    this.frame.src = new URL("runner.html", import.meta.url).href;
+    this.frame.src = new URL("runner.html?v=presence-1", import.meta.url).href;
     this.frame.hidden = true;
     this.frame.title = "Java execution sandbox";
     document.body.appendChild(this.frame);
@@ -46,15 +46,18 @@ export class JavaJudge {
       if (event.source !== this.frame?.contentWindow || event.origin !== location.origin || event.data?.channel !== "bytequest-java") return;
       if (event.data.type === "status") this.onStatus(event.data.message);
       const w = this.waiters.get(event.data.id);
-      if (w) { this.waiters.delete(event.data.id); event.data.type === "error" ? w.reject(new Error(event.data.message)) : w.resolve(event.data.result); }
+      if (w) { this.waiters.delete(event.data.id); if(event.data.id==="boot"){clearTimeout(this.bootTimer);this.phase=event.data.type==="error"?"error":"ready";this.onStatus(this.phase==="ready"?"Java 17 is ready":"Java preparation paused. Run to retry.");}event.data.type === "error" ? w.reject(new Error(event.data.message)) : w.resolve(event.data.result); }
     };
     window.addEventListener("message", this.listener);
     this.ready = new Promise((resolve, reject) => this.waiters.set("boot", {resolve, reject}));
+    this.bootTimer=setTimeout(()=>{this.stop();this.phase="error";this.onStatus("Java preparation timed out. Run to retry.");},120000);
     return this.ready;
   }
+  preload(){if(this.phase!=="cold")return this.ready||Promise.resolve();return this.boot().catch(()=>{this.stop();this.phase="error";this.onStatus("Java preparation paused. Run to retry.");});}
   async run(source, problem, cases) {
     if (source.length > 60000) throw new Error("Keep your solution under 60,000 characters.");
     const tests = buildTests(problem, cases);
+    if(this.phase==="error")this.stop();
     await this.boot();
     this.onStatus("Compiling your Java and running " + cases.length + " tests…");
     const id = ++this.sequence;
@@ -63,6 +66,7 @@ export class JavaJudge {
     return result;
   }
   stop() {
+    clearTimeout(this.bootTimer);this.phase="cold";
     window.removeEventListener("message", this.listener);
     this.frame?.remove();
     this.frame = null;

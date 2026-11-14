@@ -1,3 +1,4 @@
+import "./presence.mjs";
 import "./online.mjs";
 import "./firebase-auth.mjs";
 import "./community.mjs";
@@ -23,6 +24,8 @@ function execute(source,tests) {
   writeFileSync("build/tests/cases.txt",tests);
   return JSON.parse(command(["-cp",["dist/java-runner.jar","build/tests"].join(delimiter),"RunnerCheck","build/tests/Solution.txt","build/tests/cases.txt"]));
 }
+const warm=execute("class Solution { public int warmup() { return 0; } }",'check("Compiler warm-up", () -> new Solution().warmup(), 0);');
+assert.equal(warm.status,"ok");assert.ok(warm.cases.every(c=>c.passed),"Compiler warm-up must run successfully.");
 let cases=0;
 try {
   for(const p of problems) {

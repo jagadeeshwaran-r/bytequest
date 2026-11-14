@@ -1,7 +1,7 @@
 import {cloudConfig} from "./config.js";
 import {firebaseConfig} from "./firebase-config.js";
 import {FirebaseSession} from "./firebase-session.js";
-import {validateProblem} from "./catalog.js?v=green-final";
+import {validateProblem} from "./catalog.js?v=presence-1";
 import {blankProgress,validateProgress} from "./progress.js";
 export function validPublicConfig(config){
   try{
@@ -12,12 +12,12 @@ export function validPublicConfig(config){
 }
 export class Cloud {
   constructor(onChange=()=>{},{config=cloudConfig,firebase=firebaseConfig,fetchImpl=(...args)=>globalThis.fetch(...args),sessionFactory=(c,cb)=>new FirebaseSession(c,cb)}={}){
-    this.config=config;this.fetch=fetchImpl;this.user=null;this.admin=false;this.canCreate=false;this.onChange=onChange;this.enabled=validPublicConfig(config);this.loginReady=false;this.bootstrap=null;
-    this.session=sessionFactory(firebase,user=>{this.user=user;this.admin=false;this.canCreate=false;this.bootstrap=null;this.onChange(user);});
+    this.config=config;this.fetch=fetchImpl;this.user=null;this.admin=false;this.canCreate=false;this.onChange=onChange;this.enabled=validPublicConfig(config);this.lastToken=null;this.loginReady=false;this.bootstrap=null;
+    this.session=sessionFactory(firebase,user=>{this.user=user;this.lastToken=null;this.admin=false;this.canCreate=false;this.bootstrap=null;this.onChange(user);});
   }
   async init(){await this.session.init();this.user=this.session.user;this.loginReady=this.session.ready;}
   async signIn(){await this.session.signIn();}
-  async signOut(){await this.session.signOut();}
+  async signOut(){this.onBeforeSignOut?.();await this.session.signOut();}
   async publicCatalog(){
     if(!this.enabled)return null;
     const query="?select=id,content,position,revision&published=eq.true&order=position.asc,id.asc&limit=1000";
@@ -30,6 +30,7 @@ export class Cloud {
     if(!this.enabled||!ownerId||this.user?.id!==ownerId)throw new Error("Sign in to sync your progress.");
     for(let attempt=0;attempt<2;attempt++){
       const token=await this.session.tokenFor(ownerId,attempt>0);
+      this.lastToken={owner:ownerId,token};
       if(this.user?.id!==ownerId)throw new Error("Your account changed. Please retry saving.");
       const response=await this.fetch(this.config.url+"/functions/v1/bytequest-firebase",{
         method:"POST",headers:{"Content-Type":"application/json",apikey:this.config.publishableKey,Authorization:"Bearer "+token},
@@ -41,6 +42,11 @@ export class Cloud {
       if(!response.ok)throw new Error(result.error||"Cloud progress is unavailable. Your work is saved on this device.");
       return result;
     }
+  }
+  leavePresence(body,ownerId=this.user?.id){
+    const cached=this.lastToken;if(!cached||cached.owner!==ownerId)return;
+    // Fire synchronously with a cached token; navigation must not wait for SDK refresh.
+    this.fetch(this.config.url+"/functions/v1/bytequest-firebase",{method:"POST",keepalive:true,headers:{"Content-Type":"application/json",apikey:this.config.publishableKey,Authorization:"Bearer "+cached.token},body:JSON.stringify({action:"presence",...body})}).catch(()=>{});
   }
   async account(userId){
     if(this.bootstrap?.owner!==userId){

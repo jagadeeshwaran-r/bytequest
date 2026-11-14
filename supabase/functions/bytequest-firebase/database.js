@@ -11,7 +11,13 @@ export function createDatabase(url,serviceKey,{fetchImpl=fetch}={}){
     async touchAccount(identity){checked(await client.rpc("touch_bytequest_firebase_account",{owner_id:identity.id,firebase_project:identity.projectId,firebase_subject:identity.uid,account_email:identity.email}));},
     async progress(owner){return checked(await client.from("bytequest_firebase_progress").select("payload,revision").eq("user_id",owner).maybeSingle());},
     async isEditor(owner){const [editor,admin]=await Promise.all([client.from("bytequest_firebase_editors").select("user_id").eq("user_id",owner).maybeSingle(),client.from("bytequest_library_admins").select("user_id").eq("user_id",owner).maybeSingle()]);return !!checked(editor)||!!checked(admin);},
-    async community(owner,action,data){const {data:result,error}=await client.rpc("bytequest_community",{owner_id:owner,action,data});rpcError(error);return enrich(result);},
+    async community(owner,action,data){
+      if(action==="presence"){const {error}=await client.rpc("bytequest_update_presence",{owner_id:owner,page_id:data.page,new_sequence:data.sequence,is_active:data.active,idle_ms:data.idleForMs});rpcError(error);return{ok:true};}
+      if(action==="profile-presence"){const {data:result,error}=await client.rpc("bytequest_read_presence",{viewer_id:owner,target:data.target});rpcError(error);return result;}
+      const {data:result,error}=await client.rpc("bytequest_community",{owner_id:owner,action,data});rpcError(error);
+      if(result.profile&&['profile','follow'].includes(action)){const presence=await client.rpc("bytequest_read_presence",{viewer_id:owner,target:result.profile.public_id});rpcError(presence.error);result.presence=presence.data.presence;}
+      return enrich(result);
+    },
     async sync(owner,payload,revision){const rows=checked(await client.rpc("sync_bytequest_firebase_progress",{owner_id:owner,new_payload:payload,expected_revision:revision}));if(!rows?.[0])throw new Error("Missing progress result");return rows[0];},
     async publicProblem(id){return checked(await client.from("bytequest_problems").select("content,revision").eq("id",id).eq("published",true).maybeSingle());},
     async claimOnlineRun(owner){return checked(await client.rpc("bytequest_claim_online_run",{owner_id:owner}));},
