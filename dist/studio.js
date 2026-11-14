@@ -1,4 +1,4 @@
-import {mountCompanyPicker} from './companies.js';
+import {mountCompanyPicker} from './companies.js?v=social-1';
 import {JavaJudge,buildTests} from "./judge.js?v=presence-1";
 import {mountBulkImport} from "./bulk-import.js?v=presence-1";
 import {validateProblem} from "./catalog.js?v=presence-1";

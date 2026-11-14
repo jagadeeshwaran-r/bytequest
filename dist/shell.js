@@ -1,8 +1,10 @@
 import {mountPresence} from './presence.js';
-import {accountCard} from './presence-model.js?v=presence-2';
+import {accountCard} from './presence-model.js?v=social-1';
+import {mountFriendAlerts,createFriendToasts} from './friend-alerts.js?v=social-1';
 import {escapeHtml as h} from './community-model.js';
 export function mountShell(){
- const toggle=document.getElementById('profileMenuToggle'),menu=document.getElementById('profileMenu'),slot=document.getElementById('menuAccountSlot');let cloud=null,identity=null,epoch=0,timer,tracker=null,card=null,painted=null,notificationOwner=null;
+ const toggle=document.getElementById('profileMenuToggle'),menu=document.getElementById('profileMenu'),slot=document.getElementById('menuAccountSlot');let cloud=null,identity=null,epoch=0,timer,tracker=null,friends=null,card=null,painted=null,notificationOwner=null;
+ const toasts=createFriendToasts();
  for(const id of ['accountBtn','exportBtn','communityAccount']){const item=document.getElementById(id);if(item)slot?.appendChild(item);}
  const cacheKey='bytequest.account-card';
  function paint(next){if(!next)return;const name=document.getElementById('menuName'),av=document.getElementById('menuAvatar');if(name.textContent!==next.name)name.textContent=next.name;
@@ -26,11 +28,12 @@ export function mountShell(){
  toggle.onclick=()=>{hidePanels();menu.hidden=!menu.hidden;toggle.setAttribute('aria-expanded',String(!menu.hidden));};
  document.addEventListener('click',e=>{if(!e.target.closest('.profile-dropdown'))close();if(!e.target.closest('.header-tools'))hidePanels();});document.addEventListener('keydown',e=>{if(e.key==='Escape'){close();hidePanels();}});
  menu.querySelectorAll('a').forEach(a=>a.addEventListener('click',close));menu.querySelectorAll('[data-theme-choice]').forEach(b=>b.onclick=()=>{window.bytequestTheme(b.dataset.themeChoice);menu.querySelectorAll('[data-theme-choice]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));});
- return {connect(c){cloud=c;tracker=mountPresence(c);},openInbox,focusSearch(){search.focus();},setAccount(user,profile){
+ return {connect(c){cloud=c;tracker=mountPresence(c);friends=mountFriendAlerts(c,{notify:friend=>toasts.show(friend),clear:()=>toasts.clear()});},openInbox,focusSearch(){search.focus();},setAccount(user,profile){
   // Cached names/photos are presentation only; verified Firebase identity still gates every API call.
   const resolved=cloud?.loginReady||cloud?.session?.ready;if(!user&&!resolved)return;
   const owner=user?.id||null;if(identity!==owner){identity=owner;epoch++;hidePanels();results.replaceChildren();$('headerNotifications').replaceChildren();$('headerUnread').textContent='';notificationOwner=null;if(card?.owner!==owner){card=null;painted=null;}}
   tracker?.setOwner(user);
+  friends?.setOwner(user);
   if(!user){card=null;painted=null;try{sessionStorage.removeItem(cacheKey);}catch{}$('menuName').textContent='Account';$('menuAvatar').textContent='A';return;}
   card=accountCard(user,profile,card);paint(card);try{sessionStorage.setItem(cacheKey,JSON.stringify(card));}catch{}
   if(notificationOwner!==owner){notificationOwner=owner;notifications();}

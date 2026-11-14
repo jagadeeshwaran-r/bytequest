@@ -1,4 +1,4 @@
-import {companies} from './companies-data.js';
+import {companies} from './companies-data.js?v=social-1';
 import {escapeHtml as h} from './community-model.js';
 export {companies};
 const aliases={meta:'facebook',aws:'amazon','amazon web services':'amazon'};

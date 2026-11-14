@@ -1,4 +1,5 @@
 import "./presence.mjs";
+import "./social.mjs";
 import "./online.mjs";
 import "./firebase-auth.mjs";
 import "./community.mjs";

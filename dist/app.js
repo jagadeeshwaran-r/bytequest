@@ -1,12 +1,12 @@
-import {companyIcon} from './companies.js';
+import {companyIcon} from './companies.js?v=social-1';
 import {mountWorkspace} from './workspace.js';
-import {mountShell} from "./shell.js?v=presence-3";
+import {mountShell} from "./shell.js?v=social-1";
 import {Dashboard} from "./dashboard.js?v=presence-1";
 import {languages,starterFor,NativeJudge} from "./languages.js?v=presence-1";
 import {problems as bundledProblems} from "./problems.js";
 import {Cloud} from "./cloud.js?v=presence-1";
 import {blankProgress, validateProgress, mergeProgress} from "./progress.js";
-import {Studio} from "./studio.js?v=presence-1";
+import {Studio} from "./studio.js?v=social-1";
 const problems=[...bundledProblems];
 const shell=mountShell();mountWorkspace();let language="java";try{const v=localStorage.getItem("bytequest.language");if(languages[v])language=v;}catch{}
 const draftId=(id=current.id)=>language==="java"?id:id+"--"+language;

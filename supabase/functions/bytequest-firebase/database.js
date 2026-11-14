@@ -14,6 +14,11 @@ export function createDatabase(url,serviceKey,{fetchImpl=fetch}={}){
     async community(owner,action,data){
       if(action==="presence"){const {error}=await client.rpc("bytequest_update_presence",{owner_id:owner,page_id:data.page,new_sequence:data.sequence,is_active:data.active,idle_ms:data.idleForMs});rpcError(error);return{ok:true};}
       if(action==="profile-presence"){const {data:result,error}=await client.rpc("bytequest_read_presence",{viewer_id:owner,target:data.target});rpcError(error);return result;}
+      if(action==="friend-presence"){const {data:result,error}=await client.rpc("bytequest_friend_presence",{viewer_id:owner});rpcError(error);return result;}
+      if(action==="profile-save"&&(data.discoverable===undefined||data.show_presence===undefined)){
+        const current=checked(await client.from("bytequest_social_profiles").select("discoverable,show_presence").eq("owner_id",owner).maybeSingle());
+        data={...data,discoverable:data.discoverable??current?.discoverable??true,show_presence:data.show_presence??current?.show_presence??true};
+      }
       const {data:result,error}=await client.rpc("bytequest_community",{owner_id:owner,action,data});rpcError(error);
       if(result.profile&&['profile','follow'].includes(action)){const presence=await client.rpc("bytequest_read_presence",{viewer_id:owner,target:result.profile.public_id});rpcError(presence.error);result.presence=presence.data.presence;}
       return enrich(result);
