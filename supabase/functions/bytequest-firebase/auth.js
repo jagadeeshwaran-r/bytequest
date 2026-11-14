@@ -37,5 +37,5 @@ export async function verifyFirebaseToken(token,{projectId,keyResolver=resolveCe
   if(typeof payload.sub!=="string"||!payload.sub.length||payload.sub.length>128||/[\x00-\x1f\x7f]/.test(payload.sub))throw new Error("Invalid account identity");
   if(!Number.isInteger(payload.iat)||payload.iat>seconds+5||!Number.isInteger(payload.auth_time)||payload.auth_time>seconds+5||payload.auth_time<0)throw new Error("Invalid token time");
   if(payload.firebase?.sign_in_provider!=="google.com"||payload.email_verified!==true||typeof payload.email!=="string"||payload.email.length>320)throw new Error("Sign in with a verified Google account");
-  return {id:"firebase:"+projectId+":"+payload.sub,projectId,uid:payload.sub,email:payload.email};
+  return {id:"firebase:"+projectId+":"+payload.sub,projectId,uid:payload.sub,email:payload.email,authTime:payload.auth_time};
 }

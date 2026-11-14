@@ -41,7 +41,7 @@ export function createFriendToasts(doc=document,{setTimer=setTimeout,clearTimer=
  return{show(friend){
   while(region.children.length>=3)remove(region.firstElementChild);
   const toast=doc.createElement('div');toast.className='friend-alert';
-  const dot=doc.createElement('span');dot.className='friend-alert-dot';dot.setAttribute('aria-hidden','true');
+  const dot=doc.createElement('span');dot.className='friend-alert-avatar';dot.setAttribute('aria-hidden','true');dot.textContent=(friend.display_name||friend.username||'?').charAt(0).toUpperCase();if(friend.avatar_url&&/^https:\/\//.test(friend.avatar_url)){const img=doc.createElement('img');img.src=friend.avatar_url;img.alt='';img.referrerPolicy='no-referrer';dot.replaceChildren(img);}
   const link=doc.createElement('a');link.href='./community.html#user/'+encodeURIComponent(friend.username);
   const name=doc.createElement('strong');name.textContent=friend.display_name||'@'+friend.username;
   const detail=doc.createElement('span');detail.textContent='is online now';link.append(name,detail);

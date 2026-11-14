@@ -1,10 +1,12 @@
+import {mountEditorTools} from './editor-tools.js?v=upgrade-2';
+import {pointsFor,totalPoints} from './rewards.js?v=upgrade-2';
 import {companyIcon} from './companies.js?v=social-1';
 import {mountWorkspace} from './workspace.js';
-import {mountShell} from "./shell.js?v=social-1";
-import {Dashboard} from "./dashboard.js?v=presence-1";
+import {mountShell} from "./shell.js?v=upgrade-2";
+import {Dashboard} from "./dashboard.js?v=upgrade-2";
 import {languages,starterFor,NativeJudge} from "./languages.js?v=presence-1";
 import {problems as bundledProblems} from "./problems.js";
-import {Cloud} from "./cloud.js?v=presence-1";
+import {Cloud} from "./cloud.js?v=upgrade-2";
 import {blankProgress, validateProgress, mergeProgress} from "./progress.js";
 import {Studio} from "./studio.js?v=social-1";
 const problems=[...bundledProblems];
@@ -36,6 +38,8 @@ let busy = false, runEpoch = 0, watchdog, toastTimer, traceTimer, traceStep = 0;
 let timerStarted = null, timerUsed = 0, timerProblem = current.id, timerTick;
 let referenceUsed = false;
 const reviewDays = [2,7,21];
+const codeTools=mountEditorTools($("codeEditor"),{getLanguage:()=>language,getProblem:()=>current,notify});
+const loadEditor=value=>codeTools.load((accountOwner||"guest")+":"+draftId(),value);
 const topicEmoji = {"Hash maps":"🗂️","Strings":"🔤","Binary search":"🔎","Two pointers":"👉","Arrays":"🌿","Sliding window":"🪟","Stacks":"🧱","Dynamic programming":"🌱","Math":"✳️"};
 const javaJudge = new JavaJudge(message => {
   $("runStatus").textContent = message;refreshJavaStatus();
@@ -66,7 +70,7 @@ function streak() {
   if(!dates.has(dateKey(d)))d.setDate(d.getDate()-1);
   let count=0; while(dates.has(dateKey(d))){count++;d.setDate(d.getDate()-1);} return count;
 }
-function xp() { return Object.keys(state.solved).length*100 + Object.values(state.reviews).reduce((sum,r)=>sum+r.step*20,0); }
+function xp() { return totalPoints(state,problems); }
 function dueTime(id) { const r=state.reviews[id]; if(!r||r.step>=3)return Infinity; return r.anchor+reviewDays[r.step]*86400000; }
 function due(id) { return dueTime(id)<=Date.now(); }
 function updateStats() { $("solvedCount").textContent=problems.filter(p=>state.solved[p.id]).length; $("solvedTotal").textContent=problems.length; $("catalogCount").textContent=problems.length+" problems · "+topics.length+" topics"; $("xpCount").textContent=xp(); $("streak").textContent=streak(); $("level").textContent=1+Math.floor(xp()/300); }
@@ -82,7 +86,6 @@ function saveDraft(){state.drafts[draftId()]=$("codeEditor").value;touch("drafts
 $("codeEditor").addEventListener("input",saveDraft);
 $("codeEditor").addEventListener("scroll",syncScroll);
 $("codeEditor").addEventListener("keydown",event=>{
-  if(event.key==="Tab"){event.preventDefault();const e=event.target;const start=e.selectionStart,end=e.selectionEnd;e.setRangeText("    ",start,end,"end");saveDraft();}
   if((event.ctrlKey||event.metaKey)&&event.key==="Enter"){event.preventDefault();run(false);}
 });
 function renderPractice() {
@@ -97,7 +100,7 @@ function renderPractice() {
   $("questMinutes").textContent=current.difficulty==="Easy"?"15–25 min":current.difficulty==="Medium"?"25–35 min":"35–50 min";
   $("problemSelect").value=current.id;
   $("learnMode").classList.toggle("active",mode==="learn"); $("challengeMode").classList.toggle("active",mode==="challenge");
-  $("codeEditor").value=state.drafts[draftId()]??currentStarter(); updateEditor();
+  loadEditor(state.drafts[draftId()]??currentStarter()); updateEditor();
   $("hintText").textContent="Stuck? Take one small hint."; hints=0;
   $("hintBtn").textContent="Get a hint ↗"; $("hintBtn").disabled=false;
   renderLearning(); renderTests();
@@ -117,13 +120,13 @@ function renderLearning(){
   } else {
     content+='<span class="pattern-tag">A LITTLE MOVING PICTURE</span><h3>Watch the idea click.</h3><p class="body-copy">A guided trace of the reference approach. Your code runs separately in the editor.</p><div id="traceBoard" class="trace-board"></div><p id="traceCaption" class="trace-caption"></p><div class="trace-controls"><button id="traceBack" aria-label="Previous animation step">←</button><button id="tracePlay" class="play-trace">▶ Play</button><button id="traceNext" aria-label="Next animation step">→</button><button id="traceReset" aria-label="Restart animation">↻</button><span id="traceCounter" class="trace-counter"></span></div><div class="code-note">Pause at any step. Say out loud: <i>“What do I know so far, and what changes next?”</i></div>';
   }
+  if(tab==="learn")content+='<section class="language-guidance"><h4>'+html(languages[language].name)+' coding tips</h4><p>'+html(({java:'Use the provided method signature. HashMap and HashSet give expected O(1) lookup; use long when int can overflow.',python:'Keep the generated function and parameters. Return the result instead of printing or reading stdin. Use dict or set for lookup, enumerate for indexed iteration, and four spaces per indentation level.',c:'Keep the generated function signature. Check array lengths before indexing and free memory you allocate. Use long long for large sums.',cpp:'Keep the generated function signature. Return the result; do not add main or read stdin. Use std::vector, std::unordered_map and std::sort; prefer long long for large sums.'})[language])+'</p><small>Suggestions: Ctrl + Space · Accept: Tab · New line: auto-indent · Undo: Ctrl / ⌘ Z · Clipboard disabled in the editor</small></section>';
   $("learningContent").innerHTML=content;
   if($("timerButton")){$("timerButton").onclick=toggleTimer;updateTimer();}
   if($("referenceBtn"))$("referenceBtn").onclick=()=>{
     referenceUsed=true;
-    $("referenceContent").innerHTML='<p class="reference-reveal-note">Trace the idea, then close this and try it yourself.</p><pre class="reference-code">'+html(current.reference)+'</pre><button id="copyReference" class="reference-button">Try this code in the editor</button>';
+    $("referenceContent").innerHTML='<p class="reference-reveal-note">Trace the idea, then close this and try it yourself.</p><pre class="reference-code">'+html(current.reference)+'</pre>';
     $("referenceBtn").hidden=true;
-    $("copyReference").onclick=()=>{if(language!=="java")setLanguage("java");state.drafts[current.id]=current.reference;touch("drafts",current.id);$("codeEditor").value=current.reference;persist();updateEditor();notify("Walkthrough loaded. Try changing one line and predict what happens.");};
   };
   if(tab==="visual"){
     traceStep=0;renderTrace();
@@ -223,7 +226,7 @@ function completeQuest(p){
   else if(isReview){state.reviews[p.id].step++;}
   if(first||isReview)state.activity.push({id:p.id,at:Date.now(),type:first?"solved":"review",passed:p.tests.length,total:p.tests.length});
   $("successTitle").textContent=first?"Aha! Quest complete.":isReview?"That pattern is sticking.":"Another good repetition.";
-  $("successCopy").textContent=(first?"+100 XP! ":isReview?"+20 review XP! ":"")+p.title+" passed all built-in cases and your custom checks. "+(first?"Your first review is in 2 days.":isReview?"Review progress saved.":"Try explaining why your approach works.");
+  $("successCopy").textContent=(first?"+"+pointsFor(p.difficulty)+" points! ":isReview?"Review complete! ":"")+p.title+" passed all built-in cases and your custom checks. "+(first?"Your first review is in 2 days.":isReview?"Review progress saved.":"Try explaining why your approach works.");
   $("successNote").value=state.notes[p.id]||"";
   document.querySelectorAll("[data-confidence]").forEach(b=>b.classList.toggle("selected",Number(b.dataset.confidence)===state.confidence[p.id]));
   persist();updateStats();$("successDialog").showModal();celebrate();
@@ -262,7 +265,7 @@ $("customForm").onsubmit=event=>{
   }catch(error){$("customError").textContent=error.message;}
 };
 $("resetCode").onclick=()=>$("resetDialog").showModal();
-$("confirmReset").onclick=()=>{state.drafts[draftId()]=currentStarter();touch("drafts",draftId());$("codeEditor").value=currentStarter();persist();updateEditor();results=null;renderTests();$("resultOutput").replaceChildren();$("resetDialog").close();notify("A fresh starter is ready.");};
+$("confirmReset").onclick=()=>{state.drafts[draftId()]=currentStarter();touch("drafts",draftId());loadEditor(currentStarter());persist();updateEditor();results=null;renderTests();$("resultOutput").replaceChildren();$("resetDialog").close();notify("A fresh starter is ready.");};
 document.querySelectorAll(".dialog-close,.dialog-close-button").forEach(b=>b.onclick=()=>b.closest("dialog").close());
 document.querySelectorAll("dialog").forEach(d=>d.addEventListener("click",event=>{if(event.target===d){const r=d.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)d.close();}}));
 $("aboutBtn").onclick=()=>$("aboutDialog").showModal();
@@ -284,12 +287,12 @@ function renderMap(){
   const pattern=$("patternFilter").value,technique=$("techniqueFilter").value;
   const query=$("searchInput").value.toLowerCase(),topic=$("topicFilter").value,level=$("difficultyFilter").value,status=$("statusFilter").value;
   const list=problems.filter(p=>(p.title+" "+String(problems.indexOf(p)+1)).toLowerCase().includes(query)&&(!topic||p.topic===topic)&&(!pattern||(p.pattern||p.topic)===pattern)&&(!technique||(p.techniques||[]).includes(technique))&&(!level||p.difficulty===level)&&(!status||(status==="solved"?state.solved[p.id]:status==="new"?!state.solved[p.id]:due(p.id))));
-  $("questGrid").innerHTML=list.length?'<table class="problem-table"><thead><tr><th>No.</th><th>Title</th><th>Companies</th><th>Difficulty</th><th>Status</th></tr></thead><tbody>'+list.map(p=>'<tr><td>'+String(problems.indexOf(p)+1).padStart(2,'0')+'</td><td><button class="problem-title" data-problem="'+p.id+'">'+html(p.title)+'</button></td><td>'+((p.companies||[]).map(companyIcon).join('')||'<span class="muted">—</span>')+'</td><td><span class="difficulty '+p.difficulty.toLowerCase()+'">'+html(p.difficulty)+'</span></td><td>'+ (state.solved[p.id]?'Solved':'Unsolved')+'</td></tr>').join('')+'</tbody></table><p class="company-note">Company tags are community-reported historical associations, not employer endorsements. <a href="https://github.com/duanehutchins/leetcode-questions-by-company" target="_blank" rel="noopener">Tag source</a></p>':'<p class="empty-state">No matching problems.</p>';
+  $("questGrid").innerHTML=list.length?'<table class="problem-table"><thead><tr><th>No.</th><th>Title</th><th>Companies</th><th>Difficulty</th><th>Status</th></tr></thead><tbody>'+list.map(p=>'<tr><td>'+String(problems.indexOf(p)+1).padStart(2,'0')+'</td><td><button class="problem-title" data-problem="'+p.id+'">'+html(p.title)+'</button></td><td>'+((p.companies||[]).map(companyIcon).join('')||'<span class="muted">—</span>')+'</td><td><span class="difficulty '+p.difficulty.toLowerCase()+'">'+html(p.difficulty)+'</span><small class="problem-points">'+pointsFor(p.difficulty)+' pts</small></td><td>'+ (state.solved[p.id]?'Solved':'Unsolved')+'</td></tr>').join('')+'</tbody></table><p class="company-note">Company tags are community-reported historical associations, not employer endorsements. <a href="https://github.com/duanehutchins/leetcode-questions-by-company" target="_blank" rel="noopener">Tag source</a></p>':'<p class="empty-state">No matching problems.</p>';
   $("questGrid").querySelectorAll("[data-problem]").forEach(b=>b.onclick=()=>changeProblem(b.dataset.problem));
 }
 function renderProgress(){
   const solved=problems.filter(p=>state.solved[p.id]).length, dueCount=problems.filter(p=>due(p.id)).length;
-  const stats=[["QUESTS SOLVED",solved+" / "+problems.length,"One idea at a time."],["XP EARNED",xp(),"Level "+(1+Math.floor(xp()/300))+" Java explorer"],["DAY STREAK",streak(),"A small daily win counts."],["READY TO REVISIT",dueCount,"Reviews at 2 / 7 / 21 days"]];
+  const stats=[["QUESTS SOLVED",solved+" / "+problems.length,"One idea at a time."],["POINTS EARNED",xp(),"Level "+(1+Math.floor(xp()/300))+" Java explorer"],["DAY STREAK",streak(),"A small daily win counts."],["READY TO REVISIT",dueCount,"Reviews at 2 / 7 / 21 days"]];
   $("progressCards").innerHTML=stats.map(c=>'<div class="progress-stat"><small>'+c[0]+'</small><b>'+c[1]+'</b><p>'+c[2]+'</p></div>').join("");
   $("topicProgress").innerHTML=topics.map(topic=>{
     const list=problems.filter(p=>p.topic===topic),done=list.filter(p=>state.solved[p.id]).length;
@@ -301,7 +304,7 @@ function renderProgress(){
   $("reviewQueue").querySelectorAll("[data-review]").forEach(b=>b.onclick=()=>changeProblem(b.dataset.review));
   $("activityList").innerHTML=state.activity.length?[...state.activity].reverse().slice(0,12).map(a=>{
     const p=problems.find(p=>p.id===a.id);
-    return '<div class="activity-row"><span class="activity-icon">'+(a.type==="solved"?"✦":a.type==="review"?"↻":"⌘")+'</span><div><strong>'+html(p?.title||a.id)+'</strong> · '+(a.type==="solved"?"Quest completed · +100 XP":a.type==="review"?"Review complete · +20 XP":a.passed+"/"+a.total+" tests passed")+'</div><time>'+new Date(a.at).toLocaleDateString(undefined,{month:"short",day:"numeric"})+'</time></div>';
+    return '<div class="activity-row"><span class="activity-icon">'+(a.type==="solved"?"✦":a.type==="review"?"↻":"⌘")+'</span><div><strong>'+html(p?.title||a.id)+'</strong> · '+(a.type==="solved"?"Quest completed · +"+pointsFor(p?.difficulty)+" points":a.type==="review"?"Review complete":a.passed+"/"+a.total+" tests passed")+'</div><time>'+new Date(a.at).toLocaleDateString(undefined,{month:"short",day:"numeric"})+'</time></div>';
   }).join(""):'<div class="empty-state">Your story starts with one attempt. Head to the practice lab.</div>';
 }
 $("exportBtn").onclick=()=>{
@@ -366,7 +369,7 @@ async function syncCloud(){
     const merged=await cloud.syncProgress(owner,JSON.parse(snapshot),mergeProgress);if(epoch!==accountEpoch||cloud.user?.id!==owner)return;
     const changedWhileSaving=JSON.stringify(state)!==snapshot;state=mergeProgress(state,merged);
     try{localStorage.setItem(storageKey,JSON.stringify(state));}catch{}
-    if(current&&document.activeElement!==$("codeEditor")){$("codeEditor").value=state.drafts[draftId()]??currentStarter();updateEditor();}
+    if(current&&document.activeElement!==$("codeEditor")){loadEditor(state.drafts[draftId()]??currentStarter());updateEditor();}
     updateStats();if(location.hash==="#progress")renderProgress();
     $("saveStatus").textContent=changedWhileSaving?"New edits saved here · sync queued":"Draft saved to your account";
     setSyncStatus("synced",changedWhileSaving?"New changes queued":"Saved to cloud");$("authMessage").textContent="";

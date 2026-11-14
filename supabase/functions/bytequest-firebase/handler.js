@@ -15,7 +15,7 @@ async function readBody(req){
   if(!body||typeof body!=="object"||Array.isArray(body))throw new HttpError(400,"Send a JSON object.");return body;
 }
 function integer(value,max=Number.MAX_SAFE_INTEGER){return Number.isSafeInteger(value)&&value>=0&&value<=max;}
-export function createHandler({projectId,allowedOrigins,verifyToken,db,privateJudge,onlineJudge}){
+export function createHandler({projectId,allowedOrigins,verifyToken,db,privateJudge,onlineJudge,deleteFirebaseAccount}){
   return async req=>{
     const origin=req.headers.get("origin");
     const headers={"Content-Type":"application/json","Cache-Control":"no-store","Vary":"Origin"};
@@ -30,7 +30,16 @@ export function createHandler({projectId,allowedOrigins,verifyToken,db,privateJu
     let identity;try{identity=await verifyToken(authorization.slice(7));}catch{return reply(401,{error:"Your sign-in expired or could not be verified. Please sign in again."});}
     try{
       const body=await readBody(req),action=body.action;
-      if(!["account","progress","sync","studio-list","studio-save","hidden-submit","avatar-upload","native-run",...communityActions].includes(action))throw new HttpError(400,"Unknown account action.");
+      if(!["account-delete","account","progress","sync","studio-list","studio-save","hidden-submit","avatar-upload","native-run",...communityActions].includes(action))throw new HttpError(400,"Unknown account action.");
+      if(action==="account-delete"){
+        if(body.confirmation!=="DELETE")throw new HttpError(400,"Type DELETE to confirm account removal.");
+        if(!deleteFirebaseAccount)throw new HttpError(503,"Account deletion is unavailable. Try again later.");
+        const status=await db.deletionStatus(identity.id);
+        if(!status&&(!Number.isInteger(identity.authTime)||Math.floor(Date.now()/1000)-identity.authTime>300))throw new HttpError(409,"Sign in with Google again before deleting your account.");
+        const job=await db.beginDeletion(identity.id);
+        if(!job.completed){await db.removeDeletedAvatar(job.avatar_path);await deleteFirebaseAccount(authorization.slice(7));await db.finishDeletion(identity.id);}
+        return reply(200,{ok:true,deleted:true});
+      }
       // Identity always comes from the verified Firebase token, never from a body field.
       await db.touchAccount(identity);
       if(action==="avatar-upload"){await db.uploadAvatar(identity.id,avatarBytes(body.image));return reply(200,await db.community(identity.id,"self",{}));}

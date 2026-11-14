@@ -1,23 +1,23 @@
-import {mountShell} from './shell.js?v=social-1';
-import {Cloud} from './cloud.js?v=presence-1';
-import {leaderboardRow,latestLeaderboard} from './leaderboard-model.js?v=leaderboard-1';
+import {mountShell} from './shell.js?v=upgrade-2';
+import {Cloud} from './cloud.js?v=upgrade-2';
+import {leaderboardRow,latestLeaderboard} from './leaderboard-model.js?v=upgrade-2';
 const $=id=>document.getElementById(id),shell=mountShell();let page=0,scope=location.hash==='#friends'?'friends':'global',accountGeneration=0;
 const cloud=new Cloud(()=>accountChanged());shell.connect(cloud);
 const loader=latestLeaderboard((...args)=>cloud.request(...args));
 function setMessage(text,error=false){$('leaderMessage').textContent=text;$('leaderMessage').classList.toggle('error',error);$('leaderAuthMessage').textContent=text;$('leaderAuthMessage').classList.toggle('error',error);}
 function selectScope(){for(const button of document.querySelectorAll('[data-board]')){const active=button.dataset.board===scope;button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;}const selected=document.querySelector('[data-board="'+scope+'"]');$('leaderPanel').setAttribute('aria-labelledby',selected.id);$('boardHeading').textContent=scope==='friends'?'Friends leaderboard':'Global leaderboard';$('boardDescription').textContent=scope==='friends'?'You and the people you follow, in one place.':'A shared place for every discoverable learner.';}
-function clearResults(){for(const id of ['yourRank','yourSolved','rankedLearners'])$(id).textContent='—';$('leaderRows').replaceChildren();$('leaderEmpty').hidden=true;$('leaderError').hidden=true;$('leaderPager').hidden=true;$('yourPosition').hidden=true;$('profileNudge').hidden=true;}
+function clearResults(){for(const id of ['yourRank','yourPoints','yourSolved','rankedLearners'])$(id).textContent='—';$('leaderRows').replaceChildren();$('leaderEmpty').hidden=true;$('leaderError').hidden=true;$('leaderPager').hidden=true;$('yourPosition').hidden=true;$('profileNudge').hidden=true;}
 async function load(){
  const owner=cloud.user?.id;if(!owner)return;selectScope();clearResults();$('leaderPanel').setAttribute('aria-busy','true');$('leaderLoading').hidden=false;$('leaderRefresh').disabled=true;setMessage('Loading rankings…');
  try{const response=await loader.load({scope,period:$('leaderPeriod').value,page},owner);if(!response)return;
   const r=response.result;if(page>0&&!r.users.length){page=Math.max(0,Math.ceil(r.total/r.pageSize)-1);load();return;}
   $('leaderRows').innerHTML=r.users.map(leaderboardRow).join('');$('leaderRows').querySelectorAll('img').forEach(img=>img.onerror=()=>img.remove());
-  $('yourRank').textContent=r.me?'#'+r.me.rank:'—';$('yourSolved').textContent=r.me?.solved??'—';$('rankedLearners').textContent=r.total;
+  $('yourRank').textContent=r.me?'#'+r.me.rank:'—';$('yourPoints').textContent=r.me?.points??'—';$('yourSolved').textContent=r.me?.solved??'—';$('rankedLearners').textContent=r.total;
   $('leaderEmpty').hidden=!!r.users.length;$('emptyTitle').textContent=scope==='friends'?'Build your practice circle.':'Be the first on the board.';$('emptyDescription').textContent=scope==='friends'?'Create a discoverable profile, then find and follow friends using the search above.':'Create a discoverable profile to join the leaderboard.';
   $('profileNudge').hidden=!!r.discoverable;$('profileNudgeText').textContent=r.hasProfile?'Make your profile discoverable to appear in the rankings.':'Create a profile to join the rankings and compare with friends.';
   $('friendHint').hidden=scope!=='friends'||r.total>1;
   const start=page*r.pageSize+1,end=Math.min((page+1)*r.pageSize,r.total);$('pageRange').textContent=r.total?start+'–'+end+' of '+r.total+' learners':'0 learners';$('leaderPager').hidden=r.total<=r.pageSize;$('leaderPrevious').disabled=page===0;$('leaderNext').disabled=end>=r.total;
-  $('yourPosition').hidden=!r.me||r.users.some(p=>p.isYou);$('yourPosition').textContent=r.me?'Your position: #'+r.me.rank+' · '+r.me.solved+' solved in this period.':'';
+  $('yourPosition').hidden=!r.me||r.users.some(p=>p.isYou);$('yourPosition').textContent=r.me?'Your position: #'+r.me.rank+' · '+r.me.points+' points · '+r.me.solved+' solved in this period.':'';
   setMessage('Rankings are up to date.');$('leaderLoading').hidden=true;$('leaderPanel').setAttribute('aria-busy','false');$('leaderRefresh').disabled=false;
  }catch(e){if(cloud.user?.id!==owner)return;$('leaderLoading').hidden=true;$('leaderError').hidden=false;$('leaderErrorText').textContent=e.message;$('leaderPanel').setAttribute('aria-busy','false');$('leaderRefresh').disabled=false;setMessage('Rankings could not be loaded.',true);}
 }

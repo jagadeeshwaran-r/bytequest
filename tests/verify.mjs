@@ -1,3 +1,4 @@
+import "./upgrades.mjs";
 import "./presence.mjs";
 import "./social.mjs";
 import "./leaderboard.mjs";

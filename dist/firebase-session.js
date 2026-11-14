@@ -53,6 +53,12 @@ export class FirebaseSession{
     const provider=new this.sdk.GoogleAuthProvider();provider.setCustomParameters({prompt:"select_account"});
     try{await this.sdk.signInWithPopup(this.auth,provider);}catch(error){throw new Error(firebaseAuthMessage(error));}
   }
+  async reauthenticate(ownerId){
+    const user=this.firebaseUser;if(!user||this.user?.id!==ownerId)throw new Error('Your account changed. Reopen account settings.');
+    const provider=new this.sdk.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});
+    try{await this.sdk.reauthenticateWithPopup(user,provider);}catch(error){throw new Error(firebaseAuthMessage(error));}
+    if(this.firebaseUser!==user||this.user?.id!==ownerId)throw new Error('Your account changed. Account removal was cancelled.');
+  }
   async signOut(){if(this.auth)await this.sdk.signOut(this.auth);}
   async tokenFor(ownerId,force=false){
     const user=this.firebaseUser;

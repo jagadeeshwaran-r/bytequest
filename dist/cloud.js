@@ -1,6 +1,6 @@
 import {cloudConfig} from "./config.js";
 import {firebaseConfig} from "./firebase-config.js";
-import {FirebaseSession} from "./firebase-session.js";
+import {FirebaseSession} from "./firebase-session.js?v=upgrade-2";
 import {validateProblem} from "./catalog.js?v=presence-1";
 import {blankProgress,validateProgress} from "./progress.js";
 export function validPublicConfig(config){
@@ -18,6 +18,16 @@ export class Cloud {
   async init(){await this.session.init();this.user=this.session.user;this.loginReady=this.session.ready;}
   async signIn(){await this.session.signIn();}
   async signOut(){this.onBeforeSignOut?.();await this.session.signOut();}
+  async deleteAccount(){
+    const owner=this.user?.id;if(!owner)throw new Error('Sign in to manage your account.');
+    if(!this.deletionPending)await this.session.reauthenticate(owner);
+    if(this.user?.id!==owner)throw new Error('Your account changed. Account removal was cancelled.');
+    this.onBeforeSignOut?.();this.deletionPending=true;
+    const result=await this.request('account-delete',{confirmation:'DELETE'},owner);
+    if(!result.deleted)throw new Error('Account removal did not finish. Please retry.');
+    try{for(const key of ['bytequest.user.'+owner,'bytequest.studio.'+owner])localStorage.removeItem(key);const card=JSON.parse(sessionStorage.getItem('bytequest.account-card')||'null');if(card?.owner===owner)sessionStorage.removeItem('bytequest.account-card');}catch{}
+    await this.session.signOut();this.deletionPending=false;return result;
+  }
   async publicCatalog(){
     if(!this.enabled)return null;
     const query="?select=id,content,position,revision&published=eq.true&order=position.asc,id.asc&limit=1000";
@@ -27,6 +37,7 @@ export class Cloud {
     return rows.map(row=>({...validateProblem(row.content),revision:row.revision}));
   }
   async request(action,body={},ownerId=this.user?.id){
+    if(this.deletionPending&&action!=="account-delete")throw new Error("Account removal is in progress.");
     if(!this.enabled||!ownerId||this.user?.id!==ownerId)throw new Error("Sign in to sync your progress.");
     for(let attempt=0;attempt<2;attempt++){
       const token=await this.session.tokenFor(ownerId,attempt>0);

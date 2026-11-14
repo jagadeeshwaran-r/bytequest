@@ -1,0 +1,5 @@
+import {escapeHtml as h} from './community-model.js';
+export const pointValues=Object.freeze({Easy:10,Medium:25,Hard:50});
+export const pointsFor=difficulty=>pointValues[difficulty]||0;
+export function totalPoints(progress,catalog,now=Date.now()){return catalog.reduce((sum,p)=>{const at=progress.solved?.[p.id];return sum+(Number.isFinite(at)&&at>0&&at<=now?pointsFor(p.difficulty):0);},0);}
+export function rankCup(rank){const name=({1:'Gold',2:'Silver',3:'Bronze'})[rank];if(!name)return '';return '<svg class="rank-cup '+name.toLowerCase()+'" viewBox="0 0 32 32" role="img" aria-label="'+name+' cup, rank '+h(rank)+'"><title>'+name+' · Rank '+h(rank)+'</title><path fill="currentColor" d="M9 4h14v9a7 7 0 0 1-6 6.93V24h5v4H10v-4h5v-4.07A7 7 0 0 1 9 13V4Z"/><path d="M9 7H5v4a6 6 0 0 0 6 6m12-10h4v4a6 6 0 0 1-6 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M12 6v6" stroke="white" stroke-opacity=".45" stroke-width="1.5" stroke-linecap="round"/></svg>';}

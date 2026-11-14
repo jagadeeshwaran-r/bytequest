@@ -1,8 +1,12 @@
 import {HttpError} from './handler.js';
-const actions=new Set(['leaderboard','presence','profile-presence','friend-presence','self','profile-save','search','profile','follow','followers','following','notifications','notifications-read','roles','role-set']);
+const actions=new Set(['friend-analytics','leaderboard','presence','profile-presence','friend-presence','self','profile-save','search','profile','follow','followers','following','notifications','notifications-read','roles','role-set']);
 export const communityActions=actions;
 export function validateCommunity(action,body){
  const data={};
+ if(action==='friend-analytics'){
+  if(!Array.isArray(body.targets)||body.targets.length>100||body.targets.some(id=>typeof id!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)))throw new HttpError(400,'Choose up to 100 followed profiles.');
+  data.targets=[...new Set(body.targets.map(id=>id.toLowerCase()))];
+ }
  if(action==='leaderboard'){
   const scope=body.scope??'global',period=body.period??'all',page=body.page??0;
   if(!['global','friends'].includes(scope)||!['all','week','month'].includes(period)||!Number.isSafeInteger(page)||page<0||page>1000000)throw new HttpError(400,'Choose a valid leaderboard, period and page.');

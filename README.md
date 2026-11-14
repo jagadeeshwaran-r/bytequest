@@ -4,7 +4,7 @@
 
 **A coding practice platform for building problem-solving confidence, one well-understood solution at a time.**
 
-ByteQuest combines executable problems, guided Java explanations, personal progress analytics and a community of learners. A compact, responsive workspace keeps the problem, editor and test results together, with green accents and light, dark and system themes.
+ByteQuest combines executable problems, guided Java explanations, personal progress analytics and a community of learners. A compact, responsive workspace keeps the problem, editor and test results together, with green accents, a binary “byte” wordmark, glossy surfaces, and light, dark and system themes.
 
 [**Open ByteQuest**](https://jagadeeshwaran-r.github.io/bytequest/) · [Leaderboard](https://jagadeeshwaran-r.github.io/bytequest/leaderboard.html) · [Backend guide](DATABASE.md) · [Report an issue](https://github.com/jagadeeshwaran-r/bytequest/issues)
 
@@ -16,11 +16,13 @@ ByteQuest combines executable problems, guided Java explanations, personal progr
 | --- | --- |
 | Problem solving | Search and filter the problem list; view company logos, difficulty, descriptions, constraints and examples; resize the editor and problem panes. |
 | Executable practice | Run Java 17 in a browser JVM. Run Python, C and C++ online through the authenticated compiler API. Inspect public sample/custom cases, compiler diagnostics and return-value comparisons. |
+| Code editor | Language-specific suggestions for Java, Python, C and C++; four-space indentation and automatic newlines; Ctrl/Cmd+Z undo and redo; clipboard actions disabled inside the editor. |
 | Learning | Explore pattern explanations, invariants, hints, complexity, trade-offs, Java reference solutions and animated reference-algorithm walkthroughs. |
 | Progress | Save drafts per language, record first solves, track activity and streaks, review on a 2/7/21-day schedule, and export or merge JSON backups. |
-| Profiles and friends | Sign in with Google, upload a profile photo, find people from the header, follow learners, and compare solving history with up to two friends. |
-| Leaderboards | Switch between Global and Friends rankings on one page. Filter by all time, this week or this month; see your rank and difficulty breakdown. |
-| Community updates | Open the inbox popover for new problems and corrections. See temporary friend-online banners and relative last-seen status when shared. |
+| Profiles and friends | Sign in with Google, upload a profile photo, find people from the header, follow learners, view rank, points, streaks and follower lists, and compare solving history with multiple or all followed friends. |
+| Leaderboards | Switch between Global and Friends rankings on one page. Filter by all time, this week or this month; earn 10/25/50 points for Easy/Medium/Hard, with shared ranks and gold, silver and bronze cups for the top three. |
+| Community updates | Open the inbox popover for new problems and corrections. See photo or initial avatars in temporary friend-online banners and relative last-seen status when shared. |
+| Account control | Delete your ByteQuest account after recent Google verification. Private learning records and photos are removed; published community problems remain without account attribution. |
 | Problem authoring | Create and publish your own problems from the separate studio, attach private cases, use the company-logo picker, import problem packs and publish correction notes. |
 
 The bundled starter catalog contains **16 original runnable problems across 9 topics, with 81 built-in Java checks**. The live database catalog can grow without redeploying the frontend. A 500-problem import workflow is available; 500 problems are not preloaded in this repository.
@@ -69,7 +71,7 @@ Guest Java practice and local backups work without an account. Cloud features re
 
 - **Global** includes discoverable learner profiles. **Friends** includes your discoverable profile and the discoverable people you follow.
 - Each currently published problem counts once, using its earliest synced completion timestamp. Repeated attempts and reviews do not add solves.
-- Equal solve counts share a competition rank: for example, **1, 2, 2, 4**. Usernames provide a stable display order within a tie.
+- Each first solve earns **10 points for Easy, 25 for Medium, or 50 for Hard**. Equal point totals share a competition rank: for example, **1, 2, 2, 4**. Usernames provide a stable display order within a tie.
 - Weekly rankings start on Monday. Week and month boundaries use **UTC**.
 - Your rank remains visible in the summary even when your row is outside the current page. Lists are paginated in groups of 25.
 - Rankings require sign-in and use synced, self-reported practice progress. They are intended for learning motivation, not verified contest scoring.
@@ -114,7 +116,7 @@ npm run build
 npm test
 ```
 
-The suite covers real Java reference solutions and diagnostics, native Python/C/C++ harnesses, authentication and owner isolation, progress merging, author permissions, image validation, presence, friend alerts and leaderboard requests. Rollback-only database fixtures in `tests/leaderboard.sql` additionally check ranking, time windows, privacy, following, pagination and function permissions.
+The suite covers real Java reference solutions and diagnostics, native Python/C/C++ harnesses, authentication and owner isolation, progress merging, author permissions, image validation, presence, friend alerts, leaderboard requests, language suggestions, editor history, smooth chart paths and account deletion safeguards. Rollback-only database fixtures in `tests/leaderboard.sql` and `tests/upgrades.sql` additionally check weighted/shared ranks, time windows, comparison privacy, pagination, account-removal cascades, anonymization, retry behavior and service-only function permissions. No real account is deleted during validation.
 
 ## Repository guide
 

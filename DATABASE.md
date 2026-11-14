@@ -15,7 +15,7 @@ This guide describes the current Firebase identity and Supabase data architectur
 | Function entrypoint / import map | `index.ts` / `deno.json` |
 | Browser SDKs | Firebase 13.3.0; server dependencies pinned in `deno.json` |
 
-`dist/firebase-config.js` contains public Firebase web configuration. `dist/config.js` contains the Supabase URL and a browser-safe publishable key. These files must never contain a service account, private key, OAuth client secret or Supabase service credential.
+`dist/firebase-config.js` contains public Firebase web configuration. Keep its server copy, `supabase/functions/bytequest-firebase/domain/firebase-config.js`, identical; account deletion uses that project’s public web API key. `dist/config.js` contains the Supabase URL and a browser-safe publishable key. These files must never contain a service account, private key, OAuth client secret or Supabase service credential.
 
 For a separate deployment, create your own projects, replace the public configuration, update the fixed Firebase project in the function entrypoint, enable Google's sign-in provider, and configure Firebase authorized domains. Update the function's exact `allowedOrigins` list for that deployment. Localhost is not allowed by the production API.
 
@@ -62,6 +62,8 @@ SQL files are successive schema snapshots and changes, rather than an automatic 
 6. `database/active-presence.sql`, then `database/presence-expired-last-seen.sql`
 7. `database/social-defaults-and-friend-presence.sql`
 8. `database/leaderboard.sql`
+9. `database/points-and-awards.sql`
+10. `database/account-removal-functions.sql`
 
 Use new reviewed migrations for later changes. Keep all private-table RLS, function grants and ownership predicates in place.
 
@@ -91,14 +93,28 @@ Profile status displays a radar dot while online and relative last-seen time oth
 | --- | --- |
 | Global scope | All discoverable profiles |
 | Friends scope | The viewer's discoverable profile and discoverable accounts they follow |
-| Score | Count of currently published problems with a valid positive first-solve timestamp |
+| Score | Easy 10, Medium 25, Hard 50 points per first solve of a currently published problem; only valid positive timestamps |
 | Periods | All time, UTC week starting Monday, UTC month |
 | Exclusions | Unknown/draft/unpublished problem IDs, invalid values and future timestamps |
-| Ties | Competition rank by solve count; username orders tied rows |
+| Ties | Competition rank by total points; username orders tied rows |
 | Pagination | 25 profiles per page; the viewer's rank is returned separately |
-| Privacy | Only selected profile fields and aggregate counts; no raw progress or account identity |
+| Privacy | Only selected profile fields and aggregate points/counts; no raw progress or account identity |
 
 Avatars for list entries and the viewer are signed before returning. The API accepts only validated scope/period/page values and always supplies the viewer from the verified token. Rankings are motivational, self-reported practice records, not trusted contest results. Changes appear after progress sync; the page's **Refresh** button fetches current rankings.
+
+Profile ranks use the global all-time board, with the same published-problem and timestamp filters. Private profiles can see their own points but have no public rank. The first three shared ranks receive gold, silver and bronze cups. Role badges are read from the server administrator table.
+
+`bytequest_friend_analytics(viewer_id, targets)` accepts up to 100 public profile UUIDs in one batch. It returns only followed, discoverable learners with public profile fields, UTC first-solve dates and topics. It excludes malformed/future dates and unpublished problem IDs. The client can select multiple or all followed friends; colors, photos/initials, crosshair details and an accessible data table identify each series. Animation respects reduced-motion preferences.
+
+## Account removal
+
+The shared account menu and **Edit profile** expose account removal. The learner types `DELETE` and verifies their Google identity. The API requires a verified Firebase token and recent `auth_time` (five minutes) for a new removal; request-body owner IDs are ignored.
+
+`bytequest_begin_account_deletion` acquires an account advisory lock, writes a SHA-256 owner tombstone, deletes unpublished authored problems, anonymizes retained revision attribution and removes the Firebase profile. Foreign keys remove private progress, public profile, follows, presence sessions, author/role links, read cursors and compiler limits. Published problems and their private tests remain part of the community library without the deleted account's attribution.
+
+The API then removes the uploaded Storage photo, deletes this project's Firebase Authentication user through Google's fixed Identity Toolkit endpoint, and marks the removal complete. It never deletes the person's Google account. Failed cleanup is retryable; a pending job allows the verified owner to finish it without recreating their profile. `bytequest_touch_active_account` uses the same lock and rejects tombstoned identities, preventing an old token from resurrecting removed records.
+
+`bytequest_account_deletions` is private, RLS-enabled and inaccessible to browser roles. It retains only an owner hash, request/completion times, and a photo path until cleanup completes. The current browser clears the removed account's local progress/drafts and signs out. Offline caches on other devices are outside this server's control and can be cleared in those browsers.
 
 ## Problem authoring and permissions
 
@@ -146,6 +162,6 @@ npm test
 
 The test suite covers real Java/native execution, owner isolation, author permissions, revision handling, presence, friend alerts, safe rendering and leaderboard requests. The browser and server domain contracts must remain identical where asserted by the tests.
 
-Rollback-only SQL checks include `tests/leaderboard.sql`, `tests/social-presence.sql`, and the `database/verify-*.sql` access checks. Run them as an operator, inspect their returned verification result, and confirm fixtures were rolled back. Use disposable fixture identities rather than modifying real users for testing.
+Rollback-only SQL checks include `tests/leaderboard.sql`, `tests/upgrades.sql`, `tests/social-presence.sql`, and the `database/verify-*.sql` access checks. Run them as an operator, inspect their returned verification result, and confirm fixtures were rolled back. Use disposable fixture identities rather than modifying real users for testing.
 
 After deployment, verify `/health`, confirm an unsigned private request returns 401, run security advisors, and test the live UI with an existing authorized session. GitHub's workflow independently builds/tests the frontend before publishing. Monitor actual provider quotas and keep exported backups; this documentation does not promise unlimited free usage.
