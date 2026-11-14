@@ -1,7 +1,7 @@
-import {receivedPresence,presenceOnline} from './presence-model.js';
+import {receivedPresence,presenceOnline} from './presence-model.js?v=presence-2';
 import {Dashboard} from './dashboard.js?v=presence-1';
 import {analyticsMarkup} from './profile-analytics.js';
-import {mountShell} from './shell.js?v=presence-1';
+import {mountShell} from './shell.js?v=presence-2';
 import {prepareAvatar} from './avatar-upload.js';
 import {Cloud} from './cloud.js?v=presence-1';
 import {activityStats,escapeHtml as h} from './community-model.js';

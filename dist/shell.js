@@ -1,5 +1,5 @@
 import {mountPresence} from './presence.js';
-import {accountCard} from './presence-model.js';
+import {accountCard} from './presence-model.js?v=presence-2';
 import {escapeHtml as h} from './community-model.js';
 export function mountShell(){
  const toggle=document.getElementById('profileMenuToggle'),menu=document.getElementById('profileMenu'),slot=document.getElementById('menuAccountSlot');let cloud=null,identity=null,epoch=0,timer,tracker=null,card=null,painted=null,notificationOwner=null;

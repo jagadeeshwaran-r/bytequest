@@ -1,6 +1,6 @@
 import {companyIcon} from './companies.js';
 import {mountWorkspace} from './workspace.js';
-import {mountShell} from "./shell.js?v=presence-1";
+import {mountShell} from "./shell.js?v=presence-2";
 import {Dashboard} from "./dashboard.js?v=presence-1";
 import {languages,starterFor,NativeJudge} from "./languages.js?v=presence-1";
 import {problems as bundledProblems} from "./problems.js";
