@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import {validateCommunity} from '../supabase/functions/bytequest-firebase/community.js';
+import {createHandler} from '../supabase/functions/bytequest-firebase/handler.js';
+import {createDatabase} from '../supabase/functions/bytequest-firebase/database.js';
+import {leaderboardRow,latestLeaderboard} from '../dist/leaderboard-model.js';
+assert.deepEqual(validateCommunity('leaderboard',{}),{scope:'global',period:'all',page:0});
+assert.deepEqual(validateCommunity('leaderboard',{scope:'friends',period:'month',page:2,viewer_id:'forged'}),{scope:'friends',period:'month',page:2});
+for(const patch of [{scope:'all-users'},{period:'year'},{page:-1},{page:1.5},{page:1000001},{page:'1'}])assert.throws(()=>validateCommunity('leaderboard',patch));
+const calls=[];const handler=createHandler({projectId:'fixture',allowedOrigins:['https://bytequest.test'],verifyToken:async()=>({id:'verified-viewer'}),db:{touchAccount:async()=>{},community:async(...args)=>{calls.push(args);return{users:[],total:0};}}});
+const request=body=>new Request('https://example.invalid',{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://bytequest.test',Authorization:'Bearer fixture'},body:JSON.stringify(body)});
+assert.equal((await handler(request({action:'leaderboard',scope:'friends',period:'week',page:1,viewer_id:'victim',isAdmin:true}))).status,200);assert.deepEqual(calls[0],['verified-viewer','leaderboard',{scope:'friends',period:'week',page:1}]);
+const unsigned=request({action:'leaderboard'});unsigned.headers.delete('Authorization');assert.equal((await handler(unsigned)).status,401);
+const dbCalls=[];const row={public_id:'public-fixture',username:'fixture',display_name:'Fixture',rank:26,solved:1,easy:1,medium:0,hard:0,isYou:true,avatar_path:'public-fixture/avatar.jpg',avatar_url:''};
+const db=createDatabase('https://example.supabase.co','fixture-key',{fetchImpl:async(url,options)=>{
+ const path=new URL(url).pathname,body=JSON.parse(options.body);dbCalls.push({path,body});
+ const result=path.endsWith('/bytequest_leaderboard')?{users:[{...row}],me:{...row},total:26}:[{path:'public-fixture/avatar.jpg',signedURL:'/object/sign/bytequest-avatars/public-fixture/avatar.jpg?token=fixture'}];
+ return new Response(JSON.stringify(result),{headers:{'Content-Type':'application/json'}});
+}});
+const result=await db.community('verified-viewer','leaderboard',{scope:'friends',period:'all',page:1});assert.deepEqual(dbCalls[0].body,{viewer_id:'verified-viewer',board_scope:'friends',ranking_period:'all',page_number:1});assert.equal(result.me.avatar_path,undefined);assert.equal(result.users[0].avatar_path,undefined);assert.ok(result.me.avatar_url.startsWith('https://example.supabase.co/storage/v1/object/sign/'));assert.equal(result.me.avatar_url,result.users[0].avatar_url);
+const malicious=leaderboardRow({...row,display_name:'<script>alert(1)</script>',username:'a"><img>',avatar_url:'javascript:alert(1)'});assert.ok(!malicious.includes('<script>'));assert.ok(!malicious.includes('javascript:'));assert.ok(malicious.includes('&lt;script&gt;'));assert.ok(malicious.includes('class="your-ranking"'));assert.ok(leaderboardRow({...row,avatar_url:'https://example.invalid/a.jpg'}).includes('referrerpolicy="no-referrer"'));
+const pending=[];const loader=latestLeaderboard((...args)=>new Promise((resolve,reject)=>pending.push({args,resolve,reject})));
+const first=loader.load({scope:'global'},'owner-a'),second=loader.load({scope:'friends'},'owner-a');pending[1].resolve({scope:'friends'});assert.deepEqual(await second,{result:{scope:'friends'}});pending[0].resolve({scope:'global'});assert.equal(await first,null,'Slow responses cannot replace the selected board.');
+const beforeSwitch=loader.load({},'owner-a');loader.cancel();pending[2].reject(new Error('stale account'));assert.equal(await beforeSwitch,null,'Old-account failures cannot overwrite the new page state.');
+console.log('PASS: leaderboard filters, verified viewer binding, unsigned rejection, private avatar signing, safe profile rendering and stale-response cancellation.');

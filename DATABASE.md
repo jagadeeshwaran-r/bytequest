@@ -1,197 +1,151 @@
-# ByteQuest: Firebase login and Supabase data
+# ByteQuest backend and operations
 
-Google login is implemented with Firebase Authentication. GitHub Pages remains the host, and Supabase retains the problem library and learning progress. Java compilation and execution remain local to the visitor's browser.
+This guide describes the current Firebase identity and Supabase data architecture. The static interface is hosted on GitHub Pages. Java executes in the browser; Python, C and C++ execute through the verified online-compiler API.
 
-## Project configuration
+## Deployment configuration
 
-| Component | Actual project / configuration |
+| Component | Current configuration |
 | --- | --- |
 | Website | https://jagadeeshwaran-r.github.io/bytequest/ |
-| Firebase | ByteQuest, project ID `bytequest-7b841`, Spark plan |
-| Firebase web app | ByteQuest web, app ID `1:25442282451:web:7b188546eadc81adb75d26` |
+| Firebase project | `bytequest-7b841` |
 | Firebase auth domain | `bytequest-7b841.firebaseapp.com` |
-| Supabase | ByteQuest, ref `zwubrziriuppkldrdoos`, Mumbai |
-| Account API | `https://zwubrziriuppkldrdoos.supabase.co/functions/v1/bytequest-firebase` |
-| Authentication | Google provider enabled in Firebase Authentication |
-| Login domains | `jagadeeshwaran-r.github.io` and the existing private Sites preview domain |
+| Supabase project | `zwubrziriuppkldrdoos` |
+| Account function | `bytequest-firebase` |
+| API base | `https://zwubrziriuppkldrdoos.supabase.co/functions/v1/bytequest-firebase` |
+| Function entrypoint / import map | `index.ts` / `deno.json` |
+| Browser SDKs | Firebase 13.3.0; server dependencies pinned in `deno.json` |
 
-`dist/firebase-config.js` is the public Firebase web configuration. `dist/config.js` is the public Supabase project configuration. These identifiers are intended to be included in a browser. Do not replace them with a service account, private key, OAuth client secret, or Supabase service-role credential.
+`dist/firebase-config.js` contains public Firebase web configuration. `dist/config.js` contains the Supabase URL and a browser-safe publishable key. These files must never contain a service account, private key, OAuth client secret or Supabase service credential.
 
-The browser imports Firebase SDK **13.3.0** from Google's CDN. The backend pins **jose 6.2.17** and **supabase-js 2.119.0**. Test dependencies are pinned in `package-lock.json` and installed by CI.
+For a separate deployment, create your own projects, replace the public configuration, update the fixed Firebase project in the function entrypoint, enable Google's sign-in provider, and configure Firebase authorized domains. Update the function's exact `allowedOrigins` list for that deployment. Localhost is not allowed by the production API.
 
-## How private data is protected
+## Identity and authorization
 
-1. A learner chooses **Sign in with Google**. Firebase performs the Google sign-in flow and persists the session on that browser.
-2. For every private account request, the browser obtains a current Firebase ID token and sends it over HTTPS to the Supabase Edge Function.
-3. The function validates the token signature against Google's fixed public-certificate endpoint, RS256 algorithm, exact project issuer and audience, expiration, issued/authenticated times, Google provider, and verified email.
-4. The account owner is derived from that verified token as `firebase:<projectId>:<uid>`. User IDs or role flags in a request body cannot select another account or grant editor access.
-5. The backend reads or writes only that owner's progress. Publishing requires a row for that exact owner in `bytequest_firebase_editors`, checked again on each editor request.
+1. Firebase handles Google sign-in and browser session persistence.
+2. The browser sends a current Firebase ID token with every private API request.
+3. The Edge Function verifies RS256 signatures using Google's fixed certificate endpoint, the exact Firebase issuer/audience, expiry, issued/authenticated times, Google provider and verified email.
+4. Ownership is derived as `firebase:<projectId>:<uid>`. Request-body owners, emails and admin flags cannot grant access.
+5. Database calls run through the server-side Supabase client and enforce the verified owner again in the relevant operation.
 
-The private account tables have RLS enabled and no direct grants to `anon` or `authenticated`. Only the backend's service-role client can access them. That credential comes from Supabase's built-in Edge Function environment; it is never returned to the browser or written into source.
+The function gateway uses `verify_jwt=false` because it receives Firebase tokens rather than Supabase tokens. This does **not** make private actions anonymous: application-level Firebase verification is mandatory. Only the `/health` GET and CORS preflight are unauthenticated. The function does not perform an Admin SDK revocation lookup on every request; a signed token may remain valid until it expires.
 
-The gateway's `verify_jwt` is disabled **only for this function** because it receives Firebase JWTs, rather than Supabase JWTs. The function itself performs the required authentication before all private actions. Only the public `/health` GET and CORS preflight are unauthenticated. CORS accepts the two configured site origins, not a wildcard.
+Private account tables have RLS enabled and are denied to direct `anon` and `authenticated` roles. Service-only functions explicitly revoke browser/public execution. The `SUPABASE_SERVICE_ROLE_KEY` is read only from the Edge Function environment.
 
-The implementation verifies signed, unexpired ID tokens. It does not perform an Admin SDK revocation lookup on each request; existing Firebase tokens can remain valid until they expire. Editor removal takes effect on the next editor API request because the database allowlist is checked each time.
-
-No Firebase Cloud Function or custom JWT-role claim is needed for this integration. The account API runs on the existing Supabase project.
-
-## Tables and migrations
-
-The original Supabase-auth schema and records are retained. New Firebase accounts use separate namespaced records and are never matched to legacy accounts just by email.
+## Data model
 
 | Table | Purpose |
 | --- | --- |
-| `bytequest_problems` | Existing public published catalog and private editor drafts |
-| `bytequest_firebase_profiles` | Verified Firebase identity, email, creation and last-seen dates |
-| `bytequest_firebase_progress` | Private learning backup and monotonically increasing revision |
-| `bytequest_firebase_editors` | Explicit editor allowlist |
+| `bytequest_problems` | Published problem content and private unpublished drafts |
+| `bytequest_firebase_profiles` | Verified Firebase identity records |
+| `bytequest_firebase_progress` | Private progress payload and optimistic revision |
+| `bytequest_social_profiles` | Username, public profile fields and privacy preferences |
+| `bytequest_follows` | Following relationships between public profile identifiers |
+| `bytequest_presence_sessions` | Per-page activity leases, sequence numbers and last activity |
+| `bytequest_problem_authors` | Ownership of learner-created problems |
+| `bytequest_firebase_editors`, `bytequest_library_admins` | Explicit elevated library permissions |
+| `bytequest_problem_private` | Private test suites, excluded from the public catalog |
+| `bytequest_problem_history` | Problem revisions and correction notes |
+| `bytequest_announcements`, `bytequest_notification_reads` | In-app problem updates and per-account read cursors |
+| `bytequest_online_limits` | Per-account online-compiler rate limits |
 
-`database/schema.sql` remains the initial Supabase-auth schema snapshot. `database/firebase.sql` is the additive Firebase migration, applied to the hosted project as `bytequest_firebase_accounts`. Do not reapply these files to an already configured project. Make a new reviewed migration for later schema changes.
+Legacy Supabase-auth tables are retained separately. Firebase accounts are namespaced and are not linked to old accounts by matching an email address.
 
-Progress saves use a database row lock and expected revision. A stale device receives the current row, merges changes by field timestamp, and retries. Requests from a previous account are bound to that account's captured token and are discarded by the UI after an account switch. Local caches include the Firebase project and UID. Guest progress is imported only through **Bring this device’s guest progress**.
+### Schema evolution
 
-## Enrol an editor
+SQL files are successive schema snapshots and changes, rather than an automatic installer. The hosted project has already applied them; do not re-run creation scripts there. For a fresh project, review their dependencies in this order:
 
-Sign in to ByteQuest once with the intended Google account. In the Supabase SQL editor, inspect the verified account records:
+1. `database/schema.sql`, then `database/seed.sql`
+2. `database/firebase.sql`
+3. `database/community.sql`, then `database/private-judge.sql`
+4. `database/profile-photos-dashboard.sql`, then `database/profile-presence.sql`
+5. `database/community-authorship-online.sql`
+6. `database/active-presence.sql`, then `database/presence-expired-last-seen.sql`
+7. `database/social-defaults-and-friend-presence.sql`
+8. `database/leaderboard.sql`
 
-```sql
-select user_id, email, created_at
-from public.bytequest_firebase_profiles
-order by created_at desc;
-```
+Use new reviewed migrations for later changes. Keep all private-table RLS, function grants and ownership predicates in place.
 
-Verify the intended owner email and its exact namespaced user ID. Then insert only that verified ID:
+## Progress and privacy
 
-```sql
-insert into public.bytequest_firebase_editors(user_id)
-values ('REPLACE_WITH_VERIFIED_FIREBASE_USER_ID')
-on conflict(user_id) do nothing;
-```
+Guest work stays in localStorage on its browser/origin. Signed-in accounts have a separate local cache and a private cloud progress row. Guest records are imported only when the learner chooses **Bring guest progress**.
 
-Reload ByteQuest. **Problem studio** appears for that editor. Do not make the first visitor an editor, derive permissions from editable profile data, or grant the editor role based on a request body's email or admin flag.
+Saves include an expected revision. A stale writer receives the current payload, merges by field timestamp and retries. First-solve dates retain their earliest timestamp. Drafts are saved per language; notes, reviews and backups stay account scoped. Responses from an old account are discarded after an account switch.
 
-To revoke an editor, remove only that exact ID from `bytequest_firebase_editors` in the owner dashboard. This retains the learner's progress.
+New profiles default to discoverability and status sharing. Existing saved opt-outs remain in effect. Turning discoverability off removes the profile from other learners' searches, profiles, social lists and leaderboards. It does not delete progress or existing follow relationships. Public profile responses exclude owner IDs, email, drafts, notes and raw progress.
 
-## Add problems later
+### Photos
 
-Open **Problem studio → New problem**, or import a JSON definition. Supply a unique lowercase problem ID, statement, constraints, Java contract, starter/reference classes, 2–100 cases, pattern notes, complexity, hints and optional animation frames. The first two cases are examples; all cases remain public learning checks.
+Device images are cropped/resized to 256×256 JPEG in the browser, stripping original metadata. The backend accepts at most 192 KB and derives the caller's upload path. The private `bytequest-avatars` bucket is provisioned lazily. API responses contain ten-minute signed URLs; the bucket is not public. External HTTPS avatar URLs remain optional.
 
-Choose **Validate Java** to run the reference against its cases. Save a private draft or enable **Published** and save. The live database library updates without redeploying GitHub Pages. Unpublish to keep an item privately. Stale editor revisions are rejected to prevent overwriting another editor's changes.
+### Activity and presence
 
-Supported Java values are `int`, `int[]`, `boolean`, and ASCII `String`. An imported `int[]` problem may use `"normalize":"sort-int"` when result order does not matter. The studio preserves this on import, editing, and export. Animations illustrate the reference algorithm and do not trace arbitrary submitted code. The publisher is a trusted editor; browser reference validation is a learning-content workflow, not a server-enforced adversarial judge.
+Online presence requires a visible, focused page and input within 30 seconds. Per-page sequence numbers reject stale updates; multiple active tabs are combined. Blur, hide, sign-out and page close send inactive updates when possible, while server expiry covers lost requests. Background API polling does not extend the lease.
 
-## Deploy the account function
+Profile status displays a radar dot while online and relative last-seen time otherwise. Status sharing is checked before another learner receives presence data. A friend's offline-to-online transition can create a five-second banner on a focused page. Initial online snapshots remain quiet, and rapid reconnects have a cooldown. Friend alerts refer to people the viewer follows and are in-app only.
 
-The deployed function source is `supabase/functions/bytequest-firebase/`. Include its `deno.json` and all `domain/` dependencies. The domain files are copies of the public problem/progress validation contracts; tests ensure they match. Update both when deliberately changing a contract.
+## Leaderboards
 
-Deploy as **bytequest-firebase** to project `zwubrziriuppkldrdoos`, with entrypoint `index.ts`, import map `deno.json`, and `verify_jwt=false`. The source is pinned to Firebase project `bytequest-7b841`. Changing the Firebase project requires a reviewed update of both the public config and backend issuer/audience settings.
+`bytequest_leaderboard(viewer_id, board_scope, ranking_period, page_number)` is a service-only, security-invoker RPC called through the Firebase-verified API.
 
-The platform supplies `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. Do not expose these secret environment values through UI forms or the repository. A health request to `/health` returns only the Firebase project ID and provider. A private request without a valid Firebase token must return 401.
+| Rule | Behavior |
+| --- | --- |
+| Global scope | All discoverable profiles |
+| Friends scope | The viewer's discoverable profile and discoverable accounts they follow |
+| Score | Count of currently published problems with a valid positive first-solve timestamp |
+| Periods | All time, UTC week starting Monday, UTC month |
+| Exclusions | Unknown/draft/unpublished problem IDs, invalid values and future timestamps |
+| Ties | Competition rank by solve count; username orders tied rows |
+| Pagination | 25 profiles per page; the viewer's rank is returned separately |
+| Privacy | Only selected profile fields and aggregate counts; no raw progress or account identity |
 
-## Verify changes
+Avatars for list entries and the viewer are signed before returning. The API accepts only validated scope/period/page values and always supplies the viewer from the verified token. Rankings are motivational, self-reported practice records, not trusted contest results. Changes appear after progress sync; the page's **Refresh** button fetches current rankings.
+
+## Problem authoring and permissions
+
+Every verified learner can create problems and manage their own authored problems. The backend records ownership in `bytequest_problem_authors`; changing a request field cannot claim someone else's problem. Elevated editors and library administrators can manage the full catalog. The original bundled library remains protected from ordinary author edits.
+
+In **Problem studio**, supply the statement, examples, Java contract, teaching notes, public tests, optional private tests and company metadata. Validate the reference in real Java, then save a draft or publish. Supported values are `int`, `int[]`, `boolean` and ASCII `String`. Imports support packs of up to 500 definitions; each save still goes through validation and authorization.
+
+`bytequest_save_problem` performs the ownership/role check, revision comparison, content/private-suite updates, history and announcement in one transaction. Updating a published problem requires a correction note. A stale revision is rejected. Unpublishing removes the challenge from the public catalog and related announcement feed.
+
+Only deliberately enrolled library administrators can delegate creator/editor permissions through **Manage creators**. No first-visitor promotion or client-controlled grant exists. Owner/admin enrollment must use a verified account ID in the owner dashboard, never a user-editable profile claim.
+
+The inbox returns up to 50 announcements for currently published problems and an account-specific read cursor. It does not send email or push notifications.
+
+## Code execution
+
+### Java
+
+CheerpJ loads the Java 17 compiler/runtime in a dedicated iframe. The bridge compiles `Solution` and a generated harness, invokes public tests and compares return values. Runtime/compiler preloading begins while reading problems when the browser permits it. A 120-second startup limit and 30-second compilation watchdog provide recovery; Stop resets the runner. Cold startup remains dependent on download, device and cache conditions.
+
+### Python, C and C++
+
+The verified function generates a public-test harness and sends it to a fixed Wandbox endpoint. Current compiler identifiers are pinned in `online-judge.js`. Source, generated code, case count and output are bounded. Runs require sign-in, with at least five seconds between runs and a maximum of 60 per account per hour. Provider requests use `save:false`; no account token, profile data or private suite is forwarded.
+
+### Private Java suites
+
+Private test attachments and a Judge0 adapter are implemented, but the hosted private judge is **not configured**. A challenge requiring hidden acceptance cannot complete until a trusted isolated server judge is connected. Public-case practice remains available.
+
+To connect a trusted provider, configure these server-side values:
+
+- `BYTEQUEST_JUDGE0_URL`: HTTPS base URL of the isolated judge.
+- `BYTEQUEST_JUDGE0_KEY`: optional `X-Auth-Token` secret.
+- `BYTEQUEST_JAVA_LANGUAGE_ID`: the provider's verified Java language ID.
+
+The adapter requires network isolation and resource limits. Never run visitors' source directly in an application server process. Private inputs and expected values are excluded from learner responses.
+
+## Deploy and verify
+
+Deploy the complete `supabase/functions/bytequest-firebase/` tree, including `deno.json` and all `domain/` files. Set entrypoint `index.ts`, import map `deno.json`, and `verify_jwt=false` while preserving application-level Firebase verification. The platform supplies `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
 
 ```sh
 npm ci --ignore-scripts
-node tests/verify.mjs
+npm run build
+npm test
 ```
 
-This runs 16 real Java reference solutions / 81 cases, existing catalog and backup checks, and Firebase security tests. Firebase tests cover real signed JWTs, tampered signatures, wrong projects, expired tokens, fake request-body owners, editor allowlists and revocation, stale progress revisions, token refresh and account switching. The native tests use disposable signing keys; those keys are never trusted by the deployed function.
+The test suite covers real Java/native execution, owner isolation, author permissions, revision handling, presence, friend alerts, safe rendering and leaderboard requests. The browser and server domain contracts must remain identical where asserted by the tests.
 
-`database/verify-firebase-access.sql` runs rollback-only fixtures to verify that browser roles cannot read private account tables, call privileged account functions or promote themselves. It also checks revision conflicts and payload validation. The existing `database/verify-access.sql` covers the retained legacy access model.
+Rollback-only SQL checks include `tests/leaderboard.sql`, `tests/social-presence.sql`, and the `database/verify-*.sql` access checks. Run them as an operator, inspect their returned verification result, and confirm fixtures were rolled back. Use disposable fixture identities rather than modifying real users for testing.
 
-For end-to-end testing, sign in on the actual website, add a note or edit a draft, choose **Sync now**, reload and confirm it returns. Sign out and verify guest work stays separate. Test another browser/device for an independent cloud round trip.
-
-Firebase Spark and Supabase Free quotas still apply. No paid plan was enabled for this implementation. Monitor usage in the actual project dashboards and keep exported backups.
-
-## Community and creator workflow (November 2026)
-
-Apply `database/community.sql` and `database/private-judge.sql` once. Both are
-already applied to the hosted ByteQuest database. All new tables enable RLS and
-are denied to direct `anon` and `authenticated` access. The verified Firebase
-Edge Function calls the service-only RPCs with the token's account ID.
-
-`community.html` provides opt-in profiles, username/exact public-ID search,
-follow/unfollow, followers/following, an activity calendar, and the quest inbox.
-Public profile responses contain no account email, Firebase UID, drafts, notes,
-or raw progress. Activity and solve totals are self-reported practice records.
-Turning discoverability off removes a profile from other learners' views and
-search. Existing follow rows are retained, but undiscoverable users are omitted
-from follower lists and counts. The activity calendar uses the learner's synced
-local day strings; streak calculations use the viewing device's local day.
-
-`studio.html` is the separate creator workspace. `bytequest_library_admins`
-contains administrators, who can delegate/revoke creator access through the
-Community → Manage creators page using an exact public profile ID. Existing
-`bytequest_firebase_editors` rows are creator grants. Creators can manage the
-entire library and its private test suites. No client field can grant either
-role. **No real administrator or creator has been enrolled automatically.**
-An administrator must be deliberately enrolled by the owner after they confirm
-the exact verified Firebase account. Never grant the first visitor admin access.
-
-Saving uses `bytequest_save_problem`: role check, revision comparison, public
-content update, private-suite update, history and announcement are one transaction.
-A correction note is mandatory when updating a published challenge. Newly
-published challenges announce once per revision; corrections create a correction
-announcement. The inbox loads the latest 50 published-problem announcements when
-opened or focused. It is an in-app feed, not email or push delivery. Read cursors
-belong to the verified account. Unpublishing hides a problem's announcements.
-
-### Private Java judging
-
-Private cases are in `bytequest_problem_private`, never the browser catalog,
-bundled source, anonymous REST response, or announcement. Editors can attach and
-validate them using their authoring browser. Learner `Run` remains public-case
-practice. A problem with `hiddenCount > 0` cannot complete until private judging
-returns acceptance. The hosted server judge is **not configured yet**.
-
-The Edge Function has an optional Judge0 adapter. Configure a trusted isolated
-Judge0 provider with **server-side** environment secrets:
-
-- `BYTEQUEST_JUDGE0_URL`: HTTPS API base of the trusted provider.
-- `BYTEQUEST_JUDGE0_KEY`: optional `X-Auth-Token` secret (never in `dist/`).
-- `BYTEQUEST_JAVA_LANGUAGE_ID`: the provider's actual Java 17 language ID. Query
-  its `/languages` endpoint; do not assume IDs match between providers.
-
-The provider must support synchronous `POST /submissions?wait=true`, enforce
-network isolation and resource limits, and keep its submission API private to
-the backend. Provider credentials and provisioning are deliberately not guessed
-or activated. No paid plan was started. Each account is limited to one private
-submission per 30 seconds. Expected outputs are sent to the provider's output
-comparison, not included in the user's Java program. Learner responses contain
-only an aggregate verdict: stdout, hidden inputs, compile diagnostics and
-expected outputs are never returned. The server denies acceptance if the judge
-is unconfigured, queued, unavailable, or the problem revision changed.
-
-### The 500-problem target
-
-The shipped library currently contains **16 validated native Java problems / 81
-public checks**. A 500-problem content pack has **not** been created or imported.
-There are no link-only entries or duplicate filler problems counted toward 500.
-The creator workspace can import arrays of up to 500 original/licensed problem
-definitions. Each item is `{ "problem": <ByteQuest problem>, "hiddenTests": [] }`
-(or a bare problem without private cases). It validates contracts and duplicates,
-rejects existing IDs, compiles and executes each reference solution against every
-case, then saves successful items sequentially. A stopped/failed batch retains
-prior successful saves; it does not overwrite an existing problem. Publishing is
-optional and announces each successfully published item. Do not import proprietary
-problem text or test suites without permission.
-
-`database/verify-community.sql` is a rollback-only hosted integration check.
-`tests/community.mjs` verifies identity binding, input validation, date/streak
-edge cases, and judge payload/response isolation. Native Java tests remain in
-`tests/verify.mjs`.
-
-## Photos and comparison release
-
-`database/profile-photos-dashboard.sql` records the already-applied profile RPC update:
-`avatar_path` and discoverable profile date/topic solve aggregates. Comparisons receive
-UTC dates/topics for published problems only; no raw drafts, notes, account email or owner
-ID. `database/verify-minimal.sql` verifies this in a rollback-only fixture transaction.
-
-The verified `avatar-upload` action accepts resized JPEG bytes, finds the caller's profile,
-and upserts only `<public_profile_uuid>/avatar.jpg` in private bucket `bytequest-avatars`.
-Storage's SDK creates that private bucket on first use with MIME/size restrictions. The
-service credential stays in the Edge Function; no public read/write policy is added.
-Existing external HTTPS avatars still work. If a public profile is made private, already
-issued image links can remain valid for up to ten minutes. Normal profile reads generate
-fresh links. `tests/minimal.mjs` covers owner binding and adapter path restrictions.
+After deployment, verify `/health`, confirm an unsigned private request returns 401, run security advisors, and test the live UI with an existing authorized session. GitHub's workflow independently builds/tests the frontend before publishing. Monitor actual provider quotas and keep exported backups; this documentation does not promise unlimited free usage.

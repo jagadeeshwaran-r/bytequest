@@ -1,8 +1,13 @@
 import {HttpError} from './handler.js';
-const actions=new Set(['presence','profile-presence','friend-presence','self','profile-save','search','profile','follow','followers','following','notifications','notifications-read','roles','role-set']);
+const actions=new Set(['leaderboard','presence','profile-presence','friend-presence','self','profile-save','search','profile','follow','followers','following','notifications','notifications-read','roles','role-set']);
 export const communityActions=actions;
 export function validateCommunity(action,body){
  const data={};
+ if(action==='leaderboard'){
+  const scope=body.scope??'global',period=body.period??'all',page=body.page??0;
+  if(!['global','friends'].includes(scope)||!['all','week','month'].includes(period)||!Number.isSafeInteger(page)||page<0||page>1000000)throw new HttpError(400,'Choose a valid leaderboard, period and page.');
+  Object.assign(data,{scope,period,page});
+ }
  if(action==='presence'){
   if(typeof body.page!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(body.page)||typeof body.active!=='boolean'||!Number.isSafeInteger(body.sequence)||body.sequence<1||!Number.isInteger(body.idleForMs)||body.idleForMs<0||body.idleForMs>30000)throw new HttpError(400,'Invalid presence update.');
   Object.assign(data,{page:body.page,active:body.active,sequence:body.sequence,idleForMs:body.idleForMs});
