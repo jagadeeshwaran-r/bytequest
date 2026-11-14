@@ -6,6 +6,7 @@ export function mountShell(){
  for(const id of ['accountBtn','exportBtn','communityAccount']){const item=document.getElementById(id);if(item)slot?.appendChild(item);}
  const cacheKey='bytequest.account-card';
  function paint(next){if(!next)return;const name=document.getElementById('menuName'),av=document.getElementById('menuAvatar');if(name.textContent!==next.name)name.textContent=next.name;
+  if(!painted&&name.textContent===next.name&&av.firstElementChild?.getAttribute('src')===next.avatar){painted=next;return;}
   if(painted?.owner!==next.owner||painted?.avatarKey!==next.avatarKey){
    if(next.avatar){const img=document.createElement('img');img.src=next.avatar;img.alt='';img.referrerPolicy='no-referrer';img.onerror=()=>{if(av.firstChild===img)av.textContent=next.name.charAt(0).toUpperCase();};av.replaceChildren(img);}else av.textContent=next.name.charAt(0).toUpperCase();
   }painted=next;
