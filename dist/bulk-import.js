@@ -1,5 +1,5 @@
-import {validateProblem} from './catalog.js?v=red-1';
-import {JavaJudge,buildTests} from './judge.js';
+import {validateProblem} from './catalog.js?v=structural-2';
+import {JavaJudge,buildTests} from './judge.js?v=structural-2';
 export function mountBulkImport({cloud,notify,onChanged}){
  const panel=document.getElementById('bulkImport');let stopped=false,running=false,judge;
  document.getElementById('bulkStop').onclick=()=>{stopped=true;judge?.stop();};
