@@ -57,7 +57,6 @@ class TreeHelper {
             }
             index++;
         }
-        if (index < values.length) throw new IllegalArgumentException("Unreachable tree nodes in level-order input");
         return root;
     }
 }
