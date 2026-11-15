@@ -20,6 +20,7 @@ import { problems } from "../dist/problems.js";
 import { buildTests, javaLiteral } from "../dist/judge.js";
 import { validateProblem } from "../dist/catalog.js";
 import { buildBenchmarkProgram } from "../supabase/functions/bytequest-firebase/benchmark.js";
+import { nativeResults } from "../supabase/functions/bytequest-firebase/domain/languages.js";
 import { submitSolution } from "../supabase/functions/bytequest-firebase/submissions.js";
 import { traceFor } from "../dist/traces.js";
 mkdirSync("build/tests", {recursive:true});
@@ -159,6 +160,65 @@ try {
   assert.ok(!JSON.stringify(rejectedHidden).includes('SECRET'),'Never reveal hidden expected values or case names');
   assert.equal(records.length,1,'Failed hidden tests must never record acceptance');
   console.log('✓ Server-side hidden-case fallback accepts valid Java and redacts private diagnostics.');
+  // Creator + browser + compiled server judging for the seven new interview challenges.
+  const extendedFixtures=[
+    {
+      id:"reverse-linked-list",method:"reverseList",params:[{name:"head",type:"ListNode"}],returns:"ListNode",
+      source:"class Solution { public ListNode reverseList(ListNode head){ListNode prev=null;while(head!=null){ListNode next=head.next;head.next=prev;prev=head;head=next;}return prev;} }",
+      cases:[{args:[[1,2,3,4]],expected:[4,3,2,1]},{args:[[]],expected:[]},{args:[null],expected:null},{args:[[7]],expected:[7]}]
+    },
+    {
+      id:"merge-intervals",method:"merge",params:[{name:"intervals",type:"int[][]"}],returns:"int[][]",
+      source:"import java.util.*; class Solution { public int[][] merge(int[][] intervals){if(intervals.length==0)return new int[0][];Arrays.sort(intervals,(a,b)->Integer.compare(a[0],b[0]));List<int[]> out=new ArrayList<>();for(int[] in:intervals){if(out.isEmpty()||out.get(out.size()-1)[1]<in[0])out.add(new int[]{in[0],in[1]});else out.get(out.size()-1)[1]=Math.max(out.get(out.size()-1)[1],in[1]);}return out.toArray(new int[0][]);} }",
+      cases:[{args:[[[1,3],[2,6],[8,10],[15,18]]],expected:[[1,6],[8,10],[15,18]]},{args:[[[1,4],[4,5]]],expected:[[1,5]]},{args:[[]],expected:[]},{args:[[[-5,-1],[-2,1]]],expected:[[-5,1]]}]
+    },
+    {
+      id:"middle-of-linked-list",method:"middleNode",params:[{name:"head",type:"ListNode"}],returns:"ListNode",normalize:"listnode-index",
+      source:"class Solution { public ListNode middleNode(ListNode head){ListNode slow=head,fast=head;while(fast!=null&&fast.next!=null){slow=slow.next;fast=fast.next.next;}return slow;} }",
+      cases:[{args:[[1,2,3,4,5]],expected:2},{args:[[1,2,3,4,5,6]],expected:3},{args:[[7,7,7,7]],expected:2},{args:[[]],expected:-1}]
+    },
+    {
+      id:"merge-two-sorted-lists",method:"mergeTwoLists",params:[{name:"list1",type:"ListNode"},{name:"list2",type:"ListNode"}],returns:"ListNode",
+      source:"class Solution { public ListNode mergeTwoLists(ListNode list1,ListNode list2){ListNode dummy=new ListNode(0),tail=dummy;while(list1!=null&&list2!=null){if(list1.val<=list2.val){tail.next=list1;list1=list1.next;}else{tail.next=list2;list2=list2.next;}tail=tail.next;}tail.next=list1!=null?list1:list2;return dummy.next;} }",
+      cases:[{args:[[1,2,4],[1,3,4]],expected:[1,1,2,3,4,4]},{args:[[],[]],expected:[]},{args:[[],[0]],expected:[0]},{args:[[-3,-1,0],[2,3]],expected:[-3,-1,0,2,3]}]
+    },
+    {
+      id:"remove-nth-node-from-end",method:"removeNthFromEnd",params:[{name:"head",type:"ListNode"},{name:"n",type:"int"}],returns:"ListNode",
+      source:"class Solution { public ListNode removeNthFromEnd(ListNode head,int n){ListNode dummy=new ListNode(0,head),fast=dummy,slow=dummy;for(int i=0;i<=n;i++)fast=fast.next;while(fast!=null){fast=fast.next;slow=slow.next;}slow.next=slow.next.next;return dummy.next;} }",
+      cases:[{args:[[1,2,3,4,5],2],expected:[1,2,3,5]},{args:[[1],1],expected:[]},{args:[[1,2],2],expected:[2]},{args:[[1,2],1],expected:[1]}]
+    },
+    {
+      id:"linked-list-cycle-ii",method:"detectCycle",params:[{name:"head",type:"ListNode"}],returns:"ListNode",normalize:"listnode-index",
+      source:"class Solution { public ListNode detectCycle(ListNode head){ListNode slow=head,fast=head;while(fast!=null&&fast.next!=null){slow=slow.next;fast=fast.next.next;if(slow==fast){ListNode entry=head;while(entry!=slow){entry=entry.next;slow=slow.next;}return entry;}}return null;} }",
+      cases:[{args:[{values:[3,2,0,-4],pos:1}],expected:1},{args:[{values:[1,2],pos:0}],expected:0},{args:[{values:[1],pos:-1}],expected:-1},{args:[{values:[7,7,7,7],pos:3}],expected:3}]
+    },
+    {
+      id:"add-two-numbers",method:"addTwoNumbers",params:[{name:"l1",type:"ListNode"},{name:"l2",type:"ListNode"}],returns:"ListNode",
+      source:"class Solution { public ListNode addTwoNumbers(ListNode l1,ListNode l2){ListNode dummy=new ListNode(0),tail=dummy;int carry=0;while(l1!=null||l2!=null||carry!=0){int sum=carry;if(l1!=null){sum+=l1.val;l1=l1.next;}if(l2!=null){sum+=l2.val;l2=l2.next;}tail.next=new ListNode(sum%10);tail=tail.next;carry=sum/10;}return dummy.next;} }",
+      cases:[{args:[[2,4,3],[5,6,4]],expected:[7,0,8]},{args:[[0],[0]],expected:[0]},{args:[[9,9,9,9,9,9,9],[9,9,9,9]],expected:[8,9,9,9,0,0,0,1]},{args:[[5],[5]],expected:[0,1]}]
+    }
+  ];
+  for(let i=0;i<extendedFixtures.length;i++){
+    const x=extendedFixtures[i],testProblem={...problems[0],...x,normalize:x.normalize,starter:x.source,reference:x.source,tests:x.cases};
+    assert.equal(validateProblem(testProblem).returns,x.returns,x.id+" catalog return type");
+    const browser=execute(x.source,buildTests(testProblem,x.cases));
+    assert.equal(browser.status,"ok",x.id+": "+JSON.stringify(browser));
+    assert.ok(browser.cases.every(c=>c.passed),x.id+" browser checks: "+JSON.stringify(browser));
+    const bench=buildBenchmarkProgram(x.source,testProblem,x.cases,"java","extended"+i);
+    const folder="build/extended-"+i;
+    mkdirSync(folder,{recursive:true});
+    writeFileSync(folder+"/Wandbox.java",bench);
+    command(["com.sun.tools.javac.Main","-d",folder,folder+"/Wandbox.java"]);
+    const output=command(["-cp",folder,"Wandbox"]);
+    const graded=nativeResults(output,testProblem,x.cases);
+    assert.ok(graded.every(c=>c.passed),x.id+" server results: "+JSON.stringify(graded));
+    assert.equal((output.match(/__BYTEQUEST_CASE_\d+__/g)||[]).length,x.cases.length*4);
+  }
+  const cycleIndex=extendedFixtures[5],cycleIdentityProblem={...problems[0],...cycleIndex,starter:cycleIndex.source,reference:cycleIndex.source,tests:cycleIndex.cases};
+  const fakeEntry=execute("class Solution { public ListNode detectCycle(ListNode head){return new ListNode(head==null?0:head.val);} }",buildTests(cycleIdentityProblem,cycleIndex.cases));
+  assert.equal(fakeEntry.status,"ok");
+  assert.ok(fakeEntry.cases.some(c=>!c.passed),"Returning a new equal-valued node must fail identity checking");
+  console.log("✓ Seven extended Java contracts compile and pass browser and server grading.");
   const problem=problems[0],tests=buildTests(problem,problem.tests.slice(0,2));
   assert.equal(execute("class Solution { THIS IS NOT JAVA }",tests).status,"compile_error");
   const wrong=execute("class Solution { public int[] twoSum(int[] a,int t){return new int[]{0,0};} }",tests);
