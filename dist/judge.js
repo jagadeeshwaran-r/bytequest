@@ -76,6 +76,13 @@ export function buildTests(problem, cases) {
     if (!Array.isArray(c.args) || c.args.length !== problem.params.length) throw new Error("Provide " + problem.params.length + " argument(s) in args.");
     let call = "new Solution()." + problem.method + "(" + c.args.map((v, j) => javaLiteral(v, problem.params[j].type)).join(", ") + ")";
     let expected = javaLiteral(c.expected, problem.returns);
+    if (problem.normalize === "listnode-index") {
+      if (!Number.isInteger(c.expected) || c.expected < -1) throw new Error("Expected a zero-based node index or -1 for no node.");
+      const list = c.args[0] && !Array.isArray(c.args[0]) ? c.args[0].values : c.args[0];
+      if (c.expected >= (list?.length ?? 0)) throw new Error("Expected node index must refer to the input list.");
+      call = "ListHelper.indexOfReturned(" + javaLiteral(c.args[0], "ListNode") + ", (head) -> new Solution()." + problem.method + "(head))";
+      expected = javaLiteral(c.expected, "int");
+    }
     if (problem.normalize === "sort-int") {
       call = "sorted(" + call + ")";
       expected = "sorted(" + expected + ")";
