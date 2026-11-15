@@ -144,7 +144,8 @@ try {
     claimOnlineRun:async()=>true,
     recordSubmission:async(owner,data)=>{records.push(data);return {id:42,owner};}
   };
-  const submitOptions={owner:'test-owner',body:submissionInput,db:fakeDb,privateJudge:{ready:false}};
+  const submitOptions={owner:'test-owner',body:submissionInput,db:fakeDb,privateJudge:{ready:false},allowExternalHiddenJudge:true};
+  await assert.rejects(()=>submitSolution({...submitOptions,allowExternalHiddenJudge:false,benchmarkJudge:{run:async()=>{throw new Error('Must not send private cases to public compiler');}}}),error=>error.status===503);
   const acceptedHidden=await submitSolution({...submitOptions,benchmarkJudge:{run:async(source,p,cases,language)=>{seen.push({cases,language});return{accepted:true,status:'accepted',runtimeMs:1,memoryBytes:1024,memoryMetric:'process_peak_rss',compiler:'test-java',benchmarkVersion:'test',total:cases.length};}}});
   assert.equal(acceptedHidden.accepted,true);
   assert.equal(acceptedHidden.total,cycleCases.length+privateCases.length);
