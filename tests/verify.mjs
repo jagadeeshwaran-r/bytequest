@@ -83,7 +83,7 @@ try {
   assert.equal(validateProblem(cycleProblem).params[0].type,"ListNode");
   assert.throws(()=>validateProblem({...cycleProblem,tests:[{args:[{values:[1,2],pos:2}],expected:true},...cycleCases]}));
   const browserCycle=execute(cycleSource,buildTests(cycleProblem,cycleCases));
-  assert.equal(browserCycle.status,"ok");
+  assert.equal(browserCycle.status,"ok",JSON.stringify(browserCycle));
   assert.ok(browserCycle.cases.every(c=>c.passed),"Browser linked-list tests must pass: "+JSON.stringify(browserCycle));
   const benchJava=buildBenchmarkProgram(cycleSource,cycleProblem,cycleCases,"java","fixture");
   assert.ok(benchJava.includes("class ListNode"));
