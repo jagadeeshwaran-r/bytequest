@@ -1,5 +1,5 @@
 import {buildTests} from "./judge.js";
-const types = new Set(["int","int[]","boolean","String"]);
+const types = new Set(["int","int[]","boolean","String","ListNode"]);
 const reserved = new Set("abstract assert boolean break byte case catch char class const continue default do double else enum extends final finally float for goto if implements import instanceof int interface long native new package private protected public return short static strictfp super switch synchronized this throw throws transient try void volatile while true false null record var yield".split(" "));
 export const problemId = /^[a-z][a-z0-9-]{1,63}$/;
 const identifier = value => typeof value === "string" && /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(value) && !reserved.has(value);
@@ -8,10 +8,10 @@ export function validateProblem(input) {
   if(!input||typeof input!=="object"||Array.isArray(input))throw new Error("Provide a problem object.");
   if(!problemId.test(input.id))throw new Error("Use a lowercase problem ID, for example array-sum.");
   if(!identifier(input.method))throw new Error("Use a valid Java method name.");
-  if(!types.has(input.returns))throw new Error("Return type must be int, int[], boolean, or String.");
+  if(!types.has(input.returns)||input.returns==="ListNode")throw new Error("Return type must be int, int[], boolean, or String. ListNode is currently supported as an input only.");
   if(!Array.isArray(input.params)||input.params.length<1||input.params.length>6)throw new Error("Provide 1–6 Java parameters.");
   const names=new Set();
-  const params=input.params.map(p=>{if(!identifier(p?.name)||!types.has(p?.type)||names.has(p.name))throw new Error("Each parameter needs a unique Java name and a supported type.");names.add(p.name);return{name:p.name,type:p.type};});
+  const params=input.params.map(p=>{if(!identifier(p?.name)||!types.has(p?.type)||names.has(p.name))throw new Error("Each parameter needs a unique Java name and a supported type (including ListNode).");names.add(p.name);return{name:p.name,type:p.type};});
   if(!["Easy","Medium","Hard"].includes(input.difficulty))throw new Error("Choose Easy, Medium, or Hard.");
   if(!Array.isArray(input.tests)||input.tests.length<2||input.tests.length>100)throw new Error("Provide 2–100 test cases. The first two are examples.");
   const p={
