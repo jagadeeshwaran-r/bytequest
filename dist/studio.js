@@ -1,7 +1,7 @@
 import {mountCompanyPicker} from './companies.js?v=social-1';
-import {JavaJudge,buildTests} from "./judge.js?v=presence-1";
-import {mountBulkImport} from "./bulk-import.js?v=presence-1";
-import {validateProblem} from "./catalog.js?v=presence-1";
+import {JavaJudge,buildTests} from "./judge.js?v=structural-2";
+import {mountBulkImport} from "./bulk-import.js?v=structural-2";
+import {validateProblem} from "./catalog.js?v=structural-2";
 const $=id=>document.getElementById(id);
 const fields=["Title","Id","Topic","Difficulty","Minutes","Description","Constraints","Method","Returns","Params","Starter","Reference","Tests","Idea","Invariant","Time","Space","Tradeoff","Hints","Frames","Position","Pattern","Techniques","Companies","CompanySource","InputGuide","OutputGuide","HiddenTests","Correction"];
 const sample={
