@@ -6,12 +6,13 @@ export function validateSubmission(body){
  const data={problemId:body.problemId,language:body.language,source:body.source,revision:body.revision,nonce:body.nonce,shared:body.shared};
  for(const [key,max] of [['approach',5000],['timeComplexity',80],['spaceComplexity',80]]){if(typeof (body[key]??'')!=='string'||(body[key]||'').length>max)throw new HttpError(400,'Keep your explanation and complexity notes within their limits.');data[key]=(body[key]||'').trim();}return data;
 }
-export async function submitSolution({owner,body,db,benchmarkJudge,privateJudge}){
+export async function submitSolution({owner,body,db,benchmarkJudge,privateJudge,allowExternalHiddenJudge=false}){
  const data=validateSubmission(body),existing=await db.existingSubmission(owner,data.nonce);
  if(existing){if(existing.problem_id!==data.problemId||existing.source!==data.source||existing.language!==data.language)throw new HttpError(409,'This retry does not match the original submission.');return{accepted:true,status:'accepted',submission:publicOwn(existing),message:'Your accepted submission is already saved.'};}
  const row=await db.privateProblem(data.problemId);if(!row)throw new HttpError(404,'Problem not found.');if(row.revision!==data.revision)throw new HttpError(409,'This problem changed. Reload it before submitting.');
  if(requiresJavaStructures(row.content)&&data.language!=='java')throw new HttpError(400,'Linked-list and tree problems currently support Java submissions only.');
  const hasHidden=(row.hidden||[]).length>0||Number(row.content.hiddenCount)>0;
+ if(hasHidden&&!privateJudge?.ready&&!allowExternalHiddenJudge)throw new HttpError(503,'This problem requires a configured private Java judge. Hidden cases remain private by default.');
  if(hasHidden&&data.language!=='java')throw new HttpError(400,'Private test submissions currently support Java only.');
  if(hasHidden&&!row.hidden?.length)throw new HttpError(503,'The private suite is unavailable. No acceptance was recorded.');
  if(!await db.claimOnlineRun(owner))throw new HttpError(429,'Wait 5 seconds between submissions. Online execution allows up to 60 runs per hour.');
@@ -19,7 +20,7 @@ export async function submitSolution({owner,body,db,benchmarkJudge,privateJudge}
  if(hasHidden&&privateJudge?.ready){
   const verdict=await privateJudge.run(data.source,row.content,[...row.content.tests,...row.hidden]);if(!verdict.accepted)return{...verdict,status:'wrong_answer'};
   result={accepted:true,status:'accepted',runtimeMs:verdict.runtimeMs??null,memoryBytes:verdict.memoryBytes??null,memoryMetric:'process_peak_rss',compiler:'trusted-private-java',benchmarkVersion:'bq-private-v1',total:row.content.tests.length+row.hidden.length,message:verdict.message};
- }else if(hasHidden){
+ }else if(hasHidden&&allowExternalHiddenJudge){
   // Hosted compiler fallback: the full suite runs ONLY on the server, not in the
   // browser. Hidden inputs are transmitted to Wandbox, the existing compiler
   // provider; do not expose diagnostics, outputs, expected values, or failures.
