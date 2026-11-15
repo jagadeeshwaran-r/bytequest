@@ -97,7 +97,7 @@ export class JavaJudge {
     if (this.ready) return this.ready;
     this.phase="loading";this.onStatus("Preparing Java 17 in the background…");
     this.frame = document.createElement("iframe");
-    this.frame.src = new URL("runner.html?v=presence-1", import.meta.url).href;
+    this.frame.src = new URL("runner.html?v=structural-2", import.meta.url).href;
     this.frame.hidden = true;
     this.frame.title = "Java execution sandbox";
     document.body.appendChild(this.frame);
