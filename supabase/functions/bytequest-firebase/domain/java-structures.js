@@ -24,10 +24,22 @@ class ListHelper {
         if (cycle != null) tail.next = cycle;
         return head;
     }
+    static int indexOfReturned(ListNode head, java.util.function.Function<ListNode,ListNode> solver) {
+        ListNode result = solver.apply(head);
+        if (result == null) return -1;
+        java.util.IdentityHashMap<ListNode,Boolean> visited = new java.util.IdentityHashMap<>();
+        int index = 0;
+        while (head != null && visited.put(head, Boolean.TRUE) == null) {
+            if (result == head) return index;
+            head = head.next;
+            if (++index > 10000) throw new IllegalStateException("List exceeds maximum length");
+        }
+        return -2;
+    }
 }
 `;
 export const hasLinkedListType = problem =>
-  problem.params.some(p => p.type === 'ListNode');
+  problem.params.some(p => p.type === 'ListNode') || problem.returns === 'ListNode';
 
 // Level-order LeetCode tree representation; null marks absent children.
 export const binaryTreeJavaSource = `
@@ -64,7 +76,8 @@ class TreeHelper {
 export const hasTreeNodeType = problem =>
   problem.params.some(p => p.type === 'TreeNode');
 export const requiresJavaStructures = problem =>
-  hasLinkedListType(problem) || hasTreeNodeType(problem);
+  hasLinkedListType(problem) || hasTreeNodeType(problem) ||
+  problem.params.some(p => p.type === 'int[][]') || problem.returns === 'int[][]';
 export const javaInputStructures = problem =>
   (hasLinkedListType(problem) ? linkedListJavaSource : '') +
   (hasTreeNodeType(problem) ? binaryTreeJavaSource : '');
