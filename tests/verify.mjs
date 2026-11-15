@@ -26,10 +26,9 @@ import { traceFor } from "../dist/traces.js";
 
 for (const page of ["index.html", "studio.html"]) {
   const markup = readFileSync("dist/" + page, "utf8");
-  const select = markup.match(/<select id="pReturns">([\\s\\S]*?)<\\/select>/);
+  const select = markup.split('<select id="pReturns">')[1]?.split("</select>")[0];
   assert.ok(select, page + " must contain the problem return type selector");
-  const options = [...select[1].matchAll(/<option(?: value="([^"]+)")?>([^<]+)<\\/option>/g)]
-    .map(([, value, label]) => value ?? label);
+  const options = select.split("<option>").slice(1).map(option => option.split("</option>")[0]);
   assert.deepEqual(options, ["int", "int[]", "int[][]", "boolean", "String", "ListNode"],
     page + " return types must match supported Java catalog contracts");
 }
