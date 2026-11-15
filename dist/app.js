@@ -60,7 +60,8 @@ function warmJavaSoon(){refreshJavaStatus();if(language!=="java"||javaWarmSchedu
 addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")warmJavaSoon();});
 const nativeJudge=new NativeJudge(message=>{$("runStatus").textContent=message;},cloud);
 const judge={run:(source,p,cases)=>language==="java"?javaJudge.run(source,p,cases):nativeJudge.run(source,p,cases,language),stop:()=>{javaJudge.stop();nativeJudge.stop();}};
-function setLanguage(v){if(!languages[v])return;if(busy)stopRun();language=v;try{localStorage.setItem("bytequest.language",v);}catch{}renderPractice();}
+const javaOnlyProblem=p=>Boolean(p?.params?.some(param=>param.type==="ListNode"));
+function setLanguage(v){if(!languages[v])return;if(javaOnlyProblem(current)&&v!=="java"){notify("Linked-list problems currently support Java 17 only.");return;}if(busy)stopRun();language=v;try{localStorage.setItem("bytequest.language",v);}catch{}renderPractice();}
 $("languageSelect").onchange=e=>setLanguage(e.target.value);
 function persist() {
   try { localStorage.setItem(storageKey,JSON.stringify(state)); storageOK=true; $("saveStatus").textContent=cloud.user?"Draft saved · cloud sync queued":"Draft saved on this device"; }
@@ -90,6 +91,8 @@ $("codeEditor").addEventListener("keydown",event=>{
   if((event.ctrlKey||event.metaKey)&&event.key==="Enter"){event.preventDefault();run(false);}
 });
 function renderPractice() {
+  if(javaOnlyProblem(current)&&language!=="java"){language="java";try{localStorage.setItem("bytequest.language","java");}catch{}}
+  for(const option of $("languageSelect").options)option.disabled=javaOnlyProblem(current)&&option.value!=="java";
   warmJavaSoon();
   pauseTrace();
   $("languageSelect").value=language;$("languageSelect").disabled=busy;$("codeFilename").textContent=languages[language].file;$("runStatus").textContent=languages[language].name+(language==="java"?" · browser compiler":" · online via Wandbox");
