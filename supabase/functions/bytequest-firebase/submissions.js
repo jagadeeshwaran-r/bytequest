@@ -1,3 +1,4 @@
+import {hasLinkedListType} from './domain/java-structures.js';
 import {HttpError} from './handler.js';
 export function validateSubmission(body){
  if(typeof body.problemId!=='string'||!/^[a-z][a-z0-9-]{1,63}$/.test(body.problemId)||!['java','python','c','cpp'].includes(body.language)||typeof body.source!=='string'||!body.source.trim()||body.source.length>60000||!Number.isSafeInteger(body.revision)||body.revision<1)throw new HttpError(400,'Choose a current problem, language and solution under 60 KB.');
@@ -9,6 +10,7 @@ export async function submitSolution({owner,body,db,benchmarkJudge,privateJudge}
  const data=validateSubmission(body),existing=await db.existingSubmission(owner,data.nonce);
  if(existing){if(existing.problem_id!==data.problemId||existing.source!==data.source||existing.language!==data.language)throw new HttpError(409,'This retry does not match the original submission.');return{accepted:true,status:'accepted',submission:publicOwn(existing),message:'Your accepted submission is already saved.'};}
  const row=await db.privateProblem(data.problemId);if(!row)throw new HttpError(404,'Problem not found.');if(row.revision!==data.revision)throw new HttpError(409,'This problem changed. Reload it before submitting.');
+ if(hasLinkedListType(row.content)&&data.language!=='java')throw new HttpError(400,'Linked-list problems currently support Java submissions only.');
  const hasHidden=(row.hidden||[]).length>0||Number(row.content.hiddenCount)>0;
  if(hasHidden&&(data.language!=='java'||!privateJudge?.ready))throw new HttpError(503,'This problem requires a configured private Java judge. Public Run is available; hidden cases stay private.');
  if(!await db.claimOnlineRun(owner))throw new HttpError(429,'Wait 5 seconds between submissions. Online execution allows up to 60 runs per hour.');
