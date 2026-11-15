@@ -76,7 +76,7 @@ try {
   const cycleSource = "class Solution { public boolean hasCycle(ListNode head) { ListNode slow=head,fast=head; while(fast!=null&&fast.next!=null){slow=slow.next;fast=fast.next.next;if(slow==fast)return true;}return false; } }";
   const cycleProblem = {
     ...problems[0],id:"linked-list-cycle",method:"hasCycle",
-    returns:"boolean",params:[{name:"head",type:"ListNode"}],
+    returns:"boolean",normalize:undefined,params:[{name:"head",type:"ListNode"}],
     starter:cycleSource,reference:cycleSource,
     tests:cycleCases
   };
