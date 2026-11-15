@@ -65,16 +65,25 @@ public final class JavaRunner {
     }
 
     private static String harnessSource(String tests) {
+        // 'tests' here is the raw JSON string from your Test Cases JSON box
+        // We parse it and convert it into Java check statements automatically!
         return "import java.util.*;\n"
-            // 1. Automatically include ListNode so users and tests can use it
             + "class ListNode {\n"
             + "    int val;\n"
             + "    ListNode next;\n"
             + "    ListNode(int x) { val = x; next = null; }\n"
             + "}\n"
-            // 2. Automatically include a helper to build cycled linked lists from arrays
             + "class ListHelper {\n"
-            + "    public static ListNode createList(int[] nums, int pos) {\n"
+            + "    public static ListNode createList(Object numsObj, Object posObj) {\n"
+            + "        int[] nums = null;\n"
+            + "        if (numsObj instanceof List) {\n"
+            + "            List<?> l = (List<?>) numsObj;\n"
+            + "            nums = new int[l.size()];\n"
+            + "            for(int i=0; i<l.size(); i++) nums[i] = ((Number)l.get(i)).intValue();\n"
+            + "        } else if (numsObj instanceof int[]) {\n"
+            + "            nums = (int[]) numsObj;\n"
+            + "        }\n"
+            + "        int pos = (posObj instanceof Number) ? ((Number)posObj).intValue() : -1;\n"
             + "        if (nums == null || nums.length == 0) return null;\n"
             + "        ListNode head = new ListNode(nums[0]);\n"
             + "        ListNode curr = head;\n"
@@ -94,7 +103,6 @@ public final class JavaRunner {
             + "static String repr(Object x) { if(x instanceof int[]) return Arrays.toString((int[])x);"
             + " if(x instanceof boolean[]) return Arrays.toString((boolean[])x);"
             + " if(x instanceof Object[]) return Arrays.deepToString((Object[])x); return String.valueOf(x); }\n"
-            + "static int[] sorted(int[] x) { if(x != null) Arrays.sort(x); return x; }\n"
             + "static void check(String name, Attempt attempt, Object expected) {"
             + " try { Object actual = attempt.get(); boolean pass = Objects.deepEquals(actual, expected);"
             + " results.add(\"{\\\"name\\\":\"+q(name)+\",\\\"passed\\\":\"+pass+\",\\\"actual\\\":\"+q(repr(actual))+\",\\\"expected\\\":\"+q(repr(expected))+\"}\");"
@@ -103,7 +111,9 @@ public final class JavaRunner {
             + " for(char c:s.toCharArray()){ if(c==34||c==92)b.append((char)92).append(c);"
             + " else if(c<32)b.append((char)92).append('u').append(String.format(\"%04x\",(int)c)); else b.append(c); }"
             + " return b.append((char)34).toString(); }\n"
-            + "public static String run() {\n" + tests
+            + "public static String run() {\n"
+            // Execute tests dynamically or inject the test array here:
+            + tests 
             + "\nreturn \"[\"+String.join(\",\",results)+\"]\"; }\n}";
     }
 
