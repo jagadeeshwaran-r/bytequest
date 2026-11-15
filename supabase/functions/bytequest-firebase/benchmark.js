@@ -6,9 +6,14 @@ export const benchmarkVersion='bq-v1';
 export const benchmarkCompilers={java:'openjdk-jdk-21+35',python:'cpython-3.11.10',c:'gcc-13.2.0-c',cpp:'gcc-13.2.0'};
 function javaProgram(source,p,cases,nonce){
  const imports=(source.match(/^\s*import\s+[^;]+;\s*$/gm)||[]).join('\n'),solution=source.replace(/^\s*import\s+[^;]+;\s*$/gm,'').replace(/public\s+class\s+Solution\b/,'class Solution');
- const calls=cases.map((c,i)=>'System.out.println("\\n__BYTEQUEST_CASE_'+i+'__{\\\"ok\\\":true,\\\"actual\\\":"+repr(new Solution().'+p.method+'('+c.args.map((v,j)=>javaLiteral(v,p.params[j].type)).join(',')+'))+"}");').join('\n');
+ const calls=cases.map((c,i)=>{
+  let call='new Solution().'+p.method+'('+c.args.map((v,j)=>javaLiteral(v,p.params[j].type)).join(',')+')';
+  if(p.normalize==='listnode-index') call='ListHelper.indexOfReturned('+javaLiteral(c.args[0],'ListNode')+', head -> new Solution().'+p.method+'(head))';
+  else if(p.returns==='ListNode') call='ListHelper.toArray('+call+')';
+  return 'System.out.println("\\n__BYTEQUEST_CASE_'+i+'__{\\\"ok\\\":true,\\\"actual\\\":"+repr('+call+')+"}");';
+ }).join('\n');
  return imports+'\n'+javaInputStructures(p)+'\n'+solution+`\nclass Wandbox {
- static String repr(Object x){if(x instanceof int[]){int[] a=(int[])x;StringBuilder b=new StringBuilder("[");for(int i=0;i<a.length;i++){if(i>0)b.append(',');b.append(a[i]);}return b.append(']').toString();}if(x instanceof String){StringBuilder b=new StringBuilder();b.append((char)34);for(char c:((String)x).toCharArray()){if(c==34||c==92)b.append((char)92).append(c);else if(c<32)b.append((char)92).append('u').append(String.format("%04x",(int)c));else b.append(c);}return b.append((char)34).toString();}return String.valueOf(x);}
+ static String repr(Object x){if(x instanceof int[][])return java.util.Arrays.deepToString((int[][])x);if(x instanceof int[]){int[] a=(int[])x;StringBuilder b=new StringBuilder("[");for(int i=0;i<a.length;i++){if(i>0)b.append(',');b.append(a[i]);}return b.append(']').toString();}if(x instanceof String){StringBuilder b=new StringBuilder();b.append((char)34);for(char c:((String)x).toCharArray()){if(c==34||c==92)b.append((char)92).append(c);else if(c<32)b.append((char)92).append('u').append(String.format("%04x",(int)c));else b.append(c);}return b.append((char)34).toString();}return String.valueOf(x);}
  static long peakRss(){try{for(String line:java.nio.file.Files.readAllLines(java.nio.file.Path.of("/proc/self/status"))){if(line.startsWith("VmHWM:"))return Long.parseLong(line.replaceAll("[^0-9]",""))*1024;}}catch(Exception ignored){}return -1;}
  static void suite() throws Exception {`+calls+`}
  public static void main(String[] args) throws Exception {suite();double[] trials=new double[3];for(int i=0;i<3;i++){long at=System.nanoTime();suite();trials[i]=(System.nanoTime()-at)/1000000.0;}java.util.Arrays.sort(trials);System.out.println("\\n__BYTEQUEST_BENCH_`+nonce+`__{\\\"runtimeMs\\\":"+trials[1]+",\\\"memoryBytes\\\":"+peakRss()+"}");}
