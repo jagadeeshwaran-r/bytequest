@@ -87,12 +87,16 @@ try {
   assert.ok(browserCycle.cases.every(c=>c.passed),"Browser linked-list tests must pass: "+JSON.stringify(browserCycle));
   const benchJava=buildBenchmarkProgram(cycleSource,cycleProblem,cycleCases,"java","fixture");
   assert.ok(benchJava.includes("class ListNode"));
-  writeFileSync("build/tests/Wandbox.java",benchJava);
-  command(["com.sun.tools.javac.Main","-d","build/tests","build/tests/Wandbox.java"]);
-  const benchmarkOutput=command(["-cp","build/tests","Wandbox"]);
+  // Keep the benchmark ListNode.class out of RunnerCheck\'s classpath.
+  // The browser runner generates an independent ListNode class per submission.
+  mkdirSync("build/benchmark",{recursive:true});
+  writeFileSync("build/benchmark/Wandbox.java",benchJava);
+  command(["com.sun.tools.javac.Main","-d","build/benchmark","build/benchmark/Wandbox.java"]);
+  const benchmarkOutput=command(["-cp","build/benchmark","Wandbox"]);
   assert.equal((benchmarkOutput.match(/__BYTEQUEST_CASE_\d+__/g)||[]).length,cycleCases.length*4);
   assert.ok(benchmarkOutput.includes("__BYTEQUEST_BENCH_fixture__"));
   const wrongCycle=execute("class Solution { public boolean hasCycle(ListNode head) { return false; } }",buildTests(cycleProblem,cycleCases));
+  assert.equal(wrongCycle.status,"ok",JSON.stringify(wrongCycle));
   assert.deepEqual(wrongCycle.cases.map(c=>c.passed),[false,false,true,true]);
   console.log("✓ ListNode catalog, cycle position inputs, browser verification, and server benchmark.");
   const problem=problems[0],tests=buildTests(problem,problem.tests.slice(0,2));
