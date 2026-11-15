@@ -44,6 +44,26 @@ try {
     cases+=result.cases.length;
     console.log("✓ "+p.title+" · "+result.cases.length+" cases");
   }
+  const structures = execute(
+    "import java.util.*; class Solution { ListNode list(ListNode n){return n;} TreeNode tree(TreeNode n){return n;} GraphNode graph(GraphNode n){return n;} int[][] matrix(int[][] a){return a;} List<List<Integer>> nested(List<List<Integer>> a){return a;} }",
+    [
+      'check("Linked list", () -> new Solution().list(ListHelper.createList(new int[]{1,2,3})), ListHelper.createList(new int[]{1,2,3}));',
+      'check("Cyclic linked list", () -> new Solution().list(ListHelper.createList(new int[]{3,2,0,-4},1)), ListHelper.createList(new int[]{3,2,0,-4},1));',
+      'check("Binary tree", () -> new Solution().tree(TreeHelper.createTree(1,2,3,null,4)), TreeHelper.createTree(1,2,3,null,4));',
+      'check("Graph adjacency", () -> new Solution().graph(GraphHelper.createGraph(new int[][]{{2},{1}})), GraphHelper.createGraph(new int[][]{{2},{1}}));',
+      'check("Matrix", () -> new Solution().matrix(new int[][]{{1,2},{3,4}}), new int[][]{{1,2},{3,4}});',
+      'check("Nested lists", () -> new Solution().nested(Arrays.asList(Arrays.asList(1,2),Arrays.asList(3))), Arrays.asList(Arrays.asList(1,2),Arrays.asList(3)));',
+      'check("Wrong tree", () -> new Solution().tree(TreeHelper.createTree(1,2,3)), TreeHelper.createTree(1,2,4));'
+    ].join("\n")
+  );
+  assert.equal(structures.status,"ok","Structure harness must compile and execute");
+  assert.deepEqual(structures.cases.map(x=>x.passed),[true,true,true,true,true,true,false],"Structural comparisons must distinguish different trees");
+  console.log("✓ Linked lists (including cycles), binary trees, graphs, matrices, and nested lists.");
+  assert.equal(javaLiteral([[1,2],[3]],"int[][]"),"new int[][]{new int[]{1,2},new int[]{3}}");
+  assert.equal(javaLiteral([1,2,3],"ListNode"),"ListHelper.createList(new int[]{1,2,3},-1)");
+  assert.equal(javaLiteral([1,null,3],"TreeNode"),"TreeHelper.createTree(1,null,3)");
+  assert.equal(javaLiteral([[2],[1]],"GraphNode"),"GraphHelper.createGraph(new int[][]{new int[]{2},new int[]{1}})");
+  assert.throws(()=>javaLiteral({values:[1,2],pos:2},"ListNode"));
   const problem=problems[0],tests=buildTests(problem,problem.tests.slice(0,2));
   assert.equal(execute("class Solution { THIS IS NOT JAVA }",tests).status,"compile_error");
   const wrong=execute("class Solution { public int[] twoSum(int[] a,int t){return new int[]{0,0};} }",tests);

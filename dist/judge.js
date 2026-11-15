@@ -16,6 +16,58 @@ export function javaLiteral(value, type, asciiOnly = true) {
     // Encode controls as octal; JSON's \u escapes are processed early by javac.
     return '"' + [...value].map(c => c === '"' ? '\\"' : c === "\\" ? "\\\\" : c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127 ? "\\" + c.charCodeAt(0).toString(8).padStart(3, "0") : c).join("") + '"';
   }
+  // LeetCode-style Java-only structural types. Values are validated before
+  // being turned into Java expressions; no user-supplied Java snippets are evaluated.
+  const intValue = v => Number.isInteger(v) && v >= -1000000000 && v <= 1000000000;
+  const javaArray = (v, itemType, max = 10000) => {
+    if (!Array.isArray(v) || v.length > max) throw new Error("Expected an array of at most " + max + " elements.");
+    return "new " + itemType + "[]{" + v.map(item => javaLiteral(item, itemType, asciiOnly)).join(",") + "}";
+  };
+  if (type === "long") {
+    if (!Number.isSafeInteger(value)) throw new Error("Expected a safe integer for long.");
+    return String(value) + "L";
+  }
+  if (type === "double") {
+    if (typeof value !== "number" || !Number.isFinite(value)) throw new Error("Expected a finite number.");
+    return String(value) + "d";
+  }
+  if (type === "int[][]") {
+    if (!Array.isArray(value) || value.length > 1000) throw new Error("Expected a matrix with at most 1,000 rows.");
+    return "new int[][]{" + value.map(row => javaLiteral(row, "int[]", asciiOnly)).join(",") + "}";
+  }
+  if (type === "boolean[]") return javaArray(value, "boolean");
+  if (type === "String[]") return javaArray(value, "String");
+  if (type === "long[]") return javaArray(value, "long");
+  if (type === "double[]") return javaArray(value, "double");
+  if (type === "List<Integer>") {
+    if (!Array.isArray(value) || value.length > 10000 || value.some(v => !intValue(v))) throw new Error("Expected an integer list.");
+    return "new java.util.ArrayList<>(java.util.Arrays.asList(" + value.map(v => javaLiteral(v, "int")).join(",") + "))";
+  }
+  if (type === "List<List<Integer>>") {
+    if (!Array.isArray(value) || value.length > 1000) throw new Error("Expected a nested list.");
+    return "new java.util.ArrayList<>(java.util.Arrays.asList(" + value.map(row => javaLiteral(row, "List<Integer>")).join(",") + "))";
+  }
+  if (type === "ListNode") {
+    if (value === null) return "null";
+    let pos = -1, values = value;
+    if (value && !Array.isArray(value) && typeof value === "object") {
+      values = value.values;
+      pos = value.pos ?? -1;
+    }
+    if (!Array.isArray(values) || values.length > 10000 || values.some(v => !intValue(v))) throw new Error("Expected list values as an integer array.");
+    if (!Number.isInteger(pos) || pos < -1 || pos >= values.length) throw new Error("Invalid linked-list cycle position.");
+    return "ListHelper.createList(" + javaLiteral(values,"int[]") + "," + pos + ")";
+  }
+  if (type === "TreeNode") {
+    if (value === null) return "null";
+    if (!Array.isArray(value) || value.length > 10000 || value.some(v => v !== null && !intValue(v))) throw new Error("Expected level-order tree values as integers or null.");
+    return "TreeHelper.createTree(" + value.map(v => v === null ? "null" : String(v)).join(",") + ")";
+  }
+  if (type === "GraphNode") {
+    if (value === null) return "null";
+    if (!Array.isArray(value) || value.length > 1000 || value.some(row => !Array.isArray(row) || row.some(n => !Number.isInteger(n) || n < 1 || n > value.length))) throw new Error("Expected a 1-indexed graph adjacency list.");
+    return "GraphHelper.createGraph(" + javaLiteral(value,"int[][]") + ")";
+  }
   throw new Error("Unsupported parameter type.");
 }
 
