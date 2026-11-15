@@ -1,4 +1,4 @@
-import {linkedListJavaSource,hasLinkedListType} from './domain/java-structures.js';
+import {javaInputStructures} from './domain/java-structures.js';
 import {javaLiteral} from './domain/judge.js';
 import {HttpError} from './handler.js';
 // This adapter runs only on the server. No provider key, inputs, or expected outputs
@@ -12,7 +12,7 @@ export function makePrivateJudge({url,apiKey='',languageId,fetchImpl=(...args)=>
   const imports=(source.match(/^\s*import\s+[^;]+;\s*$/gm)||[]).join('\n');
   const solution=source.replace(/^\s*import\s+[^;]+;\s*$/gm,'').replace(/public\s+class\s+Solution\b/,'class Solution');
   const calls=cases.map(c=>{let call='new Solution().'+problem.method+'('+c.args.map((v,i)=>javaLiteral(v,problem.params[i].type)).join(',')+')';if(problem.normalize==='sort-int')call='sorted('+call+')';return 'System.out.println(repr('+call+'));';}).join('\n');
-  const program=imports+'\n'+(hasLinkedListType(problem)?linkedListJavaSource:'')+'\n'+solution+`\npublic class Main {
+  const program=imports+'\n'+javaInputStructures(problem)+'\n'+solution+`\npublic class Main {
  static int[] sorted(int[] x){if(x!=null)java.util.Arrays.sort(x);return x;}
  static String repr(Object x){if(x instanceof int[]){int[] a=(int[])x;StringBuilder b=new StringBuilder("[");for(int i=0;i<a.length;i++){if(i>0)b.append(',');b.append(a[i]);}return b.append(']').toString();}if(x instanceof String){StringBuilder b=new StringBuilder();b.append((char)34);for(char c:((String)x).toCharArray()){if(c==34||c==92)b.append((char)92).append(c);else if(c<32)b.append((char)92).append('u').append(String.format("%04x",(int)c));else b.append(c);}return b.append((char)34).toString();}return String.valueOf(x);}
  public static void main(String[] args)throws Exception{`+calls+'\n}}';

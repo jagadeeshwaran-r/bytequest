@@ -99,6 +99,37 @@ try {
   assert.equal(wrongCycle.status,"ok",JSON.stringify(wrongCycle));
   assert.deepEqual(wrongCycle.cases.map(c=>c.passed),[false,false,true,true]);
   console.log("✓ ListNode catalog, cycle position inputs, browser verification, and server benchmark.");
+  // TreeNode problems are configured through the UI using LeetCode level-order arrays.
+  const depthSource = "class Solution { public int maxDepth(TreeNode root){return root==null?0:1+Math.max(maxDepth(root.left),maxDepth(root.right));} }";
+  const depthCases = [
+    {args:[[3,9,20,null,null,15,7]],expected:3,label:"balanced and deep"},
+    {args:[[1,null,2]],expected:2,label:"one-sided tree"},
+    {args:[[]],expected:0,label:"empty tree"},
+    {args:[[1]],expected:1,label:"single node"},
+    {args:[[1,2,3,4,null,null,5]],expected:3,label:"sparse level order"}
+  ];
+  const depthProblem = {
+    ...problems[0],id:"maximum-depth-of-binary-tree",method:"maxDepth",
+    returns:"int",normalize:undefined,params:[{name:"root",type:"TreeNode"}],
+    starter:depthSource,reference:depthSource,tests:depthCases
+  };
+  assert.equal(validateProblem(depthProblem).params[0].type,"TreeNode");
+  assert.throws(()=>validateProblem({...depthProblem,tests:[{args:[["not an integer"]],expected:1},...depthCases]}));
+  const browserDepth=execute(depthSource,buildTests(depthProblem,depthCases));
+  assert.equal(browserDepth.status,"ok",JSON.stringify(browserDepth));
+  assert.ok(browserDepth.cases.every(c=>c.passed),"Browser tree verification failed: "+JSON.stringify(browserDepth));
+  const wrongDepth=execute("class Solution { public int maxDepth(TreeNode root){return 0;} }",buildTests(depthProblem,depthCases));
+  assert.equal(wrongDepth.status,"ok",JSON.stringify(wrongDepth));
+  assert.deepEqual(wrongDepth.cases.map(c=>c.passed),[false,false,true,false,false]);
+  const benchmarkTree=buildBenchmarkProgram(depthSource,depthProblem,depthCases,"java","treefixture");
+  assert.ok(benchmarkTree.includes("class TreeNode"));
+  mkdirSync("build/tree-benchmark",{recursive:true});
+  writeFileSync("build/tree-benchmark/Wandbox.java",benchmarkTree);
+  command(["com.sun.tools.javac.Main","-d","build/tree-benchmark","build/tree-benchmark/Wandbox.java"]);
+  const treeOutput=command(["-cp","build/tree-benchmark","Wandbox"]);
+  assert.equal((treeOutput.match(/__BYTEQUEST_CASE_\d+__/g)||[]).length,depthCases.length*4);
+  assert.ok(treeOutput.includes("__BYTEQUEST_BENCH_treefixture__"));
+  console.log("✓ TreeNode studio validation, sparse/empty level-order trees, browser judge, and server benchmark.");
   const problem=problems[0],tests=buildTests(problem,problem.tests.slice(0,2));
   assert.equal(execute("class Solution { THIS IS NOT JAVA }",tests).status,"compile_error");
   const wrong=execute("class Solution { public int[] twoSum(int[] a,int t){return new int[]{0,0};} }",tests);
