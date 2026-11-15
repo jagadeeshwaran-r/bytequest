@@ -18,6 +18,8 @@ import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from "node
 import { join, delimiter } from "node:path";
 import { problems } from "../dist/problems.js";
 import { buildTests, javaLiteral } from "../dist/judge.js";
+import { validateProblem } from "../dist/catalog.js";
+import { buildBenchmarkProgram } from "../supabase/functions/bytequest-firebase/benchmark.js";
 import { traceFor } from "../dist/traces.js";
 mkdirSync("build/tests", {recursive:true});
 function command(args) {
@@ -64,6 +66,39 @@ try {
   assert.equal(javaLiteral([1,null,3],"TreeNode"),"TreeHelper.createTree(1,null,3)");
   assert.equal(javaLiteral([[2],[1]],"GraphNode"),"GraphHelper.createGraph(new int[][]{new int[]{2},new int[]{1}})");
   assert.throws(()=>javaLiteral({values:[1,2],pos:2},"ListNode"));
+  // Regression: creator accepts ListNode and both client/server judges can execute cycle inputs.
+  const cycleCases = [
+    {args:[{values:[3,2,0,-4],pos:1}],expected:true,label:"cycle at second node"},
+    {args:[{values:[1,2],pos:0}],expected:true,label:"cycle at head"},
+    {args:[{values:[1],pos:-1}],expected:false,label:"no cycle"},
+    {args:[null],expected:false,label:"null head"}
+  ];
+  const cycleSource = "class Solution { public boolean hasCycle(ListNode head) { ListNode slow=head,fast=head; while(fast!=null&&fast.next!=null){slow=slow.next;fast=fast.next.next;if(slow==fast)return true;}return false; } }";
+  const cycleProblem = {
+    ...problems[0],id:"linked-list-cycle",method:"hasCycle",
+    returns:"boolean",normalize:undefined,params:[{name:"head",type:"ListNode"}],
+    starter:cycleSource,reference:cycleSource,
+    tests:cycleCases
+  };
+  assert.equal(validateProblem(cycleProblem).params[0].type,"ListNode");
+  assert.throws(()=>validateProblem({...cycleProblem,tests:[{args:[{values:[1,2],pos:2}],expected:true},...cycleCases]}));
+  const browserCycle=execute(cycleSource,buildTests(cycleProblem,cycleCases));
+  assert.equal(browserCycle.status,"ok",JSON.stringify(browserCycle));
+  assert.ok(browserCycle.cases.every(c=>c.passed),"Browser linked-list tests must pass: "+JSON.stringify(browserCycle));
+  const benchJava=buildBenchmarkProgram(cycleSource,cycleProblem,cycleCases,"java","fixture");
+  assert.ok(benchJava.includes("class ListNode"));
+  // Keep the benchmark ListNode.class out of RunnerCheck\'s classpath.
+  // The browser runner generates an independent ListNode class per submission.
+  mkdirSync("build/benchmark",{recursive:true});
+  writeFileSync("build/benchmark/Wandbox.java",benchJava);
+  command(["com.sun.tools.javac.Main","-d","build/benchmark","build/benchmark/Wandbox.java"]);
+  const benchmarkOutput=command(["-cp","build/benchmark","Wandbox"]);
+  assert.equal((benchmarkOutput.match(/__BYTEQUEST_CASE_\d+__/g)||[]).length,cycleCases.length*4);
+  assert.ok(benchmarkOutput.includes("__BYTEQUEST_BENCH_fixture__"));
+  const wrongCycle=execute("class Solution { public boolean hasCycle(ListNode head) { return false; } }",buildTests(cycleProblem,cycleCases));
+  assert.equal(wrongCycle.status,"ok",JSON.stringify(wrongCycle));
+  assert.deepEqual(wrongCycle.cases.map(c=>c.passed),[false,false,true,true]);
+  console.log("✓ ListNode catalog, cycle position inputs, browser verification, and server benchmark.");
   const problem=problems[0],tests=buildTests(problem,problem.tests.slice(0,2));
   assert.equal(execute("class Solution { THIS IS NOT JAVA }",tests).status,"compile_error");
   const wrong=execute("class Solution { public int[] twoSum(int[] a,int t){return new int[]{0,0};} }",tests);
