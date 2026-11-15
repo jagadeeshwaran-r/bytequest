@@ -46,7 +46,8 @@ export function createHandler({projectId,allowedOrigins,verifyToken,db,privateJu
       await db.touchAccount(identity);
       if(action==='live-events'){
         if(body.after!==undefined&&body.after!==null&&(!Number.isSafeInteger(body.after)||body.after<0))throw new HttpError(400,'Invalid event cursor.');
-        return liveEventResponse({req:new Request(req.url,{method:'POST',headers:req.headers,signal:req.signal,body:JSON.stringify({after:body.after??null})}),headers,owner:identity.id,db});
+        if(body.announcementsAfter!=null&&(!Number.isSafeInteger(body.announcementsAfter)||body.announcementsAfter<0))throw new HttpError(400,'Invalid update cursor.');
+        return liveEventResponse({req:new Request(req.url,{method:'POST',headers:req.headers,signal:req.signal,body:JSON.stringify({after:body.after??null,announcementsAfter:body.announcementsAfter??null})}),headers,owner:identity.id,db});
       }
       if(action==='submission-create')return reply(200,await submitSolution({owner:identity.id,body,db,benchmarkJudge,privateJudge}));
       if(action==="avatar-upload"){await db.uploadAvatar(identity.id,avatarBytes(body.image));return reply(200,await db.community(identity.id,"self",{}));}

@@ -3,11 +3,12 @@ export function liveEventResponse({req,headers,owner,db,durationMs=50000,interva
  let cancelled=false;const encoder=new TextEncoder();req.signal.addEventListener('abort',()=>{cancelled=true;},{once:true});
  const stream=new ReadableStream({async start(controller){
   const emit=batch=>{if(!cancelled)controller.enqueue(encoder.encode('data: '+JSON.stringify(batch)+'\n\n'));};
-  let cursor=null;const until=Date.now()+durationMs;
+  let cursor=null,announcementCursor=null;const until=Date.now()+durationMs;
   try{
-   const body=await req.json();cursor=body.after??null;
+   const body=await req.json();cursor=body.after??null;announcementCursor=body.announcementsAfter??null;
    if(cursor!==null&&(!Number.isSafeInteger(cursor)||cursor<0))throw new Error('Invalid cursor');
-   while(!cancelled&&Date.now()<until){const batch=await db.liveEvents(owner,cursor);cursor=batch.cursor;emit(batch);await new Promise(resolve=>setTimeout(resolve,intervalMs));}
+   if(announcementCursor!==null&&(!Number.isSafeInteger(announcementCursor)||announcementCursor<0))throw new Error('Invalid update cursor');
+   while(!cancelled&&Date.now()<until){const batch=await db.liveEvents(owner,cursor,announcementCursor);cursor=batch.cursor;announcementCursor=batch.announcementCursor??announcementCursor;emit(batch);await new Promise(resolve=>setTimeout(resolve,intervalMs));}
   }catch{try{emit({error:'Live updates paused. Reconnecting.'});}catch{}}
   finally{if(!cancelled)try{controller.close();}catch{}}
  },cancel(){cancelled=true;}});

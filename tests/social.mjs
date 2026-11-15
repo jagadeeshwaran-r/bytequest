@@ -35,12 +35,12 @@ monitor.setOwner(null);const previous=body;tick();assert.equal(body,previous);mo
 const calls=[];let current=null;
 const db=createDatabase('https://example.supabase.co','fixture-key',{fetchImpl:async(url,options)=>{
  const path=new URL(url).pathname;const data=options.body?JSON.parse(options.body):null;calls.push({path,data,url:String(url)});
- const result=path.endsWith('/bytequest_friend_presence')?{users:[]}:path.endsWith('/bytequest_community')?{profile:null}:current;
+ const result=path.endsWith('/bytequest_friend_presence')?{users:[]}:(path.endsWith('/bytequest_community')||path.endsWith('/bytequest_save_profile'))?{profile:null}:current;
  return new Response(JSON.stringify(result),{headers:{'Content-Type':'application/json'}});
 }});
 await db.community('verified-owner','friend-presence',{viewer_id:'forged'});assert.deepEqual(calls.at(-1).data,{viewer_id:'verified-owner'});
 const save={username:'learner',display_name:'Name',bio:'',avatar_url:''};
-const clean=validateCommunity('profile-save',save);await db.community('verified-owner','profile-save',clean);assert.equal(calls.at(-1).data.data.discoverable,true);assert.equal(calls.at(-1).data.data.show_presence,true);
+const clean=validateCommunity('profile-save',save);await db.community('verified-owner','profile-save',clean);assert.ok(calls.at(-1).path.endsWith('/bytequest_save_profile'));assert.equal(calls.at(-1).data.owner_id,'verified-owner');assert.equal(calls.at(-1).data.data.discoverable,true);assert.equal(calls.at(-1).data.data.show_presence,true);
 current={discoverable:false,show_presence:false};await db.community('verified-owner','profile-save',clean);assert.equal(calls.at(-1).data.data.discoverable,false);assert.equal(calls.at(-1).data.data.show_presence,false,'Omitted settings preserve existing opt-outs.');
 for(const settings of [{discoverable:'true'},{show_presence:null}])assert.throws(()=>validateCommunity('profile-save',{...save,...settings}));
 const verified=[];const handler=createHandler({projectId:'fixture',allowedOrigins:[],verifyToken:async()=>({id:'verified-owner'}),db:{touchAccount:async()=>{},community:async(...args)=>{verified.push(args);return{users:[]};}}});

@@ -39,6 +39,7 @@ Private account tables have RLS enabled and are denied to direct `anon` and `aut
 | `bytequest_firebase_profiles` | Verified Firebase identity records |
 | `bytequest_firebase_progress` | Private progress payload and optimistic revision |
 | `bytequest_social_profiles` | Username, public profile fields and privacy preferences |
+| `bytequest_profile_details` | Optional self-reported organization and LinkedIn details; visibility follows the social profile |
 | `bytequest_follows` | Following relationships between public profile identifiers |
 | `bytequest_presence_sessions` | Per-page activity leases, sequence numbers and last activity |
 | `bytequest_problem_authors` | Ownership of learner-created problems |
@@ -69,6 +70,7 @@ SQL files are successive schema snapshots and changes, rather than an automatic 
 10. `database/account-removal-functions.sql`
 11. `database/social-live.sql`, then `database/submissions-and-solving.sql`
 12. `database/submission-metric-consistency.sql`
+13. `database/profile-inbox.sql`
 
 Use new reviewed migrations for later changes. Keep all private-table RLS, function grants and ownership predicates in place.
 
@@ -131,7 +133,11 @@ In **Problem studio**, supply the statement, examples, Java contract, teaching n
 
 Only deliberately enrolled library administrators can delegate creator/editor permissions through **Manage creators**. No first-visitor promotion or client-controlled grant exists. Owner/admin enrollment must use a verified account ID in the owner dashboard, never a user-editable profile claim.
 
-The inbox returns up to 50 announcements for currently published problems and an account-specific read cursor. It does not send email or push notifications.
+The Updates tab within Messages & updates returns up to 50 announcements for currently published problems and an account-specific read cursor. `bytequest_updates` returns a separate shared event cursor and exact unread count; `bytequest_activity_feed` combines these with private chat/online events. Every active signed-in account receives shared announcements without a per-user fan-out write, including accounts with no public social profile. Initial streams establish a quiet baseline; reconnects resume both cursors. Unpublishing advances the cursor without exposing removed content. It does not send email or device push notifications.
+
+`bytequest_problem_credits` resolves stored original authors for a published problem, returning only discoverable authors or the viewer's own profile. Corrections do not transfer ownership. The 16 bundled problems have no creator account and use a ByteQuest collection credit. Private or unavailable author profiles are not exposed.
+
+`bytequest_save_profile` wraps the existing profile operation and optional detail upsert in one transaction. Optional website URLs require HTTPS; LinkedIn links are restricted to linkedin.com personal `/in/` profiles. Browser roles cannot access the detail table directly. `bytequest_profile_insights` checks own/discoverable access and returns distinct solved published problems by topic, accepted-submission language counts, and optional details. It never guesses a language for legacy progress. Deleting the account cascades through optional details.
 
 ## Code execution
 
@@ -183,11 +189,13 @@ After deployment, verify `/health`, confirm an unsigned private request returns 
 
 `submission-create` loads the current published revision and private suite from the database, ignores client owners/scores and claims the shared online-execution quota. `benchmark.js` builds one warm-up plus three measured public-suite passes. Only correct repeated runs with valid nonce-tagged measurements can be recorded. Public compiler requests use the fixed Wandbox endpoint, contain only code/public inputs and request no permalink. Versions: OpenJDK 21, CPython 3.11.10 and GCC 13.2. Browser Java Run remains Java 17. Hidden-suite problems fail closed unless a trusted private Java judge is configured; that judge checks public and hidden cases together. Hidden inputs never go to Wandbox.
 
-Acceptance atomically updates private progress and accepted days, advancing the optimistic revision. `bytequest_submissions` unlocks shared solutions only after a server-owned accepted record for that current revision. Self-reported progress cannot satisfy the gate. Ranking/history lists omit source; another learner’s source read additionally requires explicit sharing and a discoverable author. Own private history is available. Each author contributes one best shared result per language, with separate runtime/memory rankings and unmeasured values excluded. Corrections invalidate older unlocks.
+Acceptance atomically updates private progress and accepted days, advancing the optimistic revision. `bytequest_submissions` unlocks shared solutions only after a server-owned accepted record for that current revision. Self-reported progress cannot satisfy the gate. Ranking/history lists omit source; another learner’s source read additionally requires explicit sharing and a discoverable author. Own private history is available. The list defaults to `all` languages, optionally filters Java/Python/C/C++, and returns each row's language. Each author contributes one best shared result per language, with separate runtime/memory rankings and unmeasured values excluded. Corrections invalidate older unlocks.
 
 Runtime includes harness/serialization/output overhead. Memory is whole-process peak RSS, not auxiliary space. Measurements are estimates affected by provider scheduling and in-process instrumentation tampering, rather than trusted contest scores. Big-O annotations are optional author explanations. A private judge reports its own metrics instead of the public warmed median. RLS and service-only RPC grants protect all new tables. Account deletion cascades through messages, events and submissions.
 
 `node tests/next-features.mjs` verifies four-language harnesses, repetition checks, authenticated streaming, hidden-input isolation and revision gates. `tests/social-submissions.sql` uses rollback-only database fixtures to verify permissions, nonces, unread state, online privacy, source gates, ranking, streaks and deletion cascades. Validation does not message real learners or delete real accounts.
+
+`tests/profile-inbox.mjs` verifies calendar month/leap boundaries, medal markup, safe optional links, default all-language filters, shared announcement replay and account-switch isolation. `tests/profile-inbox.sql` rolls back fixture profiles, problems and accepted submissions after checking atomic profile saves, author retention, public/private insights, all-account announcements, independent read cursors and per-author/per-language rankings.
 
 ## Public compiler availability failures
 

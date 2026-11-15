@@ -1,14 +1,15 @@
-import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=next-1';
+import {profileAvatar,publicProfileHref} from './profile-view.js?v=profile-2';
+import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=profile-2';
 import {launchCelebration} from './celebration.js?v=next-1';
 import {mountEditorTools} from './editor-tools.js?v=upgrade-2';
 import {pointsFor,totalPoints} from './rewards.js?v=upgrade-2';
 import {companyIcon} from './companies.js?v=social-1';
 import {mountWorkspace} from './workspace.js';
-import {mountShell} from "./shell.js?v=next-1";
+import {mountShell} from "./shell.js?v=profile-2";
 import {Dashboard} from "./dashboard.js?v=next-1";
 import {languages,starterFor,NativeJudge} from "./languages.js?v=presence-1";
 import {problems as bundledProblems} from "./problems.js";
-import {Cloud} from "./cloud.js?v=next-1";
+import {Cloud} from "./cloud.js?v=profile-2";
 import {blankProgress, validateProgress, mergeProgress, solveStreak} from "./progress.js?v=next-1";
 import {Studio} from "./studio.js?v=social-1";
 const problems=[...bundledProblems];
@@ -39,7 +40,7 @@ let current = problems.find(p => p.id === state.current) || problems[0];
 let tab = "problem", mode = "learn", hints = 0, selectedCase = 0, customCases = [], results = null;
 let busy = false, runEpoch = 0, watchdog, toastTimer, traceTimer, traceStep = 0;
 let timerStarted = null, timerUsed = 0, timerProblem = current.id, timerTick;
-let referenceUsed = false;
+let referenceUsed = false,creditEpoch=0;
 const reviewDays = [2,7,21];
 const codeTools=mountEditorTools($("codeEditor"),{getLanguage:()=>language,getProblem:()=>current,notify});
 const loadEditor=value=>codeTools.load((accountOwner||"guest")+":"+draftId(),value);
@@ -107,13 +108,13 @@ function renderPractice() {
 }
 function timerHtml() { return mode==="challenge"?'<div class="timer">'+icon("clock")+'<span id="timerDisplay" class="stopwatch-text">20:00</span><span>optional focus timer</span><button id="timerButton">Start</button></div>':""; }
 function renderLearning(){
-  pauseTrace();
+  pauseTrace();creditEpoch++;
   document.querySelectorAll("[data-tab]").forEach(b=>{b.classList.toggle("active",b.dataset.tab===tab);b.setAttribute("aria-selected",String(b.dataset.tab===tab));});
   submissions.close();
   if(tab==="submissions"){submissions.mount($("learningContent"),current,language);return;}
   let content=timerHtml();
   if(tab==="problem"){
-    content+='<h3>'+html(current.title)+'</h3><p class="body-copy">'+html(current.description)+'</p><h4>Input</h4><p class="body-copy">'+html(current.inputGuide||current.params.map(p=>p.name+' ('+p.type+')').join(', '))+'</p><h4>Output</h4><p class="body-copy">'+html(current.outputGuide||('Return '+current.returns+' from '+current.method+'.'))+'</p><h4>Examples</h4>';
+    content+='<h3>'+html(current.title)+'</h3><div id="problemCredits" class="problem-credits"></div><p class="body-copy">'+html(current.description)+'</p><h4>Input</h4><p class="body-copy">'+html(current.inputGuide||current.params.map(p=>p.name+' ('+p.type+')').join(', '))+'</p><h4>Output</h4><p class="body-copy">'+html(current.outputGuide||('Return '+current.returns+' from '+current.method+'.'))+'</p><h4>Examples</h4>';
     current.tests.slice(0,2).forEach((c,i)=>{content+='<div class="example-card"><code>Input: <b>'+html(formatArgs(c.args))+'</b>\nOutput: <b>'+html(JSON.stringify(c.expected))+'</b></code><p>'+html(c.label)+'</p></div>';});
     content+='<h4>Constraints</h4><div class="constraints">'+html(current.constraints)+'</div><details class="concept-hint"><summary>Reveal the key concept</summary><p>'+html(current.topic)+(current.pattern&&current.pattern!==current.topic?' · '+html(current.pattern):'')+'</p></details>';
   } else if(tab==="learn"){
@@ -123,6 +124,7 @@ function renderLearning(){
   }
   if(tab==="learn")content+='<section class="language-guidance"><h4>'+html(languages[language].name)+' coding tips</h4><p>'+html(({java:'Use the provided method signature. HashMap and HashSet give expected O(1) lookup; use long when int can overflow.',python:'Keep the generated function and parameters. Return the result instead of printing or reading stdin. Use dict or set for lookup, enumerate for indexed iteration, and four spaces per indentation level.',c:'Keep the generated function signature. Check array lengths before indexing and free memory you allocate. Use long long for large sums.',cpp:'Keep the generated function signature. Return the result; do not add main or read stdin. Use std::vector, std::unordered_map and std::sort; prefer long long for large sums.'})[language])+'</p><small>Suggestions: Ctrl + Space · Accept: Tab · New line: auto-indent · Undo: Ctrl / ⌘ Z · Clipboard disabled in the editor</small></section>';
   $("learningContent").innerHTML=content;
+  if(tab==="problem")loadCredits(current,creditEpoch);
   if($("timerButton")){$("timerButton").onclick=toggleTimer;updateTimer();}
   if($("referenceBtn"))$("referenceBtn").onclick=()=>{
     referenceUsed=true;
@@ -141,6 +143,12 @@ function renderLearning(){
       traceTimer=setInterval(()=>{traceStep++;renderTrace();if(traceStep>=frames.length-1)pauseTrace();},1900);
     };
   }
+}
+async function loadCredits(problem,ticket){
+ const container=$("problemCredits"),owner=cloud.user?.id;if(!container)return;
+ if(!owner){container.textContent='Community library · Sign in to view contributor';return;}
+ container.textContent='Loading contributor…';
+ try{const r=await cloud.request('problem-authors',{problemId:problem.id},owner);if(ticket!==creditEpoch||cloud.user?.id!==owner||!container.isConnected)return;container.innerHTML=r.users?.length?'<span>Created by</span>'+r.users.map(p=>'<a class="problem-author" href="'+publicProfileHref(p)+'" aria-label="View '+html(p.display_name)+' profile">'+profileAvatar(p)+'<strong>'+html(p.display_name)+'</strong></a>').join(''):r.hasAuthor?'Contributor profile unavailable':'ByteQuest collection';}catch{if(ticket===creditEpoch&&container.isConnected)container.textContent='Community library';}
 }
 function renderTrace(){
   const frames=traceFor(current), f=frames[traceStep];

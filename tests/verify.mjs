@@ -1,3 +1,4 @@
+import "./profile-inbox.mjs";
 import "./compiler-recovery.mjs";
 import "./next-features.mjs";
 import "./upgrades.mjs";

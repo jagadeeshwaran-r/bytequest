@@ -19,11 +19,11 @@ ByteQuest combines executable problems, guided Java explanations, personal progr
 | Code editor | Language-specific suggestions for Java, Python, C and C++; four-space indentation and automatic newlines; Ctrl/Cmd+Z undo and redo; clipboard actions disabled inside the editor. |
 | Learning | Explore pattern explanations, invariants, hints, complexity, trade-offs, Java reference solutions and animated reference-algorithm walkthroughs. |
 | Progress | Save drafts per language, record first solves, track consecutive UTC accepted-solve days, review on a 2/7/21-day schedule, and export or merge JSON backups. |
-| Profiles and friends | Sign in with Google, upload a profile photo, find people from the header, follow learners, view rank, points, solve-only streaks, solved/total progress and follower lists, and compare solving history with multiple or all followed friends. |
+| Profiles and friends | Sign in with Google, upload a photo, find and follow learners, view medal-styled global ranks, solved/total progress, month-separated solving calendars, solve-derived skills and language badges. Add optional organization and LinkedIn links; open follower lists beneath the name and compare solving history with followed friends. |
 | Leaderboards | Switch between Global and Friends rankings on one page. Filter by all time, this week or this month; earn 10/25/50 points for Easy/Medium/Hard, with shared ranks and gold, silver and bronze cups for the top three. |
 | Friend chat | Exchange private messages with mutual followers; track unread messages and receive live in-site banners with the sender’s photo or initial. |
-| Submissions | Unlock shared solutions after a server-accepted answer for the current revision; rank each learner’s best shared result by runtime or peak memory within one language; view code and explanations. Sharing is off by default. |
-| Community updates | Open the inbox popover for new problems and corrections. See photo or initial avatars in temporary friend-online banners and relative last-seen status when shared. |
+| Submissions | Unlock shared solutions after a server-accepted answer for the current revision; view all languages by default, optionally filter one language, and rank each learner’s best shared result per language by runtime or peak memory. Sharing is off by default. |
+| Community updates | One Messages & updates dialog combines private chat and problem announcements. Receive live in-site new-problem and correction banners, catch up on unread updates, and see friend-online alerts with photo or initial avatars. |
 | Account control | Delete your ByteQuest account after recent Google verification. Private learning records and photos are removed; published community problems remain without account attribution. |
 | Problem authoring | Create and publish your own problems from the separate studio, attach private cases, use the company-logo picker, import problem packs and publish correction notes. |
 
@@ -84,15 +84,15 @@ Create a discoverable profile to appear in rankings. New profiles default to dis
 
 Select **Submit solution** to run your answer against the database-owned test suite. Add an optional approach and complexity explanation. **Share my accepted solution** is unchecked by default. An accepted answer unlocks the **Submissions** tab for that exact problem revision; guest completions and imported progress cannot unlock another learner’s source. Corrected problems require a new acceptance. Your own private accepted history remains available.
 
-Public benchmarks use one warm-up and three measured passes. Runtime is the median duration and excludes compilation/network latency, but includes harness work, serialization and output. Memory is whole-process peak RSS, including the language runtime; it is **not auxiliary space complexity**. Rankings compare each discoverable learner’s best explicitly shared result, separately by language and by runtime or memory.
+Public benchmarks use one warm-up and three measured passes. Runtime is the median duration and excludes compilation/network latency, but includes harness work, serialization and output. Memory is whole-process peak RSS, including the language runtime; it is **not auxiliary space complexity**. Rankings start with **All languages**, with one best explicitly shared result per discoverable learner and language. Filter a language for closer comparisons: runtime and memory overhead differ across languages. Runtime and memory have separate ranking orders.
 
 Java submissions use OpenJDK 21; browser Run remains Java 17. Python uses CPython 3.11.10; C/C++ use GCC 13.2. Small suites, provider scheduling and in-process instrumentation make these practice estimates, not trusted contest scores or proof of Big-O. Complexity annotations are author-stated and do not determine rank. A configured private Java judge uses its own execution metrics for the complete public and hidden suite. Hidden inputs are never sent to Wandbox.
 
 ## Private friend chat and live alerts
 
-Use **Messages** in the glass header or **Message** on a followed profile. Sending requires mutual follows and discoverable profiles. Participant-only API checks protect conversation history; the project owner administers the database. Unfollowing disables new messages while participants retain existing history.
+Use **Messages and updates** in the glass header, then choose **Messages** or **Updates**. The single badge combines unread conversations and community updates. You can also choose **Message** on a followed profile. Sending requires mutual follows and discoverable profiles. Participant-only API checks protect conversation history; the project owner administers the database. Unfollowing disables new messages while participants retain existing history.
 
-A Firebase-authorized POST event stream delivers messages and online transitions while the page is focused and visible. Tokens stay in headers. Durable per-account cursors recover missed events after reconnects; short polling provides a fallback. Initial online snapshots remain quiet, and real transitions have a short cooldown. These are website banners, not device push notifications. Delivery uses backend requests and is subject to hosting quotas.
+A Firebase-authorized POST event stream delivers messages, online transitions and problem announcements while the page is focused and visible. Tokens stay in headers. Separate private-event and shared-announcement cursors recover missed events after reconnects; short polling provides a fallback. Initial snapshots remain quiet. Newly published problems and corrections are available to every signed-in account, including accounts without a discoverable profile; missed updates remain in Updates with a private read cursor. These are website banners, not device push notifications. Delivery uses backend requests and is subject to hosting quotas.
 
 ## Add or update a problem
 
@@ -101,7 +101,7 @@ A Firebase-authorized POST event stream delivers messages and online transitions
 3. Validate the Java reference against the public cases.
 4. Save a draft or enable **Published** and save. Updates to a published problem require a correction note.
 
-Every verified learner can author and manage their own problems. Explicit library editors and administrators can manage the wider catalog; role permissions are enforced by the backend. Publishing updates the database catalog and creates an in-app announcement.
+Every verified learner can author and manage their own problems. Explicit library editors and administrators can manage the wider catalog; role permissions are enforced by the backend. Publishing updates the database catalog and creates an in-app announcement. Original authorship is stored independently of later editors and shown below the problem title with a profile link when the author is discoverable. The original bundled problems carry a ByteQuest collection credit.
 
 The current function protocol supports `int`, `int[]`, `boolean` and ASCII `String` parameters/results. See [DATABASE.md](DATABASE.md) for author ownership, private suites and deployment details.
 
@@ -122,6 +122,8 @@ Private account tables use RLS and are inaccessible to direct browser roles. Onl
 
 Uploaded avatars use a private Storage bucket with expiring signed links. Discoverable profiles and leaderboards expose selected profile fields and aggregate practice counts, excluding emails, Firebase IDs, source drafts and notes. Presence requires a focused, visible page and interaction within 30 seconds; shared last seen uses relative time.
 
+**My profile → Edit profile** includes optional company, organization or university details, an HTTPS website and a LinkedIn profile link. These are self-reported and follow profile discoverability. Known companies use bundled logos; other organizations use a building icon. Skills count distinct solved published problems by topic. Language badges count distinct problems with server-accepted submissions in that language; older progress without language evidence remains unassigned.
+
 Java Run executes on the learner’s device. Python/C/C++ runs and signed-in submissions in all four languages send code and public test data to the configured online compiler. Review the [privacy notice](https://jagadeeshwaran-r.github.io/bytequest/privacy.html) and [backend guide](DATABASE.md) for the current data flow.
 
 ## Verification
@@ -132,7 +134,7 @@ npm run build
 npm test
 ```
 
-The suite covers four-language benchmark harnesses, authenticated event streams, real Java reference solutions and diagnostics, native Python/C/C++ harnesses, authentication and owner isolation, progress merging, author permissions, image validation, presence, friend alerts, leaderboard requests, language suggestions, editor history, smooth chart paths and account deletion safeguards. Rollback-only database fixtures in `tests/leaderboard.sql`, `tests/upgrades.sql` and `tests/social-submissions.sql` additionally check weighted/shared ranks, time windows, comparison privacy, pagination, account-removal cascades, anonymization, retry behavior and service-only function permissions. No real account is deleted during validation.
+The suite covers four-language benchmark harnesses, authenticated event streams, real Java reference solutions and diagnostics, native Python/C/C++ harnesses, authentication and owner isolation, progress merging, author permissions, image validation, presence, friend alerts, leaderboard requests, language suggestions, editor history, smooth chart paths, month boundaries and optional profile-link validation. Rollback-only database fixtures in `tests/leaderboard.sql`, `tests/upgrades.sql`, `tests/social-submissions.sql` and `tests/profile-inbox.sql` additionally check ranks, comparison privacy, account-removal cascades, authorship, global announcements, accepted-language evidence, source gates and service-only permissions. Validation does not message real learners or delete real accounts.
 
 ## Repository guide
 

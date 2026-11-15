@@ -26,7 +26,7 @@ export class Cloud {
     const result=await this.request('account-delete',{confirmation:'DELETE'},owner);
     if(!result.deleted)throw new Error('Account removal did not finish. Please retry.');
     try{for(const key of ['bytequest.user.'+owner,'bytequest.studio.'+owner])localStorage.removeItem(key);const card=JSON.parse(sessionStorage.getItem('bytequest.account-card')||'null');if(card?.owner===owner)sessionStorage.removeItem('bytequest.account-card');}catch{}
-    try{sessionStorage.removeItem('bytequest.live.'+owner);}catch{}await this.session.signOut();this.deletionPending=false;return result;
+    try{sessionStorage.removeItem('bytequest.live.'+owner);sessionStorage.removeItem('bytequest.announcements.'+owner);}catch{}await this.session.signOut();this.deletionPending=false;return result;
   }
   async publicCatalog(){
     if(!this.enabled)return null;
@@ -54,13 +54,13 @@ export class Cloud {
       return result;
     }
   }
-  async openLive({after,signal,onBatch},ownerId=this.user?.id){
+  async openLive({after,announcementsAfter=null,signal,onBatch},ownerId=this.user?.id){
     if(this.deletionPending||!ownerId||this.user?.id!==ownerId)throw new Error('Sign in to receive messages.');
     let response;
     for(let attempt=0;attempt<2;attempt++){
       const token=await this.session.tokenFor(ownerId,attempt>0);
       if(this.user?.id!==ownerId||signal.aborted)throw new Error('Account changed.');
-      response=await this.fetch(this.config.url+'/functions/v1/bytequest-firebase',{method:'POST',headers:{'Content-Type':'application/json',apikey:this.config.publishableKey,Authorization:'Bearer '+token},body:JSON.stringify({action:'live-events',after}),signal});
+      response=await this.fetch(this.config.url+'/functions/v1/bytequest-firebase',{method:'POST',headers:{'Content-Type':'application/json',apikey:this.config.publishableKey,Authorization:'Bearer '+token},body:JSON.stringify({action:'live-events',after,announcementsAfter}),signal});
       if(response.status!==401||attempt)break;
     }
     if(!response.ok||!response.body)throw new Error('Live updates are reconnecting.');

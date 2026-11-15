@@ -1,5 +1,6 @@
+import {profileDetails} from './domain/profile-fields.js';
 import {HttpError} from './handler.js';
-const actions=new Set(['chat-list','chat-thread','chat-send','chat-read','live-events-poll','submission-list','submission-read','submission-history','friend-analytics','leaderboard','presence','profile-presence','friend-presence','self','profile-save','search','profile','follow','followers','following','notifications','notifications-read','roles','role-set']);
+const actions=new Set(['problem-authors','chat-list','chat-thread','chat-send','chat-read','live-events-poll','submission-list','submission-read','submission-history','friend-analytics','leaderboard','presence','profile-presence','friend-presence','self','profile-save','search','profile','follow','followers','following','notifications','notifications-read','roles','role-set']);
 export const communityActions=actions;
 export function validateCommunity(action,body){
  const data={};
@@ -8,10 +9,11 @@ export function validateCommunity(action,body){
   for(const key of ['after','before','through'])if(body[key]!==undefined){if(!Number.isSafeInteger(body[key])||body[key]<0)throw new HttpError(400,'Invalid conversation cursor.');data[key]=body[key];}
   if(action==='chat-send'){if(typeof body.body!=='string'||!body.body.trim()||body.body.length>2000||typeof body.nonce!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.nonce))throw new HttpError(400,'Write a message under 2,000 characters.');data.body=body.body.trim();data.nonce=body.nonce;}
  }
- if(action==='live-events-poll'){if(body.after!==null&&body.after!==undefined&&(!Number.isSafeInteger(body.after)||body.after<0))throw new HttpError(400,'Invalid event cursor.');data.after=body.after??null;}
+ if(action==='problem-authors'){if(typeof body.problemId!=='string'||!/^[a-z][a-z0-9-]{1,63}$/.test(body.problemId))throw new HttpError(400,'Choose a valid problem.');data.problemId=body.problemId;}
+ if(action==='live-events-poll'){if(body.after!==null&&body.after!==undefined&&(!Number.isSafeInteger(body.after)||body.after<0))throw new HttpError(400,'Invalid event cursor.');data.after=body.after??null;if(body.announcementsAfter!=null&&(!Number.isSafeInteger(body.announcementsAfter)||body.announcementsAfter<0))throw new HttpError(400,'Invalid update cursor.');data.announcementsAfter=body.announcementsAfter??null;}
  if(['submission-list','submission-history'].includes(action)){
   if(typeof body.problemId!=='string'||!/^[a-z][a-z0-9-]{1,63}$/.test(body.problemId))throw new HttpError(400,'Choose a problem.');data.problemId=body.problemId;
-  if(action==='submission-list'){if(!['java','python','c','cpp'].includes(body.language)||!['runtime','memory'].includes(body.sort??'runtime')||!Number.isSafeInteger(body.page??0)||(body.page??0)<0||(body.page??0)>1000000)throw new HttpError(400,'Choose a valid submission filter.');Object.assign(data,{language:body.language,sort:body.sort??'runtime',page:body.page??0});}
+  if(action==='submission-list'){if(!['all','java','python','c','cpp'].includes(body.language??'all')||!['runtime','memory'].includes(body.sort??'runtime')||!Number.isSafeInteger(body.page??0)||(body.page??0)<0||(body.page??0)>1000000)throw new HttpError(400,'Choose a valid submission filter.');Object.assign(data,{language:body.language??'all',sort:body.sort??'runtime',page:body.page??0});}
  }
  if(action==='submission-read'){if(typeof body.id!=='string'||!/^[0-9a-f-]{36}$/i.test(body.id))throw new HttpError(400,'Choose a valid submission.');data.id=body.id.toLowerCase();}
 
@@ -30,6 +32,7 @@ export function validateCommunity(action,body){
  }
 
  if(action==='profile-save'){
+  try{Object.assign(data,profileDetails(body));}catch(e){throw new HttpError(400,e.message);}
   if(!/^[a-z][a-z0-9_]{2,23}$/.test(body.username||''))throw new HttpError(400,'Username: 3–24 lowercase letters, numbers or underscores; start with a letter.');
   if(typeof body.display_name!=='string'||!body.display_name.trim()||body.display_name.trim().length>60)throw new HttpError(400,'Add a name under 60 characters.');
   if(typeof body.bio!=='string'||body.bio.length>280||['discoverable','show_presence'].some(key=>body[key]!==undefined&&typeof body[key]!=='boolean'))throw new HttpError(400,'Check your profile settings.');

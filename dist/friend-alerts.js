@@ -35,17 +35,17 @@ export function mountFriendAlerts(cloud,{notify,clear=()=>{},win=window,doc=docu
 }
 
 export function createFriendToasts(doc=document,{setTimer=setTimeout,clearTimer=clearTimeout}={}){
- const region=doc.createElement('aside');region.className='friend-alerts';region.setAttribute('aria-label','Friend activity');region.setAttribute('aria-live','polite');region.setAttribute('aria-relevant','additions');doc.body.append(region);
+ const region=doc.createElement('aside');region.className='friend-alerts';region.setAttribute('aria-label','Community activity');region.setAttribute('aria-live','polite');region.setAttribute('aria-relevant','additions');doc.body.append(region);
  const timers=new Map();
  function remove(toast){clearTimer(timers.get(toast));timers.delete(toast);toast.remove();}
  return{show(friend,options={}){
   while(region.children.length>=3)remove(region.firstElementChild);
   const toast=doc.createElement('div');toast.className='friend-alert';
   const dot=doc.createElement('span');dot.className='friend-alert-avatar';dot.setAttribute('aria-hidden','true');dot.textContent=(friend.display_name||friend.username||'?').charAt(0).toUpperCase();if(friend.avatar_url&&/^https:\/\//.test(friend.avatar_url)){const img=doc.createElement('img');img.src=friend.avatar_url;img.alt='';img.referrerPolicy='no-referrer';dot.replaceChildren(img);}
-  const link=doc.createElement('a');link.href='./community.html#user/'+encodeURIComponent(friend.username||'');if(options.open)link.onclick=e=>{e.preventDefault();options.open();remove(toast);};
+  const link=doc.createElement('a');link.href=options.href||'./community.html#user/'+encodeURIComponent(friend.username||'');if(options.open)link.onclick=e=>{e.preventDefault();options.open();remove(toast);};
   const name=doc.createElement('strong');name.textContent=friend.display_name||'@'+friend.username;
   const detail=doc.createElement('span');detail.textContent=options.message||'is online now';link.append(name,detail);
-  const close=doc.createElement('button');close.type='button';close.textContent='×';close.setAttribute('aria-label','Dismiss friend notification');close.onclick=()=>remove(toast);
+  const close=doc.createElement('button');close.type='button';close.textContent='×';close.setAttribute('aria-label','Dismiss notification');close.onclick=()=>remove(toast);
   toast.append(dot,link,close);region.append(toast);timers.set(toast,setTimer(()=>remove(toast),5000));
  },clear(){for(const toast of [...region.children])remove(toast);}};
 }

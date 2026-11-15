@@ -1,5 +1,5 @@
-import {mountShell} from './shell.js?v=next-1';
-import {Cloud} from './cloud.js?v=next-1';
+import {mountShell} from './shell.js?v=profile-2';
+import {Cloud} from './cloud.js?v=profile-2';
 import {leaderboardRow,latestLeaderboard} from './leaderboard-model.js?v=upgrade-2';
 const $=id=>document.getElementById(id),shell=mountShell();let page=0,scope=location.hash==='#friends'?'friends':'global',accountGeneration=0;
 const cloud=new Cloud(()=>accountChanged());shell.connect(cloud);
