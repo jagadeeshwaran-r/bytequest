@@ -24,6 +24,18 @@ class ListHelper {
         if (cycle != null) tail.next = cycle;
         return head;
     }
+    static int[] toArray(ListNode head) {
+        int[] values = new int[10000];
+        int size = 0;
+        java.util.IdentityHashMap<ListNode,Boolean> visited = new java.util.IdentityHashMap<>();
+        while (head != null) {
+            if (visited.put(head, Boolean.TRUE) != null) throw new IllegalStateException("Returned list contains a cycle");
+            if (size == values.length) throw new IllegalStateException("Returned list exceeds 10,000 nodes");
+            values[size++] = head.val;
+            head = head.next;
+        }
+        return java.util.Arrays.copyOf(values, size);
+    }
     static int indexOfReturned(ListNode head, java.util.function.Function<ListNode,ListNode> solver) {
         ListNode result = solver.apply(head);
         if (result == null) return -1;
