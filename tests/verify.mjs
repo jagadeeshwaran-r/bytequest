@@ -20,6 +20,7 @@ import { problems } from "../dist/problems.js";
 import { buildTests, javaLiteral } from "../dist/judge.js";
 import { validateProblem } from "../dist/catalog.js";
 import { buildBenchmarkProgram } from "../supabase/functions/bytequest-firebase/benchmark.js";
+import { submitSolution } from "../supabase/functions/bytequest-firebase/submissions.js";
 import { traceFor } from "../dist/traces.js";
 mkdirSync("build/tests", {recursive:true});
 function command(args) {
@@ -130,6 +131,33 @@ try {
   assert.equal((treeOutput.match(/__BYTEQUEST_CASE_\d+__/g)||[]).length,depthCases.length*4);
   assert.ok(treeOutput.includes("__BYTEQUEST_BENCH_treefixture__"));
   console.log("✓ TreeNode studio validation, sparse/empty level-order trees, browser judge, and server benchmark.");
+
+  // A Studio problem with hidden cases must be submittable even without a
+  // configured Judge0 instance, without leaking private expected values.
+  const privateCases=[{args:[{values:[1,2],pos:0}],expected:true,label:"private cycle"}];
+  const serverProblem={...cycleProblem,hiddenCount:privateCases.length,revision:1};
+  const submissionInput={problemId:serverProblem.id,revision:1,language:'java',source:cycleSource,nonce:'3b2f24dd-18e9-4b6b-9a9d-57f4f485ce1a',shared:false};
+  const seen=[],records=[];
+  const fakeDb={
+    existingSubmission:async()=>null,
+    privateProblem:async()=>({content:serverProblem,revision:1,hidden:privateCases}),
+    claimOnlineRun:async()=>true,
+    recordSubmission:async(owner,data)=>{records.push(data);return {id:42,owner};}
+  };
+  const submitOptions={owner:'test-owner',body:submissionInput,db:fakeDb,privateJudge:{ready:false}};
+  const acceptedHidden=await submitSolution({...submitOptions,benchmarkJudge:{run:async(source,p,cases,language)=>{seen.push({cases,language});return{accepted:true,status:'accepted',runtimeMs:1,memoryBytes:1024,memoryMetric:'process_peak_rss',compiler:'test-java',benchmarkVersion:'test',total:cases.length};}}});
+  assert.equal(acceptedHidden.accepted,true);
+  assert.equal(acceptedHidden.total,cycleCases.length+privateCases.length);
+  assert.deepEqual(seen[0].cases,[...cycleCases,...privateCases]);
+  assert.equal(seen[0].language,'java');
+  assert.equal(records.length,1);
+  assert.equal(records[0].suiteKind,'private');
+  const rejectedHidden=await submitSolution({...submitOptions,benchmarkJudge:{run:async()=>({accepted:false,status:'wrong_answer',cases:[{name:'SECRET CASE',expected:'SECRET EXPECTED',actual:'SECRET ACTUAL'}],message:'PRIVATE EXPECTED VALUE'})}});
+  assert.equal(rejectedHidden.accepted,false);
+  assert.equal(rejectedHidden.status,'wrong_answer');
+  assert.ok(!JSON.stringify(rejectedHidden).includes('SECRET'),'Never reveal hidden expected values or case names');
+  assert.equal(records.length,1,'Failed hidden tests must never record acceptance');
+  console.log('✓ Server-side hidden-case fallback accepts valid Java and redacts private diagnostics.');
   const problem=problems[0],tests=buildTests(problem,problem.tests.slice(0,2));
   assert.equal(execute("class Solution { THIS IS NOT JAVA }",tests).status,"compile_error");
   const wrong=execute("class Solution { public int[] twoSum(int[] a,int t){return new int[]{0,0};} }",tests);
