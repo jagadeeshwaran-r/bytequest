@@ -22,6 +22,6 @@ export function makePrivateJudge({url,apiKey='',languageId,fetchImpl=(...args)=>
   const result=await response.json(),status=result.status?.id;
   if([1,2].includes(status))throw new HttpError(503,'The judge is still processing. Retry your submission shortly.');
   // Diagnostics can contain hidden inputs: never echo stdout, stderr, or compile_output.
-  return {accepted:status===3,hiddenCount:cases.length,message:status===3?'All private cases passed.':status===6?'Java compilation failed in the private judge. Check your code using Run.':status===5?'Private tests exceeded the time limit.':'Private tests did not pass. Recheck edge cases and constraints.'};
+  return {accepted:status===3,runtimeMs:result.time!=null&&Number.isFinite(Number(result.time))&&Number(result.time)>=0?Number(result.time)*1000:null,memoryBytes:result.memory!=null&&Number.isFinite(Number(result.memory))&&Number(result.memory)>0?Number(result.memory)*1024:null,hiddenCount:cases.length,message:status===3?'All private cases passed.':status===6?'Java compilation failed in the private judge. Check your code using Run.':status===5?'Private tests exceeded the time limit.':'Private tests did not pass. Recheck edge cases and constraints.'};
  }};
 }

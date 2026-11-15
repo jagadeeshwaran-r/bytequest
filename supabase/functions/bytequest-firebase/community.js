@@ -1,8 +1,20 @@
 import {HttpError} from './handler.js';
-const actions=new Set(['friend-analytics','leaderboard','presence','profile-presence','friend-presence','self','profile-save','search','profile','follow','followers','following','notifications','notifications-read','roles','role-set']);
+const actions=new Set(['chat-list','chat-thread','chat-send','chat-read','live-events-poll','submission-list','submission-read','submission-history','friend-analytics','leaderboard','presence','profile-presence','friend-presence','self','profile-save','search','profile','follow','followers','following','notifications','notifications-read','roles','role-set']);
 export const communityActions=actions;
 export function validateCommunity(action,body){
  const data={};
+ if(['chat-thread','chat-send','chat-read'].includes(action)){
+  if(typeof body.target!=='string'||!/^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i.test(body.target))throw new HttpError(400,'Choose a friend.');data.target=body.target.toLowerCase();
+  for(const key of ['after','before','through'])if(body[key]!==undefined){if(!Number.isSafeInteger(body[key])||body[key]<0)throw new HttpError(400,'Invalid conversation cursor.');data[key]=body[key];}
+  if(action==='chat-send'){if(typeof body.body!=='string'||!body.body.trim()||body.body.length>2000||typeof body.nonce!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.nonce))throw new HttpError(400,'Write a message under 2,000 characters.');data.body=body.body.trim();data.nonce=body.nonce;}
+ }
+ if(action==='live-events-poll'){if(body.after!==null&&body.after!==undefined&&(!Number.isSafeInteger(body.after)||body.after<0))throw new HttpError(400,'Invalid event cursor.');data.after=body.after??null;}
+ if(['submission-list','submission-history'].includes(action)){
+  if(typeof body.problemId!=='string'||!/^[a-z][a-z0-9-]{1,63}$/.test(body.problemId))throw new HttpError(400,'Choose a problem.');data.problemId=body.problemId;
+  if(action==='submission-list'){if(!['java','python','c','cpp'].includes(body.language)||!['runtime','memory'].includes(body.sort??'runtime')||!Number.isSafeInteger(body.page??0)||(body.page??0)<0||(body.page??0)>1000000)throw new HttpError(400,'Choose a valid submission filter.');Object.assign(data,{language:body.language,sort:body.sort??'runtime',page:body.page??0});}
+ }
+ if(action==='submission-read'){if(typeof body.id!=='string'||!/^[0-9a-f-]{36}$/i.test(body.id))throw new HttpError(400,'Choose a valid submission.');data.id=body.id.toLowerCase();}
+
  if(action==='friend-analytics'){
   if(!Array.isArray(body.targets)||body.targets.length>100||body.targets.some(id=>typeof id!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)))throw new HttpError(400,'Choose up to 100 followed profiles.');
   data.targets=[...new Set(body.targets.map(id=>id.toLowerCase()))];

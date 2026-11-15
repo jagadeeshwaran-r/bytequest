@@ -1,13 +1,15 @@
+import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=next-1';
+import {launchCelebration} from './celebration.js?v=next-1';
 import {mountEditorTools} from './editor-tools.js?v=upgrade-2';
 import {pointsFor,totalPoints} from './rewards.js?v=upgrade-2';
 import {companyIcon} from './companies.js?v=social-1';
 import {mountWorkspace} from './workspace.js';
-import {mountShell} from "./shell.js?v=upgrade-2";
-import {Dashboard} from "./dashboard.js?v=upgrade-2";
+import {mountShell} from "./shell.js?v=next-1";
+import {Dashboard} from "./dashboard.js?v=next-1";
 import {languages,starterFor,NativeJudge} from "./languages.js?v=presence-1";
 import {problems as bundledProblems} from "./problems.js";
-import {Cloud} from "./cloud.js?v=upgrade-2";
-import {blankProgress, validateProgress, mergeProgress} from "./progress.js";
+import {Cloud} from "./cloud.js?v=next-1";
+import {blankProgress, validateProgress, mergeProgress, solveStreak} from "./progress.js?v=next-1";
 import {Studio} from "./studio.js?v=social-1";
 const problems=[...bundledProblems];
 const shell=mountShell();mountWorkspace();let language="java";try{const v=localStorage.getItem("bytequest.language");if(languages[v])language=v;}catch{}
@@ -30,6 +32,7 @@ let publicProfile=null;
 let syncTimer,syncing=false,syncAgain=false,accountEpoch=0,accountOwner,accountReady=false;
 const cloud=new Cloud(user=>changeAccount(user));shell.connect(cloud);
 const studio=new Studio({cloud,notify:message=>notify(message),onCatalogChanged:()=>refreshCatalog()});
+const submissions=mountSubmissions(cloud,{notify});
 const dashboard=new Dashboard({cloud,getState:()=>state,getCatalog:()=>problems});
 function touch(field,id){state.modified[id]??={};state.modified[id][field]=Date.now();}
 let current = problems.find(p => p.id === state.current) || problems[0];
@@ -65,11 +68,7 @@ function persist() {
 function notify(message) { clearTimeout(toastTimer); $("toast").textContent=message; $("toast").classList.add("show"); toastTimer=setTimeout(()=>$("toast").classList.remove("show"),4000); }
 function dateKey(date = new Date()) { return date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0"); }
 function addDay() { const day=dateKey(); if(!state.days.includes(day))state.days.push(day); }
-function streak() {
-  const dates=new Set(state.days); const d=new Date();
-  if(!dates.has(dateKey(d)))d.setDate(d.getDate()-1);
-  let count=0; while(dates.has(dateKey(d))){count++;d.setDate(d.getDate()-1);} return count;
-}
+function streak(){return solveStreak(state);}
 function xp() { return totalPoints(state,problems); }
 function dueTime(id) { const r=state.reviews[id]; if(!r||r.step>=3)return Infinity; return r.anchor+reviewDays[r.step]*86400000; }
 function due(id) { return dueTime(id)<=Date.now(); }
@@ -110,13 +109,15 @@ function timerHtml() { return mode==="challenge"?'<div class="timer">'+icon("clo
 function renderLearning(){
   pauseTrace();
   document.querySelectorAll("[data-tab]").forEach(b=>{b.classList.toggle("active",b.dataset.tab===tab);b.setAttribute("aria-selected",String(b.dataset.tab===tab));});
+  submissions.close();
+  if(tab==="submissions"){submissions.mount($("learningContent"),current,language);return;}
   let content=timerHtml();
   if(tab==="problem"){
-    content+='<span class="pattern-tag">'+html(current.topic)+'</span><h3>'+html(current.title)+'</h3><p class="body-copy">'+html(current.description)+'</p><h4>Input</h4><p class="body-copy">'+html(current.inputGuide||current.params.map(p=>p.name+' ('+p.type+')').join(', '))+'</p><h4>Output</h4><p class="body-copy">'+html(current.outputGuide||('Return '+current.returns+' from '+current.method+'.'))+'</p><h4>Examples</h4>';
+    content+='<h3>'+html(current.title)+'</h3><p class="body-copy">'+html(current.description)+'</p><h4>Input</h4><p class="body-copy">'+html(current.inputGuide||current.params.map(p=>p.name+' ('+p.type+')').join(', '))+'</p><h4>Output</h4><p class="body-copy">'+html(current.outputGuide||('Return '+current.returns+' from '+current.method+'.'))+'</p><h4>Examples</h4>';
     current.tests.slice(0,2).forEach((c,i)=>{content+='<div class="example-card"><code>Input: <b>'+html(formatArgs(c.args))+'</b>\nOutput: <b>'+html(JSON.stringify(c.expected))+'</b></code><p>'+html(c.label)+'</p></div>';});
-    content+='<h4>Constraints</h4><div class="constraints">'+html(current.constraints)+'</div>';
+    content+='<h4>Constraints</h4><div class="constraints">'+html(current.constraints)+'</div><details class="concept-hint"><summary>Reveal the key concept</summary><p>'+html(current.topic)+(current.pattern&&current.pattern!==current.topic?' · '+html(current.pattern):'')+'</p></details>';
   } else if(tab==="learn"){
-    content+='<span class="pattern-tag">THE '+html(current.topic.toUpperCase())+' PATTERN</span><h3>Approach</h3><p class="body-copy">'+html(current.idea)+'</p><div class="pattern-callout"><strong>Invariant</strong>'+html(current.invariant)+'</div><div class="complexity-row"><div class="complexity-box"><small>TIME</small><b>'+html(current.complexity.time)+'</b></div><div class="complexity-box"><small>EXTRA SPACE</small><b>'+html(current.complexity.space)+'</b></div></div><p class="tradeoff">'+html(current.complexity.tradeoff)+'</p><button id="referenceBtn" class="reference-button">Show Java solution</button><div id="referenceContent"></div>';
+    content+='<span class="pattern-tag">EDITORIAL</span><h3>Approach</h3><p class="body-copy">'+html(current.idea)+'</p><div class="pattern-callout"><strong>Invariant</strong>'+html(current.invariant)+'</div><div class="complexity-row"><div class="complexity-box"><small>TIME</small><b>'+html(current.complexity.time)+'</b></div><div class="complexity-box"><small>EXTRA SPACE</small><b>'+html(current.complexity.space)+'</b></div></div><p class="tradeoff">'+html(current.complexity.tradeoff)+'</p><button id="referenceBtn" class="reference-button">Show Java solution</button><div id="referenceContent"></div>';
   } else {
     content+='<span class="pattern-tag">A LITTLE MOVING PICTURE</span><h3>Watch the idea click.</h3><p class="body-copy">A guided trace of the reference approach. Your code runs separately in the editor.</p><div id="traceBoard" class="trace-board"></div><p id="traceCaption" class="trace-caption"></p><div class="trace-controls"><button id="traceBack" aria-label="Previous animation step">←</button><button id="tracePlay" class="play-trace">▶ Play</button><button id="traceNext" aria-label="Next animation step">→</button><button id="traceReset" aria-label="Restart animation">↻</button><span id="traceCounter" class="trace-counter"></span></div><div class="code-note">Pause at any step. Say out loud: <i>“What do I know so far, and what changes next?”</i></div>';
   }
@@ -188,6 +189,7 @@ function stopRun(message="Run stopped. Your draft is saved."){
 }
 async function run(submit){
   if(busy||!current)return;
+  if(submit&&cloud.user){await submitOnline();return;}
   const epoch=++runEpoch,p=current,source=$("codeEditor").value;
   const cases=submit?[...p.tests,...customCases]:allCases();
   setBusy(true);results=null;renderTests();$("resultOutput").textContent="Starting your code…";
@@ -215,28 +217,40 @@ async function run(submit){
   }catch(error){if(epoch===runEpoch)$("resultOutput").textContent=String(error.message||error);}
   finally{if(epoch===runEpoch){clearTimeout(watchdog);setBusy(false);$("runStatus").textContent=languages[language].name+(language==="java"?" · browser compiler":" · online via Wandbox");updateStats();persist();}}
 }
+async function submitOnline(){
+ const p=current,lang=language,source=$("codeEditor").value,user=cloud.user?.id,account=accountEpoch;
+ setBusy(true);
+ const options=await requestSubmission({problem:p,language:languages[lang].name});
+ if(!options||current.id!==p.id||language!==lang||cloud.user?.id!==user||account!==accountEpoch){setBusy(false);return;}
+ const epoch=++runEpoch;results=null;renderTests();$("resultOutput").textContent='Running and measuring your solution…';
+ watchdog=setTimeout(()=>stopRun('The submission is taking longer than expected. Your code is saved. Check My submissions before retrying.'),70000);
+ try{
+  const result=await cloud.request('submission-create',{...options,problemId:p.id,revision:p.revision,source,language:lang},user);
+  if(epoch!==runEpoch||account!==accountEpoch||cloud.user?.id!==user)return;
+  logAttempt(p,result.passed||0,result.total||p.tests.length);
+  const output=$("resultOutput");output.replaceChildren();const summary=document.createElement('div');summary.className='result-summary'+(result.accepted?'':' failed');summary.textContent=(result.accepted?'✓ Accepted · ':'')+(result.message||'Submission finished.');output.append(summary);
+  if(result.accepted){const metrics=document.createElement('p');metrics.className='benchmark-note';metrics.textContent=runtimeLabel(result.runtimeMs??result.submission?.runtime_ms)+' · '+memoryLabel(result.memoryBytes??result.submission?.memory_bytes)+' · measured test suite';output.append(metrics);const link=document.createElement('button');link.className='reference-button';link.textContent='View submissions →';link.onclick=()=>{tab='submissions';renderLearning();};output.append(link);completeQuest(p);if(tab==='submissions')submissions.refresh();}
+ }catch(e){if(epoch===runEpoch&&account===accountEpoch)$("resultOutput").textContent=e.message;}
+ finally{if(epoch===runEpoch&&account===accountEpoch){clearTimeout(watchdog);setBusy(false);$("runStatus").textContent=languages[language].name+' · ready';persist();updateStats();}}
+}
 function logAttempt(p,passed,total){
   state.attempts[p.id]=(state.attempts[p.id]||0)+1;
   state.activity.push({id:p.id,at:Date.now(),type:"attempt",passed,total});
-  state.activity=state.activity.slice(-200);addDay();persist();updateStats();
+  state.activity=state.activity.slice(-200);persist();updateStats();
 }
 function completeQuest(p){
+  const solvedDay=new Date().toISOString().slice(0,10);state.acceptedDays??=[];if(!state.acceptedDays.includes(solvedDay))state.acceptedDays.push(solvedDay);
   const first=!state.solved[p.id],isReview=!first&&due(p.id);
   if(first){state.solved[p.id]=Date.now();state.reviews[p.id]={anchor:Date.now(),step:0};}
   else if(isReview){state.reviews[p.id].step++;}
   if(first||isReview)state.activity.push({id:p.id,at:Date.now(),type:first?"solved":"review",passed:p.tests.length,total:p.tests.length});
   $("successTitle").textContent=first?"Aha! Quest complete.":isReview?"That pattern is sticking.":"Another good repetition.";
-  $("successCopy").textContent=(first?"+"+pointsFor(p.difficulty)+" points! ":isReview?"Review complete! ":"")+p.title+" passed all built-in cases and your custom checks. "+(first?"Your first review is in 2 days.":isReview?"Review progress saved.":"Try explaining why your approach works.");
+  $("successCopy").textContent=(first?"+"+pointsFor(p.difficulty)+" points! ":isReview?"Review complete! ":"")+p.title+" passed the problem test suite. "+(first?"Your first review is in 2 days.":isReview?"Review progress saved.":"Try explaining why your approach works.");
   $("successNote").value=state.notes[p.id]||"";
   document.querySelectorAll("[data-confidence]").forEach(b=>b.classList.toggle("selected",Number(b.dataset.confidence)===state.confidence[p.id]));
   persist();updateStats();$("successDialog").showModal();celebrate();
 }
-function celebrate(){
-  if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;
-  const colors=["#69a0fa","#76cfbd","#f2d184","#c4aff3"];
-  $("confetti").innerHTML=Array.from({length:30},(_,i)=>'<i style="left:'+Math.random()*100+'%;background:'+colors[i%4]+';animation-delay:'+Math.random()*.6+'s;transform:rotate('+Math.random()*180+'deg)"></i>').join("");
-  setTimeout(()=>$("confetti").replaceChildren(),3800);
-}
+function celebrate(){launchCelebration();}
 $("successNote").addEventListener("input",()=>{state.notes[current.id]=$("successNote").value.slice(0,4000);touch("notes",current.id);persist();});
 document.querySelectorAll("[data-confidence]").forEach(b=>b.onclick=()=>{state.confidence[current.id]=Number(b.dataset.confidence);touch("confidence",current.id);document.querySelectorAll("[data-confidence]").forEach(x=>x.classList.toggle("selected",x===b));persist();});
 $("runBtn").onclick=()=>run(false);$("submitBtn").onclick=()=>run(true);$("stopBtn").onclick=()=>stopRun();
@@ -340,6 +354,7 @@ function refreshAccountUi(){
 async function changeAccount(user){
   const owner=user?.id||null;if(owner===accountOwner&&accountReady)return;
   const epoch=++accountEpoch;publicProfile=null;accountOwner=owner;accountReady=false;clearTimeout(syncTimer);syncing=false;syncAgain=false;
+  document.querySelectorAll('.submit-confirm[open],#successDialog[open]').forEach(d=>d.close());
   if(busy)stopRun();studio.accountChanged();dashboard.accountChanged();storageKey=owner?"bytequest.user."+owner:guestStorageKey;
   state=readLocal(storageKey);current=problems.find(p=>p.id===state.current)||problems[0]||null;
   renderPractice();$("codeEditor").readOnly=true;updateStats();refreshAccountUi();

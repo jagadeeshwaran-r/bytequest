@@ -2,7 +2,7 @@ const idPattern=/^[a-z][a-z0-9-]{1,79}$/;
 const maps=["drafts","solved","notes","confidence","reviews","attempts","modified"];
 const object=value=>value&&typeof value==="object"&&!Array.isArray(value);
 const time=value=>Number.isFinite(value)&&value>=0?value:0;
-export function blankProgress(){return{version:1,current:"two-sum",currentUpdated:0,drafts:{},solved:{},notes:{},confidence:{},activity:[],days:[],reviews:{},attempts:{},modified:{}};}
+export function blankProgress(){return{version:1,current:"two-sum",currentUpdated:0,drafts:{},solved:{},notes:{},confidence:{},activity:[],days:[],acceptedDays:[],reviews:{},attempts:{},modified:{}};}
 export function validateProgress(value) {
   if(!object(value)||value.version!==1)throw new Error("This is not a ByteQuest progress backup.");
   const clean=blankProgress();
@@ -18,6 +18,7 @@ export function validateProgress(value) {
   }
   clean.days=Array.isArray(value.days)?[...new Set(value.days.filter(d=>typeof d==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(d)))].sort().slice(-1000):[];
   clean.activity=Array.isArray(value.activity)?value.activity.filter(a=>a&&idPattern.test(a.id)&&time(a.at)&&["attempt","solved","review"].includes(a.type)).slice(-200).map(a=>({id:a.id,at:a.at,type:a.type,passed:Math.max(0,Math.min(100,Number(a.passed)||0)),total:Math.max(0,Math.min(100,Number(a.total)||0))})):[];
+  clean.acceptedDays=[...new Set([...(Array.isArray(value.acceptedDays)?value.acceptedDays:[]),...Object.values(clean.solved).map(utcDay),...clean.activity.filter(a=>['solved','review'].includes(a.type)).map(a=>utcDay(a.at))].filter(validDay))].sort().slice(-1000);
   if(idPattern.test(value.current))clean.current=value.current;
   clean.currentUpdated=time(value.currentUpdated);
   return clean;
@@ -38,8 +39,17 @@ export function mergeProgress(first,second) {
     if(a.attempts[id]||b.attempts[id])out.attempts[id]=Math.max(a.attempts[id]||0,b.attempts[id]||0);
   }
   out.days=[...new Set([...a.days,...b.days])].sort().slice(-1000);
+  out.acceptedDays=[...new Set([...a.acceptedDays,...b.acceptedDays])].sort().slice(-1000);
   out.activity=[...new Map([...a.activity,...b.activity].map(e=>[e.id+"-"+e.type+"-"+e.at,e])).values()].sort((x,y)=>x.at-y.at).slice(-200);
   out.current=b.currentUpdated>a.currentUpdated?b.current:a.current;
   out.currentUpdated=Math.max(a.currentUpdated,b.currentUpdated);
   return out;
+}
+
+const validDay=d=>typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d)&&Number.isFinite(Date.parse(d+'T00:00:00Z'))&&new Date(d+'T00:00:00Z').toISOString().slice(0,10)===d;
+function utcDay(at){return Number.isFinite(at)&&at>0&&at<7258118400000?new Date(at).toISOString().slice(0,10):null;}
+export function solveStreak(progress,now=Date.now()){
+ const days=new Set((progress.acceptedDays||[]).filter(d=>validDay(d)&&d<=utcDay(now))),cursor=new Date(utcDay(now)+'T00:00:00Z');let count=0;
+ if(!days.has(cursor.toISOString().slice(0,10)))cursor.setUTCDate(cursor.getUTCDate()-1);
+ while(days.has(cursor.toISOString().slice(0,10))){count++;cursor.setUTCDate(cursor.getUTCDate()-1);}return count;
 }

@@ -1,3 +1,4 @@
+import "./next-features.mjs";
 import "./upgrades.mjs";
 import "./presence.mjs";
 import "./social.mjs";

@@ -1,3 +1,5 @@
+import {liveEventResponse} from './live-stream.js';
+import {submitSolution} from './submissions.js';
 import {avatarBytes} from "./avatar.js";
 import {communityActions,validateCommunity} from "./community.js";
 import {buildTests} from "./domain/judge.js";
@@ -15,7 +17,7 @@ async function readBody(req){
   if(!body||typeof body!=="object"||Array.isArray(body))throw new HttpError(400,"Send a JSON object.");return body;
 }
 function integer(value,max=Number.MAX_SAFE_INTEGER){return Number.isSafeInteger(value)&&value>=0&&value<=max;}
-export function createHandler({projectId,allowedOrigins,verifyToken,db,privateJudge,onlineJudge,deleteFirebaseAccount}){
+export function createHandler({projectId,allowedOrigins,verifyToken,db,privateJudge,onlineJudge,deleteFirebaseAccount,benchmarkJudge}){
   return async req=>{
     const origin=req.headers.get("origin");
     const headers={"Content-Type":"application/json","Cache-Control":"no-store","Vary":"Origin"};
@@ -30,7 +32,7 @@ export function createHandler({projectId,allowedOrigins,verifyToken,db,privateJu
     let identity;try{identity=await verifyToken(authorization.slice(7));}catch{return reply(401,{error:"Your sign-in expired or could not be verified. Please sign in again."});}
     try{
       const body=await readBody(req),action=body.action;
-      if(!["account-delete","account","progress","sync","studio-list","studio-save","hidden-submit","avatar-upload","native-run",...communityActions].includes(action))throw new HttpError(400,"Unknown account action.");
+      if(!["live-events","submission-create","account-delete","account","progress","sync","studio-list","studio-save","hidden-submit","avatar-upload","native-run",...communityActions].includes(action))throw new HttpError(400,"Unknown account action.");
       if(action==="account-delete"){
         if(body.confirmation!=="DELETE")throw new HttpError(400,"Type DELETE to confirm account removal.");
         if(!deleteFirebaseAccount)throw new HttpError(503,"Account deletion is unavailable. Try again later.");
@@ -42,6 +44,11 @@ export function createHandler({projectId,allowedOrigins,verifyToken,db,privateJu
       }
       // Identity always comes from the verified Firebase token, never from a body field.
       await db.touchAccount(identity);
+      if(action==='live-events'){
+        if(body.after!==undefined&&body.after!==null&&(!Number.isSafeInteger(body.after)||body.after<0))throw new HttpError(400,'Invalid event cursor.');
+        return liveEventResponse({req:new Request(req.url,{method:'POST',headers:req.headers,signal:req.signal,body:JSON.stringify({after:body.after??null})}),headers,owner:identity.id,db});
+      }
+      if(action==='submission-create')return reply(200,await submitSolution({owner:identity.id,body,db,benchmarkJudge,privateJudge}));
       if(action==="avatar-upload"){await db.uploadAvatar(identity.id,avatarBytes(body.image));return reply(200,await db.community(identity.id,"self",{}));}
       if(communityActions.has(action))return reply(200,await db.community(identity.id,action,validateCommunity(action,body)));
       if(action==="native-run"){

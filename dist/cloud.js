@@ -2,7 +2,7 @@ import {cloudConfig} from "./config.js";
 import {firebaseConfig} from "./firebase-config.js";
 import {FirebaseSession} from "./firebase-session.js?v=upgrade-2";
 import {validateProblem} from "./catalog.js?v=presence-1";
-import {blankProgress,validateProgress} from "./progress.js";
+import {blankProgress,validateProgress} from "./progress.js?v=next-1";
 export function validPublicConfig(config){
   try{
     const url=new URL(config.url);
@@ -26,7 +26,7 @@ export class Cloud {
     const result=await this.request('account-delete',{confirmation:'DELETE'},owner);
     if(!result.deleted)throw new Error('Account removal did not finish. Please retry.');
     try{for(const key of ['bytequest.user.'+owner,'bytequest.studio.'+owner])localStorage.removeItem(key);const card=JSON.parse(sessionStorage.getItem('bytequest.account-card')||'null');if(card?.owner===owner)sessionStorage.removeItem('bytequest.account-card');}catch{}
-    await this.session.signOut();this.deletionPending=false;return result;
+    try{sessionStorage.removeItem('bytequest.live.'+owner);}catch{}await this.session.signOut();this.deletionPending=false;return result;
   }
   async publicCatalog(){
     if(!this.enabled)return null;
@@ -45,7 +45,7 @@ export class Cloud {
       if(this.user?.id!==ownerId)throw new Error("Your account changed. Please retry saving.");
       const response=await this.fetch(this.config.url+"/functions/v1/bytequest-firebase",{
         method:"POST",headers:{"Content-Type":"application/json",apikey:this.config.publishableKey,Authorization:"Bearer "+token},
-        body:JSON.stringify({action,...body}),signal:AbortSignal.timeout(action==="native-run"?45000:20000)
+        body:JSON.stringify({action,...body}),signal:AbortSignal.timeout(action==="submission-create"?65000:action==="native-run"?45000:20000)
       });
       if(this.user?.id!==ownerId)throw new Error("Your account changed. Please retry saving.");
       if(response.status===401&&attempt===0)continue;
@@ -53,6 +53,20 @@ export class Cloud {
       if(!response.ok)throw new Error(result.error||"Cloud progress is unavailable. Your work is saved on this device.");
       return result;
     }
+  }
+  async openLive({after,signal,onBatch},ownerId=this.user?.id){
+    if(this.deletionPending||!ownerId||this.user?.id!==ownerId)throw new Error('Sign in to receive messages.');
+    let response;
+    for(let attempt=0;attempt<2;attempt++){
+      const token=await this.session.tokenFor(ownerId,attempt>0);
+      if(this.user?.id!==ownerId||signal.aborted)throw new Error('Account changed.');
+      response=await this.fetch(this.config.url+'/functions/v1/bytequest-firebase',{method:'POST',headers:{'Content-Type':'application/json',apikey:this.config.publishableKey,Authorization:'Bearer '+token},body:JSON.stringify({action:'live-events',after}),signal});
+      if(response.status!==401||attempt)break;
+    }
+    if(!response.ok||!response.body)throw new Error('Live updates are reconnecting.');
+    const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='';
+    try{while(true){const {done,value}=await reader.read();if(done)break;if(this.user?.id!==ownerId||signal.aborted||this.deletionPending)break;buffer+=decoder.decode(value,{stream:true});if(buffer.length>1000000)throw new Error('Invalid live update.');let end;while((end=buffer.indexOf('\n\n'))>=0){const frame=buffer.slice(0,end);buffer=buffer.slice(end+2);for(const line of frame.split('\n'))if(line.startsWith('data:')){const batch=JSON.parse(line.slice(5));if(batch.error)throw new Error('Live updates are reconnecting.');onBatch(batch);}}}}
+    finally{await reader.cancel().catch(()=>{});reader.releaseLock();}
   }
   leavePresence(body,ownerId=this.user?.id){
     const cached=this.lastToken;if(!cached||cached.owner!==ownerId)return;

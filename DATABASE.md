@@ -1,6 +1,6 @@
 # ByteQuest backend and operations
 
-This guide describes the current Firebase identity and Supabase data architecture. The static interface is hosted on GitHub Pages. Java executes in the browser; Python, C and C++ execute through the verified online-compiler API.
+This guide describes the current Firebase identity and Supabase data architecture. The static interface is hosted on GitHub Pages. Java Run executes in the browser; Python/C/C++ runs and signed-in submissions in all four languages use the verified execution API.
 
 ## Deployment configuration
 
@@ -46,6 +46,9 @@ Private account tables have RLS enabled and are denied to direct `anon` and `aut
 | `bytequest_problem_private` | Private test suites, excluded from the public catalog |
 | `bytequest_problem_history` | Problem revisions and correction notes |
 | `bytequest_announcements`, `bytequest_notification_reads` | In-app problem updates and per-account read cursors |
+| `bytequest_chat_messages`, `bytequest_chat_limits` | Participant-only chat, retry nonces and send quotas |
+| `bytequest_live_events`, `bytequest_online_announcements` | Durable delivery and online-transition cooldowns |
+| `bytequest_submissions` | Accepted source, optional sharing, explanations and execution measurements |
 | `bytequest_online_limits` | Per-account online-compiler rate limits |
 
 Legacy Supabase-auth tables are retained separately. Firebase accounts are namespaced and are not linked to old accounts by matching an email address.
@@ -64,6 +67,8 @@ SQL files are successive schema snapshots and changes, rather than an automatic 
 8. `database/leaderboard.sql`
 9. `database/points-and-awards.sql`
 10. `database/account-removal-functions.sql`
+11. `database/social-live.sql`, then `database/submissions-and-solving.sql`
+12. `database/submission-metric-consistency.sql`
 
 Use new reviewed migrations for later changes. Keep all private-table RLS, function grants and ownership predicates in place.
 
@@ -83,7 +88,7 @@ Device images are cropped/resized to 256×256 JPEG in the browser, stripping ori
 
 Online presence requires a visible, focused page and input within 30 seconds. Per-page sequence numbers reject stale updates; multiple active tabs are combined. Blur, hide, sign-out and page close send inactive updates when possible, while server expiry covers lost requests. Background API polling does not extend the lease.
 
-Profile status displays a radar dot while online and relative last-seen time otherwise. Status sharing is checked before another learner receives presence data. A friend's offline-to-online transition can create a five-second banner on a focused page. Initial online snapshots remain quiet, and rapid reconnects have a cooldown. Friend alerts refer to people the viewer follows and are in-app only.
+Profile status displays a radar dot while online and relative last-seen time otherwise. Status sharing is checked before another learner receives presence data. A friend's offline-to-online transition can create a five-second banner on a focused page. Initial online snapshots remain quiet, and rapid reconnects have a 15-second cooldown. Friend alerts refer to people the viewer follows and are in-app only.
 
 ## Leaderboards
 
@@ -104,13 +109,13 @@ Avatars for list entries and the viewer are signed before returning. The API acc
 
 Profile ranks use the global all-time board, with the same published-problem and timestamp filters. Private profiles can see their own points but have no public rank. The first three shared ranks receive gold, silver and bronze cups. Role badges are read from the server administrator table.
 
-`bytequest_friend_analytics(viewer_id, targets)` accepts up to 100 public profile UUIDs in one batch. It returns only followed, discoverable learners with public profile fields, UTC first-solve dates and topics. It excludes malformed/future dates and unpublished problem IDs. The client can select multiple or all followed friends; colors, photos/initials, crosshair details and an accessible data table identify each series. Animation respects reduced-motion preferences.
+`bytequest_friend_analytics(viewer_id, targets)` accepts up to 100 public profile UUIDs in one batch. It returns only followed, discoverable learners with public profile fields, UTC first-solve dates and topics. It excludes malformed/future dates and unpublished problem IDs. The client can select multiple or all followed friends; colors, photos/initials and crosshair details identify each series. Friend comparison controls appear only on the viewer’s own profile. Animation respects reduced-motion preferences.
 
 ## Account removal
 
 The shared account menu and **Edit profile** expose account removal. The learner types `DELETE` and verifies their Google identity. The API requires a verified Firebase token and recent `auth_time` (five minutes) for a new removal; request-body owner IDs are ignored.
 
-`bytequest_begin_account_deletion` acquires an account advisory lock, writes a SHA-256 owner tombstone, deletes unpublished authored problems, anonymizes retained revision attribution and removes the Firebase profile. Foreign keys remove private progress, public profile, follows, presence sessions, author/role links, read cursors and compiler limits. Published problems and their private tests remain part of the community library without the deleted account's attribution.
+`bytequest_begin_account_deletion` acquires an account advisory lock, writes a SHA-256 owner tombstone, deletes unpublished authored problems, anonymizes retained revision attribution and removes the Firebase profile. Foreign keys remove private progress, public profile, follows, presence sessions, author/role links, read cursors, compiler limits, chat messages, live events and accepted submissions. Published problems and their private tests remain part of the community library without the deleted account's attribution.
 
 The API then removes the uploaded Storage photo, deletes this project's Firebase Authentication user through Google's fixed Identity Toolkit endpoint, and marks the removal complete. It never deletes the person's Google account. Failed cleanup is retryable; a pending job allows the verified owner to finish it without recreating their profile. `bytequest_touch_active_account` uses the same lock and rejects tombstoned identities, preventing an old token from resurrecting removed records.
 
@@ -165,3 +170,21 @@ The test suite covers real Java/native execution, owner isolation, author permis
 Rollback-only SQL checks include `tests/leaderboard.sql`, `tests/upgrades.sql`, `tests/social-presence.sql`, and the `database/verify-*.sql` access checks. Run them as an operator, inspect their returned verification result, and confirm fixtures were rolled back. Use disposable fixture identities rather than modifying real users for testing.
 
 After deployment, verify `/health`, confirm an unsigned private request returns 401, run security advisors, and test the live UI with an existing authorized session. GitHub's workflow independently builds/tests the frontend before publishing. Monitor actual provider quotas and keep exported backups; this documentation does not promise unlimited free usage.
+
+## Friend chat and live delivery
+
+`bytequest_chat` exposes list/thread/send/read only through the Firebase-verified service API. Sending requires mutual follows and discoverability, a 1–2,000-character body and a UUID retry nonce. The same sender/nonce cannot create duplicate messages or notifications. Sends allow one per second and at most 60 per ten minutes. Threads page in blocks of 50 using numeric cursors. Unrelated callers cannot read them. Existing participants retain history after unfollowing, with private peers anonymized in responses.
+
+`bytequest_update_presence_live` wraps the existing sequenced presence lease and writes events on real offline-to-online transitions. `bytequest_live_events_read` returns only the caller’s queue and unread count, rechecking follow/privacy/current status before delivery. The first connection creates a quiet baseline; later cursors return at most 100 events. Fresh baselines remove events older than seven days. Authorized POST streams last at most 50 seconds and reconnect using a saved per-account cursor; interrupted streams fall back to short polling. Tokens are never placed in query URLs. Website notifications require the site to be open; they are not device push.
+
+## Solving days and accepted submissions
+
+`bytequest_profile_activity` derives accepted UTC days from server-accepted submissions and compatible solve/review records. Visits, attempts, invalid calendar dates and future dates do not extend a streak. A streak can remain current through yesterday until today’s solve. Profiles show solved/total published problems, rank and total points; redundant activity totals and chart-data tables are omitted.
+
+`submission-create` loads the current published revision and private suite from the database, ignores client owners/scores and claims the shared online-execution quota. `benchmark.js` builds one warm-up plus three measured public-suite passes. Only correct repeated runs with valid nonce-tagged measurements can be recorded. Public compiler requests use the fixed Wandbox endpoint, contain only code/public inputs and request no permalink. Versions: OpenJDK 21, CPython 3.11.10 and GCC 13.2. Browser Java Run remains Java 17. Hidden-suite problems fail closed unless a trusted private Java judge is configured; that judge checks public and hidden cases together. Hidden inputs never go to Wandbox.
+
+Acceptance atomically updates private progress and accepted days, advancing the optimistic revision. `bytequest_submissions` unlocks shared solutions only after a server-owned accepted record for that current revision. Self-reported progress cannot satisfy the gate. Ranking/history lists omit source; another learner’s source read additionally requires explicit sharing and a discoverable author. Own private history is available. Each author contributes one best shared result per language, with separate runtime/memory rankings and unmeasured values excluded. Corrections invalidate older unlocks.
+
+Runtime includes harness/serialization/output overhead. Memory is whole-process peak RSS, not auxiliary space. Measurements are estimates affected by provider scheduling and in-process instrumentation tampering, rather than trusted contest scores. Big-O annotations are optional author explanations. A private judge reports its own metrics instead of the public warmed median. RLS and service-only RPC grants protect all new tables. Account deletion cascades through messages, events and submissions.
+
+`node tests/next-features.mjs` verifies four-language harnesses, repetition checks, authenticated streaming, hidden-input isolation and revision gates. `tests/social-submissions.sql` uses rollback-only database fixtures to verify permissions, nonces, unread state, online privacy, source gates, ranking, streaks and deletion cascades. Validation does not message real learners or delete real accounts.
