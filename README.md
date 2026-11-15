@@ -16,7 +16,7 @@ ByteQuest combines executable problems, guided Java explanations, personal progr
 | --- | --- |
 | Problem solving | Search and filter the problem list; view company logos, difficulty, descriptions, constraints and examples; resize the editor and problem panes. |
 | Executable practice | Run Java 17 in a browser JVM. Run Python, C and C++ online through the authenticated compiler API; submit all four languages for server-owned acceptance and benchmarks. Inspect public sample/custom cases, compiler diagnostics and return-value comparisons. |
-| Code editor | Language-specific suggestions for Java, Python, C and C++; four-space indentation and automatic newlines; Ctrl/Cmd+Z undo and redo; clipboard actions disabled inside the editor. |
+| Code editor | Language-specific suggestions for Java, Python, C and C++; four-space indentation and automatic newlines; Ctrl/Cmd+Z undo and redo; clipboard actions disabled inside the editor. Operators display literally, and Run/Submit repairs math comparison symbols outside quoted strings and comments, with undo support. |
 | Learning | Explore pattern explanations, invariants, hints, complexity, trade-offs, Java reference solutions and animated reference-algorithm walkthroughs. |
 | Progress | Save drafts per language, record first solves, track consecutive UTC accepted-solve days, review on a 2/7/21-day schedule, and export or merge JSON backups. |
 | Profiles and friends | Sign in with Google, upload a photo, find and follow learners, view medal-styled global ranks, solved/total progress, month-separated solving calendars, solve-derived skills and language badges. Add optional organization and LinkedIn links; open follower lists beneath the name and compare solving history with followed friends. |

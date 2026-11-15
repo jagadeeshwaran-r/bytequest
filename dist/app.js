@@ -1,7 +1,7 @@
 import {profileAvatar,publicProfileHref} from './profile-view.js?v=profile-2';
 import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=profile-2';
 import {launchCelebration} from './celebration.js?v=next-1';
-import {mountEditorTools} from './editor-tools.js?v=upgrade-2';
+import {mountEditorTools} from './editor-tools.js?v=operators-1';
 import {pointsFor,totalPoints} from './rewards.js?v=upgrade-2';
 import {companyIcon} from './companies.js?v=social-1';
 import {mountWorkspace} from './workspace.js';
@@ -198,7 +198,7 @@ function stopRun(message="Run stopped. Your draft is saved."){
 async function run(submit){
   if(busy||!current)return;
   if(submit&&cloud.user){await submitOnline();return;}
-  const epoch=++runEpoch,p=current,source=$("codeEditor").value;
+  const epoch=++runEpoch,p=current,source=codeTools.prepare();
   const cases=submit?[...p.tests,...customCases]:allCases();
   setBusy(true);results=null;renderTests();$("resultOutput").textContent="Starting your code…";
   watchdog=setTimeout(()=>stopRun(language==="java"?"Java startup timed out. Check your connection and allow cjrtnc.leaningtech.com, then try again.":"Online compilation is taking longer than expected. Your code is saved; please try again shortly."),language==="java"?120000:language==='cpp'?90000:60000);
@@ -226,7 +226,7 @@ async function run(submit){
   finally{if(epoch===runEpoch){clearTimeout(watchdog);setBusy(false);$("runStatus").textContent=languages[language].name+(language==="java"?" · browser compiler":" · online via Wandbox");updateStats();persist();}}
 }
 async function submitOnline(){
- const p=current,lang=language,source=$("codeEditor").value,user=cloud.user?.id,account=accountEpoch;
+ const p=current,lang=language,source=codeTools.prepare(),user=cloud.user?.id,account=accountEpoch;
  setBusy(true);
  const options=await requestSubmission({problem:p,language:languages[lang].name});
  if(!options||current.id!==p.id||language!==lang||cloud.user?.id!==user||account!==accountEpoch){setBusy(false);return;}
