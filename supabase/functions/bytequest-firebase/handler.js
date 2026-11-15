@@ -18,7 +18,7 @@ async function readBody(req){
   if(!body||typeof body!=="object"||Array.isArray(body))throw new HttpError(400,"Send a JSON object.");return body;
 }
 function integer(value,max=Number.MAX_SAFE_INTEGER){return Number.isSafeInteger(value)&&value>=0&&value<=max;}
-export function createHandler({projectId,allowedOrigins,verifyToken,db,privateJudge,onlineJudge,deleteFirebaseAccount,benchmarkJudge}){
+export function createHandler({projectId,allowedOrigins,verifyToken,db,privateJudge,onlineJudge,deleteFirebaseAccount,benchmarkJudge,allowExternalHiddenJudge=false}){
   return async req=>{
     const origin=req.headers.get("origin");
     const headers={"Content-Type":"application/json","Cache-Control":"no-store","Vary":"Origin"};
@@ -50,7 +50,7 @@ export function createHandler({projectId,allowedOrigins,verifyToken,db,privateJu
         if(body.announcementsAfter!=null&&(!Number.isSafeInteger(body.announcementsAfter)||body.announcementsAfter<0))throw new HttpError(400,'Invalid update cursor.');
         return liveEventResponse({req:new Request(req.url,{method:'POST',headers:req.headers,signal:req.signal,body:JSON.stringify({after:body.after??null,announcementsAfter:body.announcementsAfter??null})}),headers,owner:identity.id,db});
       }
-      if(action==='submission-create')return reply(200,await submitSolution({owner:identity.id,body,db,benchmarkJudge,privateJudge}));
+      if(action==='submission-create')return reply(200,await submitSolution({owner:identity.id,body,db,benchmarkJudge,privateJudge,allowExternalHiddenJudge}));
       if(action==="avatar-upload"){await db.uploadAvatar(identity.id,avatarBytes(body.image));return reply(200,await db.community(identity.id,"self",{}));}
       if(communityActions.has(action))return reply(200,await db.community(identity.id,action,validateCommunity(action,body)));
       if(action==="native-run"){
