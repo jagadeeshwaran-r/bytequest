@@ -59,6 +59,11 @@ try {
   assert.equal(structures.status,"ok","Structure harness must compile and execute");
   assert.deepEqual(structures.cases.map(x=>x.passed),[true,true,true,true,true,true,false],"Structural comparisons must distinguish different trees");
   console.log("✓ Linked lists (including cycles), binary trees, graphs, matrices, and nested lists.");
+  assert.equal(javaLiteral([[1,2],[3]],"int[][]"),"new int[][]{new int[]{1,2},new int[]{3}}");
+  assert.equal(javaLiteral([1,2,3],"ListNode"),"ListHelper.createList(new int[]{1,2,3},-1)");
+  assert.equal(javaLiteral([1,null,3],"TreeNode"),"TreeHelper.createTree(1,null,3)");
+  assert.equal(javaLiteral([[2],[1]],"GraphNode"),"GraphHelper.createGraph(new int[][]{new int[]{2},new int[]{1}})");
+  assert.throws(()=>javaLiteral({values:[1,2],pos:2},"ListNode"));
   const problem=problems[0],tests=buildTests(problem,problem.tests.slice(0,2));
   assert.equal(execute("class Solution { THIS IS NOT JAVA }",tests).status,"compile_error");
   const wrong=execute("class Solution { public int[] twoSum(int[] a,int t){return new int[]{0,0};} }",tests);
