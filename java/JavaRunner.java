@@ -66,6 +66,28 @@ public final class JavaRunner {
 
     private static String harnessSource(String tests) {
         return "import java.util.*;\n"
+            // 1. Automatically include ListNode so users and tests can use it
+            + "class ListNode {\n"
+            + "    int val;\n"
+            + "    ListNode next;\n"
+            + "    ListNode(int x) { val = x; next = null; }\n"
+            + "}\n"
+            // 2. Automatically include a helper to build cycled linked lists from arrays
+            + "class ListHelper {\n"
+            + "    public static ListNode createList(int[] nums, int pos) {\n"
+            + "        if (nums == null || nums.length == 0) return null;\n"
+            + "        ListNode head = new ListNode(nums[0]);\n"
+            + "        ListNode curr = head;\n"
+            + "        ListNode cycleNode = (pos == 0) ? head : null;\n"
+            + "        for (int i = 1; i < nums.length; i++) {\n"
+            + "            curr.next = new ListNode(nums[i]);\n"
+            + "            curr = curr.next;\n"
+            + "            if (i == pos) cycleNode = curr;\n"
+            + "        }\n"
+            + "        if (pos != -1 && cycleNode != null) curr.next = cycleNode;\n"
+            + "        return head;\n"
+            + "    }\n"
+            + "}\n"
             + "public class QuestTests {\n"
             + "static List<String> results = new ArrayList<>();\n"
             + "interface Attempt { Object get() throws Throwable; }\n"
