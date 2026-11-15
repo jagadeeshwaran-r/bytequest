@@ -60,8 +60,8 @@ function warmJavaSoon(){refreshJavaStatus();if(language!=="java"||javaWarmSchedu
 addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")warmJavaSoon();});
 const nativeJudge=new NativeJudge(message=>{$("runStatus").textContent=message;},cloud);
 const judge={run:(source,p,cases)=>language==="java"?javaJudge.run(source,p,cases):nativeJudge.run(source,p,cases,language),stop:()=>{javaJudge.stop();nativeJudge.stop();}};
-const javaOnlyProblem=p=>Boolean(p?.params?.some(param=>param.type==="ListNode"));
-function setLanguage(v){if(!languages[v])return;if(javaOnlyProblem(current)&&v!=="java"){notify("Linked-list problems currently support Java 17 only.");return;}if(busy)stopRun();language=v;try{localStorage.setItem("bytequest.language",v);}catch{}renderPractice();}
+const javaOnlyProblem=p=>Boolean(p?.params?.some(param=>param.type==="ListNode"||param.type==="TreeNode"));
+function setLanguage(v){if(!languages[v])return;if(javaOnlyProblem(current)&&v!=="java"){notify("Linked-list and tree problems currently support Java 17 only.");return;}if(busy)stopRun();language=v;try{localStorage.setItem("bytequest.language",v);}catch{}renderPractice();}
 $("languageSelect").onchange=e=>setLanguage(e.target.value);
 function persist() {
   try { localStorage.setItem(storageKey,JSON.stringify(state)); storageOK=true; $("saveStatus").textContent=cloud.user?"Draft saved · cloud sync queued":"Draft saved on this device"; }
