@@ -197,7 +197,7 @@ async function run(submit){
   try{
     const result=await judge.run(source,p,cases);
     if(epoch!==runEpoch)return;
-    if(result.status!=="ok"){$("resultOutput").textContent=(result.status==="compile_error"?"Compile error\n":"Runtime error\n")+result.message;logAttempt(p,0,cases.length);return;}
+    if(result.status!=="ok"){$("resultOutput").textContent=(result.status==="unavailable"?"Compiler temporarily unavailable\n":result.status==="compile_error"?"Compile error\n":"Runtime error\n")+result.message;if(result.status!=="unavailable")logAttempt(p,0,cases.length);return;}
     results={...result,cases:submit?[...result.cases.slice(0,2),...result.cases.slice(p.tests.length)]:result.cases};
     renderTests();
     const passed=result.cases.filter(c=>c.passed).length, accepted=passed===cases.length;
@@ -227,8 +227,8 @@ async function submitOnline(){
  try{
   const result=await cloud.request('submission-create',{...options,problemId:p.id,revision:p.revision,source,language:lang},user);
   if(epoch!==runEpoch||account!==accountEpoch||cloud.user?.id!==user)return;
-  logAttempt(p,result.passed||0,result.total||p.tests.length);
-  const output=$("resultOutput");output.replaceChildren();const summary=document.createElement('div');summary.className='result-summary'+(result.accepted?'':' failed');summary.textContent=(result.accepted?'✓ Accepted · ':'')+(result.message||'Submission finished.');output.append(summary);
+  if(result.status!=='unavailable')logAttempt(p,result.passed||0,result.total||p.tests.length);
+  const output=$("resultOutput");output.replaceChildren();const summary=document.createElement('div');summary.className='result-summary'+(result.status==='unavailable'?' unavailable':result.accepted?'':' failed');summary.textContent=(result.status==='unavailable'?'Compiler busy · ':result.accepted?'✓ Accepted · ':'')+(result.message||'Submission finished.');output.append(summary);
   if(result.accepted){const metrics=document.createElement('p');metrics.className='benchmark-note';metrics.textContent=runtimeLabel(result.runtimeMs??result.submission?.runtime_ms)+' · '+memoryLabel(result.memoryBytes??result.submission?.memory_bytes)+' · measured test suite';output.append(metrics);const link=document.createElement('button');link.className='reference-button';link.textContent='View submissions →';link.onclick=()=>{tab='submissions';renderLearning();};output.append(link);completeQuest(p);if(tab==='submissions')submissions.refresh();}
  }catch(e){if(epoch===runEpoch&&account===accountEpoch)$("resultOutput").textContent=e.message;}
  finally{if(epoch===runEpoch&&account===accountEpoch){clearTimeout(watchdog);setBusy(false);$("runStatus").textContent=languages[language].name+' · ready';persist();updateStats();}}

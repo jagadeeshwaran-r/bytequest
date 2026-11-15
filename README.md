@@ -151,6 +151,10 @@ The suite covers four-language benchmark harnesses, authenticated event streams,
 | `tests/` | Application, security, execution and database verification |
 | `.github/workflows/pages.yml` | Build, test and deployment pipeline |
 
+## Compiler availability
+
+The public compiler may temporarily fail to start a sandbox (for example, an OCI/crun resource error). ByteQuest retries a recognized container-capacity or transient HTTP failure once, using the same program and compiler within the original deadline. If it still cannot run, the site shows a compiler-availability message, keeps the draft, and records no solution verdict, failed practice attempt, points or ranking entry. Syntax errors and programs that already executed are not automatically retried. Java **Run** remains available in the browser while the remote service is unavailable.
+
 ## Current limits
 
 The first Java session downloads a browser JVM and compiler resources; preloading and warm-up reduce later waits, but cold starts depend on the device and network. Java explanations and reference solutions remain the teaching source for all supported languages. Animations illustrate the reference algorithm rather than tracing arbitrary submitted code.

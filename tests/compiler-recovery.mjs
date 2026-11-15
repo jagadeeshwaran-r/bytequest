@@ -1,0 +1,27 @@
+import assert from 'node:assert/strict';
+import {requestSandbox} from '../supabase/functions/bytequest-firebase/sandbox-provider.js';
+import {makeBenchmarkJudge} from '../supabase/functions/bytequest-firebase/benchmark.js';
+import {makeOnlineJudge} from '../supabase/functions/bytequest-firebase/online-judge.js';
+import {submitSolution} from '../supabase/functions/bytequest-firebase/submissions.js';
+import {problems} from '../dist/problems.js';
+const p=problems[0],cases=p.tests.slice(0,1),oci='Error: OCI runtime error: crun: clone: Resource temporarily unavailable';
+const json=value=>new Response(JSON.stringify(value));
+const busy=()=>json({status:'1',program_error:oci});
+const noWait=async()=>{};
+const output='__BYTEQUEST_CASE_0__{"ok":true,"actual":[0,1]}\n';
+const measured=output.repeat(4)+'__BYTEQUEST_BENCH_fixture__{"runtimeMs":0.5,"memoryBytes":12000000}\n';
+let calls=0,bodies=[],delays=[];
+const recovering=makeBenchmarkJudge({makeNonce:()=> 'fixture',wait:async ms=>delays.push(ms),random:()=>0,fetchImpl:async(url,options)=>{
+ assert.equal(url,'https://wandbox.org/api/compile.json');assert.deepEqual(Object.keys(options.headers),['Content-Type']);assert.equal(options.headers.Authorization,undefined);bodies.push(options.body);calls++;return calls===1?busy():json({status:'0',program_output:measured});}});
+const recovered=await recovering.run(p.reference,p,cases,'java');assert.equal(recovered.accepted,true);assert.equal(calls,2);assert.equal(bodies[0],bodies[1],'Same generated program, compiler and nonce on retry');assert.equal(JSON.parse(bodies[0]).save,false);assert.deepEqual(delays,[800]);
+let exhaustedCalls=0;const exhausted=makeBenchmarkJudge({makeNonce:()=> 'fixture',wait:noWait,fetchImpl:async()=>{exhaustedCalls++;return busy();}});const unavailable=await exhausted.run(p.reference,p,cases,'java');assert.equal(exhaustedCalls,2,'Exactly one retry');assert.equal(unavailable.status,'unavailable');assert.equal(unavailable.accepted,false);assert.equal(unavailable.code,'compiler_busy');assert.equal(unavailable.retryable,true);assert.ok(!unavailable.message.includes('OCI'));assert.ok(!unavailable.message.includes('crun'));
+let syntaxCalls=0;const syntax=makeBenchmarkJudge({wait:noWait,fetchImpl:async()=>{syntaxCalls++;return json({status:'1',compiler_error:'prog.java: syntax error'});}});assert.equal((await syntax.run(p.reference,p,cases,'java')).status,'compile_error');assert.equal(syntaxCalls,1,'Do not rerun invalid solutions');
+let runtimeCalls=0;const runtime=makeOnlineJudge({wait:noWait,fetchImpl:async()=>{runtimeCalls++;return json({status:'1',program_error:'NullPointerException'});}});assert.match((await runtime.run('code',p,cases,'python')).message,/NullPointerException/);assert.equal(runtimeCalls,1,'Executed program errors are not transient capacity errors');
+let nativeCalls=0;const native=makeOnlineJudge({wait:noWait,fetchImpl:async()=>++nativeCalls===1?busy():json({status:'0',program_output:output})});assert.equal((await native.run('code',p,cases,'python')).cases[0].passed,true);assert.equal(nativeCalls,2);
+let limitedCalls=0;const rateLimited=await requestSandbox({compiler:'fixture',code:'fixture',save:false},{wait:()=>assert.fail('Do not sleep beyond the deadline'),timeoutMs:30000,fetchImpl:async()=>{limitedCalls++;return new Response('',{status:429,headers:{'retry-after':'120'}});}});assert.equal(rateLimited.ok,false);assert.equal(limitedCalls,1,'Respect provider Retry-After');assert.ok(rateLimited.result.retryAfterMs>=120000);
+let clock=1000,deadlineCalls=0;const deadline=await requestSandbox({compiler:'fixture',code:'fixture'},{now:()=>clock,timeoutMs:30000,wait:()=>assert.fail('Deadline is exhausted'),fetchImpl:async()=>{deadlineCalls++;clock+=29950;return busy();}});assert.equal(deadline.ok,false);assert.equal(deadlineCalls,1,'A retry cannot exceed the existing total deadline');
+const brokenResponse=await requestSandbox({},{fetchImpl:async()=>new Response('<html>Bad gateway</html>')});assert.equal(brokenResponse.result.status,'unavailable');
+const tooMuch=await requestSandbox({},{fetchImpl:async()=>new Response('x'.repeat(1000001))});assert.equal(tooMuch.result.status,'compile_error');assert.match(tooMuch.result.message,/Output exceeds/);
+let timeoutCalls=0;const timedOut=await requestSandbox({},{fetchImpl:async()=>{timeoutCalls++;throw new DOMException('host details','TimeoutError');}});assert.equal(timedOut.result.status,'unavailable');assert.equal(timeoutCalls,1,'Do not amplify unknown or still-queued timeout requests');assert.ok(!timedOut.result.message.includes('host details'));
+let records=0,claims=0;const result=await submitSolution({owner:'verified-owner',body:{problemId:p.id,revision:1,language:'java',source:p.reference,nonce:'11111111-1111-4111-8111-111111111111',shared:false},db:{existingSubmission:async()=>null,privateProblem:async()=>({revision:1,content:p,hidden:[]}),claimOnlineRun:async()=>{claims++;return true;},recordSubmission:async()=>{records++;throw new Error('Must not record an infrastructure failure');}},benchmarkJudge:exhausted});assert.equal(result.status,'unavailable');assert.equal(records,0);assert.equal(claims,1,'Only one logical rate-limit claim for the automatic retry');
+console.log('PASS: OCI container failure recovery, bounded retry/deadline, Retry-After, real-code error isolation, output limits and no submission records for infrastructure failures.');

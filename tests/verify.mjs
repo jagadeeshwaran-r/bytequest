@@ -1,3 +1,4 @@
+import "./compiler-recovery.mjs";
 import "./next-features.mjs";
 import "./upgrades.mjs";
 import "./presence.mjs";

@@ -13,3 +13,5 @@
 :root dialog:is(.chat-dialog,.submission-dialog,#successDialog) :is(h2,h3,label){color:var(--text)!important}:root dialog:is(.chat-dialog,.submission-dialog) :is(input,textarea,select){color:var(--text)!important}:root dialog:is(.chat-dialog,.submission-dialog) p:not(.benchmark-note):not(.muted):not(.chat-caption):not(.chat-footnote):not(.chat-empty):not(.chat-status){color:var(--text)}
 .minimal-brand :is(.wordmark-byte,.wordmark-quest){display:inline!important;font-family:var(--font-sans)!important}.minimal-brand .wordmark-byte{color:var(--text)}.minimal-brand .wordmark-quest{color:var(--accent)}
 @media(max-width:700px){.header-tools .friend-search input{width:100%!important}.minimal-header{height:auto!important}}
+
+.result-summary.unavailable{color:var(--muted)!important;background:var(--surface-2)!important;border-color:var(--border)!important}
