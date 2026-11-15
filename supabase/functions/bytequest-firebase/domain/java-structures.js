@@ -28,3 +28,44 @@ class ListHelper {
 `;
 export const hasLinkedListType = problem =>
   problem.params.some(p => p.type === 'ListNode');
+
+// Level-order LeetCode tree representation; null marks absent children.
+export const binaryTreeJavaSource = `
+class TreeNode {
+    int val;
+    TreeNode left, right;
+    TreeNode(int value) { this.val = value; }
+    TreeNode(int value, TreeNode left, TreeNode right) { this.val = value; this.left = left; this.right = right; }
+}
+class TreeHelper {
+    static TreeNode createTree(Integer... values) {
+        if (values == null || values.length == 0 || values[0] == null) return null;
+        TreeNode root = new TreeNode(values[0]);
+        java.util.Queue<TreeNode> queue = new java.util.ArrayDeque<>();
+        queue.add(root);
+        int index = 1;
+        while (index < values.length && !queue.isEmpty()) {
+            TreeNode node = queue.remove();
+            if (index < values.length && values[index] != null) {
+                node.left = new TreeNode(values[index]);
+                queue.add(node.left);
+            }
+            index++;
+            if (index < values.length && values[index] != null) {
+                node.right = new TreeNode(values[index]);
+                queue.add(node.right);
+            }
+            index++;
+        }
+        if (index < values.length) throw new IllegalArgumentException("Unreachable tree nodes in level-order input");
+        return root;
+    }
+}
+`;
+export const hasTreeNodeType = problem =>
+  problem.params.some(p => p.type === 'TreeNode');
+export const requiresJavaStructures = problem =>
+  hasLinkedListType(problem) || hasTreeNodeType(problem);
+export const javaInputStructures = problem =>
+  (hasLinkedListType(problem) ? linkedListJavaSource : '') +
+  (hasTreeNodeType(problem) ? binaryTreeJavaSource : '');
