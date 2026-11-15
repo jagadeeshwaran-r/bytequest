@@ -23,6 +23,18 @@ import { buildBenchmarkProgram } from "../supabase/functions/bytequest-firebase/
 import { nativeResults } from "../supabase/functions/bytequest-firebase/domain/languages.js";
 import { submitSolution } from "../supabase/functions/bytequest-firebase/submissions.js";
 import { traceFor } from "../dist/traces.js";
+
+for (const page of ["index.html", "studio.html"]) {
+  const markup = readFileSync("dist/" + page, "utf8");
+  const select = markup.match(/<select id="pReturns">([\\s\\S]*?)<\\/select>/);
+  assert.ok(select, page + " must contain the problem return type selector");
+  const options = [...select[1].matchAll(/<option(?: value="([^"]+)")?>([^<]+)<\\/option>/g)]
+    .map(([, value, label]) => value ?? label);
+  assert.deepEqual(options, ["int", "int[]", "int[][]", "boolean", "String", "ListNode"],
+    page + " return types must match supported Java catalog contracts");
+}
+console.log("✓ Studio return type selector supports ListNode and int[][] on both pages.");
+
 mkdirSync("build/tests", {recursive:true});
 function command(args) {
   const p=spawnSync("java",args,{encoding:"utf8",timeout:25000});
