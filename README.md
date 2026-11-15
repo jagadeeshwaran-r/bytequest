@@ -155,7 +155,7 @@ The suite covers four-language benchmark harnesses, authenticated event streams,
 
 ## Compiler availability
 
-The public compiler may temporarily fail to start a sandbox (for example, an OCI/crun resource error). ByteQuest retries a recognized container-capacity or transient HTTP failure once, using the same program and compiler within the original deadline. If it still cannot run, the site shows a compiler-availability message, keeps the draft, and records no solution verdict, failed practice attempt, points or ranking entry. Syntax errors and programs that already executed are not automatically retried. Java **Run** remains available in the browser while the remote service is unavailable.
+The public compiler may temporarily fail to start a sandbox (for example, an OCI/crun resource error). ByteQuest retries a recognized container-capacity or transient HTTP failure once, using the same program and compiler within the original deadline. If it still cannot run, the site shows a compiler-availability message, keeps the draft, and records no solution verdict, failed practice attempt, points or ranking entry. Syntax errors and programs that already executed are not automatically retried. C++ allows 60 seconds for Run and 75 seconds for submission benchmarks, with longer browser request limits to leave room for authentication and database work. A timeout has a separate message from a provider outage. Redacted transport logs record compiler, failure category, HTTP status and timing; source code, tokens and profile data are excluded. Java **Run** remains available in the browser while the remote service is unavailable.
 
 ## Current limits
 

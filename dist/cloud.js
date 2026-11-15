@@ -45,7 +45,7 @@ export class Cloud {
       if(this.user?.id!==ownerId)throw new Error("Your account changed. Please retry saving.");
       const response=await this.fetch(this.config.url+"/functions/v1/bytequest-firebase",{
         method:"POST",headers:{"Content-Type":"application/json",apikey:this.config.publishableKey,Authorization:"Bearer "+token},
-        body:JSON.stringify({action,...body}),signal:AbortSignal.timeout(action==="submission-create"?65000:action==="native-run"?45000:20000)
+        body:JSON.stringify({action,...body}),signal:AbortSignal.timeout(action==="submission-create"?(body.language==="cpp"?100000:65000):action==="native-run"?(body.language==="cpp"?80000:45000):20000)
       });
       if(this.user?.id!==ownerId)throw new Error("Your account changed. Please retry saving.");
       if(response.status===401&&attempt===0)continue;

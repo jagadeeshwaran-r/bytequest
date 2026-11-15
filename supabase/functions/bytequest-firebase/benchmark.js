@@ -29,7 +29,7 @@ export function makeBenchmarkJudge({fetchImpl=fetch,makeNonce=()=>crypto.randomU
  return {async run(source,p,cases,language){
   if(!benchmarkCompilers[language])throw new Error('Unsupported benchmark language');
   const nonce=makeNonce(),code=buildBenchmarkProgram(source,p,cases,language,nonce);if(code.length>300000)return {accepted:false,status:'compile_error',message:'This suite is too large for the public benchmark.'};
-  const response=await requestSandbox({compiler:benchmarkCompilers[language],code,save:false,options:language==='cpp'?'c++17':language==='c'?'c11':''},{fetchImpl,timeoutMs:45000,wait,now,random});
+  const response=await requestSandbox({compiler:benchmarkCompilers[language],code,save:false,options:language==='cpp'?'c++17':language==='c'?'c11':''},{fetchImpl,timeoutMs:language==='cpp'?75000:45000,wait,now,random});
   if(!response.ok)return response.result;const r=response.value;
   if(String(r.status)!=='0'||r.signal)return{accepted:false,status:'compile_error',message:String(sandboxDiagnostics(r)||r.signal||'Compilation or execution failed.').slice(0,10000)};
   const output=String(r.program_output||''),results=nativeResults(output,p,cases),observations=output.split(/\r?\n/).filter(l=>/^__BYTEQUEST_CASE_\d+__/.test(l));const consistent=observations.length===cases.length*4&&Array.from({length:4},(_,i)=>nativeResults(observations.slice(i*cases.length,(i+1)*cases.length).join('\n'),p,cases).every(c=>c.passed)).every(Boolean),passed=consistent?cases.length:results.filter(c=>c.passed).length;

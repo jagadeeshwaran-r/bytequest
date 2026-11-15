@@ -9,7 +9,7 @@ import {mountShell} from "./shell.js?v=profile-2";
 import {Dashboard} from "./dashboard.js?v=next-1";
 import {languages,starterFor,NativeJudge} from "./languages.js?v=presence-1";
 import {problems as bundledProblems} from "./problems.js";
-import {Cloud} from "./cloud.js?v=profile-2";
+import {Cloud} from "./cloud.js?v=cpp-1";
 import {blankProgress, validateProgress, mergeProgress, solveStreak} from "./progress.js?v=next-1";
 import {Studio} from "./studio.js?v=social-1";
 const problems=[...bundledProblems];
@@ -201,11 +201,11 @@ async function run(submit){
   const epoch=++runEpoch,p=current,source=$("codeEditor").value;
   const cases=submit?[...p.tests,...customCases]:allCases();
   setBusy(true);results=null;renderTests();$("resultOutput").textContent="Starting your code…";
-  watchdog=setTimeout(()=>stopRun("Java startup timed out. Check your connection and allow cjrtnc.leaningtech.com, then try again."),120000);
+  watchdog=setTimeout(()=>stopRun(language==="java"?"Java startup timed out. Check your connection and allow cjrtnc.leaningtech.com, then try again.":"Online compilation is taking longer than expected. Your code is saved; please try again shortly."),language==="java"?120000:language==='cpp'?90000:60000);
   try{
     const result=await judge.run(source,p,cases);
     if(epoch!==runEpoch)return;
-    if(result.status!=="ok"){$("resultOutput").textContent=(result.status==="unavailable"?"Compiler temporarily unavailable\n":result.status==="compile_error"?"Compile error\n":"Runtime error\n")+result.message;if(result.status!=="unavailable")logAttempt(p,0,cases.length);return;}
+    if(result.status!=="ok"){$("resultOutput").textContent=(result.code==="compiler_timeout"?"Compiler request timed out\n":result.status==="unavailable"?"Compiler temporarily unavailable\n":result.status==="compile_error"?"Compile error\n":"Runtime error\n")+result.message;if(result.status!=="unavailable")logAttempt(p,0,cases.length);return;}
     results={...result,cases:submit?[...result.cases.slice(0,2),...result.cases.slice(p.tests.length)]:result.cases};
     renderTests();
     const passed=result.cases.filter(c=>c.passed).length, accepted=passed===cases.length;
@@ -222,7 +222,7 @@ async function run(submit){
       else{try{const verdict=await cloud.request("hidden-submit",{problemId:p.id,source,revision:p.revision});output.append(document.createTextNode(" "+verdict.message));if(verdict.accepted)completeQuest(p);}catch(error){output.append(document.createTextNode(" "+error.message));}}
     }else if(accepted&&submit)completeQuest(p);
     else if(accepted)notify("Samples passed! Submit quest to check every built-in edge case.");
-  }catch(error){if(epoch===runEpoch)$("resultOutput").textContent=String(error.message||error);}
+  }catch(error){if(epoch===runEpoch)$("resultOutput").textContent=language!=="java"&&error?.name==='TimeoutError'?"Compiler request timed out. Your code is saved. Please try again shortly.":String(error.message||error);}
   finally{if(epoch===runEpoch){clearTimeout(watchdog);setBusy(false);$("runStatus").textContent=languages[language].name+(language==="java"?" · browser compiler":" · online via Wandbox");updateStats();persist();}}
 }
 async function submitOnline(){
@@ -231,14 +231,14 @@ async function submitOnline(){
  const options=await requestSubmission({problem:p,language:languages[lang].name});
  if(!options||current.id!==p.id||language!==lang||cloud.user?.id!==user||account!==accountEpoch){setBusy(false);return;}
  const epoch=++runEpoch;results=null;renderTests();$("resultOutput").textContent='Running and measuring your solution…';
- watchdog=setTimeout(()=>stopRun('The submission is taking longer than expected. Your code is saved. Check My submissions before retrying.'),70000);
+ watchdog=setTimeout(()=>stopRun('The submission is taking longer than expected. Your code is saved. Check My submissions before retrying.'),lang==='cpp'?105000:70000);
  try{
   const result=await cloud.request('submission-create',{...options,problemId:p.id,revision:p.revision,source,language:lang},user);
   if(epoch!==runEpoch||account!==accountEpoch||cloud.user?.id!==user)return;
   if(result.status!=='unavailable')logAttempt(p,result.passed||0,result.total||p.tests.length);
-  const output=$("resultOutput");output.replaceChildren();const summary=document.createElement('div');summary.className='result-summary'+(result.status==='unavailable'?' unavailable':result.accepted?'':' failed');summary.textContent=(result.status==='unavailable'?'Compiler busy · ':result.accepted?'✓ Accepted · ':'')+(result.message||'Submission finished.');output.append(summary);
+  const output=$("resultOutput");output.replaceChildren();const summary=document.createElement('div');summary.className='result-summary'+(result.status==='unavailable'?' unavailable':result.accepted?'':' failed');summary.textContent=(result.code==='compiler_timeout'?'Compiler timed out · ':result.status==='unavailable'?'Compiler unavailable · ':result.accepted?'✓ Accepted · ':'')+(result.message||'Submission finished.');output.append(summary);
   if(result.accepted){const metrics=document.createElement('p');metrics.className='benchmark-note';metrics.textContent=runtimeLabel(result.runtimeMs??result.submission?.runtime_ms)+' · '+memoryLabel(result.memoryBytes??result.submission?.memory_bytes)+' · measured test suite';output.append(metrics);const link=document.createElement('button');link.className='reference-button';link.textContent='View submissions →';link.onclick=()=>{tab='submissions';renderLearning();};output.append(link);completeQuest(p);if(tab==='submissions')submissions.refresh();}
- }catch(e){if(epoch===runEpoch&&account===accountEpoch)$("resultOutput").textContent=e.message;}
+ }catch(e){if(epoch===runEpoch&&account===accountEpoch)$("resultOutput").textContent=e?.name==='TimeoutError'?'The submission request timed out. Your code is saved. Check My submissions before retrying.':e.message;}
  finally{if(epoch===runEpoch&&account===accountEpoch){clearTimeout(watchdog);setBusy(false);$("runStatus").textContent=languages[language].name+' · ready';persist();updateStats();}}
 }
 function logAttempt(p,passed,total){
