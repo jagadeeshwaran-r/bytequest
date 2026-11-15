@@ -1,13 +1,14 @@
-import {profileAvatar,publicProfileHref} from './profile-view.js?v=profile-2';
-import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=profile-2';
+import {profileAvatar,publicProfileHref} from './profile-view.js?v=workbench-1';
+import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=workbench-1';
 import {launchCelebration} from './celebration.js?v=next-1';
-import {mountEditorTools} from './editor-tools.js?v=operators-1';
+import {mountEditorTools} from './editor-tools.js?v=workbench-1';
+import {submissionFeedback} from './submission-feedback.js?v=workbench-1';
 import {pointsFor,totalPoints} from './rewards.js?v=upgrade-2';
 import {companyIcon} from './companies.js?v=social-1';
 import {mountWorkspace} from './workspace.js';
-import {mountShell} from "./shell.js?v=profile-2";
+import {mountShell} from "./shell.js?v=workbench-1";
 import {Dashboard} from "./dashboard.js?v=next-1";
-import {languages,starterFor,NativeJudge} from "./languages.js?v=presence-1";
+import {languages,starterFor,NativeJudge} from "./languages.js?v=workbench-1";
 import {problems as bundledProblems} from "./problems.js";
 import {Cloud} from "./cloud.js?v=cpp-1";
 import {blankProgress, validateProgress, mergeProgress, solveStreak} from "./progress.js?v=next-1";
@@ -205,7 +206,7 @@ async function run(submit){
   try{
     const result=await judge.run(source,p,cases);
     if(epoch!==runEpoch)return;
-    if(result.status!=="ok"){$("resultOutput").textContent=(result.code==="compiler_timeout"?"Compiler request timed out\n":result.status==="unavailable"?"Compiler temporarily unavailable\n":result.status==="compile_error"?"Compile error\n":"Runtime error\n")+result.message;if(result.status!=="unavailable")logAttempt(p,0,cases.length);return;}
+    if(result.status!=="ok"){$("resultOutput").textContent=(result.code==="compiler_timeout"?"Compiler request timed out\n":result.status==="unavailable"?"Compiler temporarily unavailable\n":result.status==="compile_error"?"Compile error\n":"Runtime error\n")+result.message;if(submit){const feedback=submissionFeedback({...result,accepted:false});$("resultOutput").innerHTML=feedback.html;notify(feedback.announcement);}else notify(result.status==="compile_error"?"Compilation failed. Review the compiler output.":"Run failed. Review the test results.");if(result.status!=="unavailable")logAttempt(p,0,cases.length);return;}
     results={...result,cases:submit?[...result.cases.slice(0,2),...result.cases.slice(p.tests.length)]:result.cases};
     renderTests();
     const passed=result.cases.filter(c=>c.passed).length, accepted=passed===cases.length;
@@ -216,13 +217,14 @@ async function run(submit){
     });
     if(result.stdout){const stdout=document.createElement("div");stdout.className="stdout";stdout.textContent="Console\n"+result.stdout;output.append(stdout);}
     logAttempt(p,passed,cases.length);
+    if(submit&&!accepted){const feedback=submissionFeedback({...result,accepted:false,status:"wrong_answer",passed,total:cases.length});output.innerHTML=feedback.html;notify(feedback.announcement);}
     if(accepted&&submit&&p.hiddenCount){
       if(language!=="java"){output.append(document.createTextNode(" Private submissions currently support Java only. No acceptance recorded."));return;}
       if(!cloud.user){notify("Public checks passed. Sign in for private-test submissions.");output.append(document.createTextNode(" Private tests are not checked; this quest is not yet accepted."));}
       else{try{const verdict=await cloud.request("hidden-submit",{problemId:p.id,source,revision:p.revision});output.append(document.createTextNode(" "+verdict.message));if(verdict.accepted)completeQuest(p);}catch(error){output.append(document.createTextNode(" "+error.message));}}
     }else if(accepted&&submit)completeQuest(p);
     else if(accepted)notify("Samples passed! Submit quest to check every built-in edge case.");
-  }catch(error){if(epoch===runEpoch)$("resultOutput").textContent=language!=="java"&&error?.name==='TimeoutError'?"Compiler request timed out. Your code is saved. Please try again shortly.":String(error.message||error);}
+  }catch(error){if(epoch===runEpoch){const message=language!=="java"&&error?.name==='TimeoutError'?"Compiler request timed out. Your code is saved. Please try again shortly.":String(error.message||error);$("resultOutput").textContent=message;notify(message);}}
   finally{if(epoch===runEpoch){clearTimeout(watchdog);setBusy(false);$("runStatus").textContent=languages[language].name+(language==="java"?" · browser compiler":" · online via Wandbox");updateStats();persist();}}
 }
 async function submitOnline(){
@@ -236,9 +238,9 @@ async function submitOnline(){
   const result=await cloud.request('submission-create',{...options,problemId:p.id,revision:p.revision,source,language:lang},user);
   if(epoch!==runEpoch||account!==accountEpoch||cloud.user?.id!==user)return;
   if(result.status!=='unavailable')logAttempt(p,result.passed||0,result.total||p.tests.length);
-  const output=$("resultOutput");output.replaceChildren();const summary=document.createElement('div');summary.className='result-summary'+(result.status==='unavailable'?' unavailable':result.accepted?'':' failed');summary.textContent=(result.code==='compiler_timeout'?'Compiler timed out · ':result.status==='unavailable'?'Compiler unavailable · ':result.accepted?'✓ Accepted · ':'')+(result.message||'Submission finished.');output.append(summary);
+  const output=$("resultOutput"),feedback=submissionFeedback(result);output.innerHTML=feedback.html;notify(feedback.announcement);output.tabIndex=-1;output.focus({preventScroll:true});output.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
   if(result.accepted){const metrics=document.createElement('p');metrics.className='benchmark-note';metrics.textContent=runtimeLabel(result.runtimeMs??result.submission?.runtime_ms)+' · '+memoryLabel(result.memoryBytes??result.submission?.memory_bytes)+' · measured test suite';output.append(metrics);const link=document.createElement('button');link.className='reference-button';link.textContent='View submissions →';link.onclick=()=>{tab='submissions';renderLearning();};output.append(link);completeQuest(p);if(tab==='submissions')submissions.refresh();}
- }catch(e){if(epoch===runEpoch&&account===accountEpoch)$("resultOutput").textContent=e?.name==='TimeoutError'?'The submission request timed out. Your code is saved. Check My submissions before retrying.':e.message;}
+ }catch(e){if(epoch===runEpoch&&account===accountEpoch){const text=e?.name==='TimeoutError'?'The submission request timed out. Your code is saved. Check My submissions before retrying.':e.message,feedback=submissionFeedback({status:'error',message:text});$("resultOutput").innerHTML=feedback.html;notify(feedback.announcement+': '+text);$("resultOutput").scrollIntoView({block:'nearest'});}}
  finally{if(epoch===runEpoch&&account===accountEpoch){clearTimeout(watchdog);setBusy(false);$("runStatus").textContent=languages[language].name+' · ready';persist();updateStats();}}
 }
 function logAttempt(p,passed,total){

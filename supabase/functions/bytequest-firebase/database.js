@@ -19,9 +19,11 @@ export function createDatabase(url,serviceKey,{fetchImpl=fetch}={}){
     async progress(owner){return checked(await client.from("bytequest_firebase_progress").select("payload,revision").eq("user_id",owner).maybeSingle());},
     async isEditor(owner){const [editor,admin]=await Promise.all([client.from("bytequest_firebase_editors").select("user_id").eq("user_id",owner).maybeSingle(),client.from("bytequest_library_admins").select("user_id").eq("user_id",owner).maybeSingle()]);return !!checked(editor)||!!checked(admin);},
     async community(owner,action,data){
+      if(action==='creator-search'){const r=await client.rpc('bytequest_creator_search',{owner_id:owner,query_text:data.query});rpcError(r.error);return enrich(r.data);}
+      if(action==='role-set'){const r=await client.rpc('bytequest_set_creator',{owner_id:owner,target_ref:data.target,allow_creator:data.creator});rpcError(r.error);return enrich(r.data);}
       if(action==='notifications'){const r=await client.rpc('bytequest_updates',{owner_id:owner,after_id:null,include_history:true});rpcError(r.error);return r.data;}
       if(action==='problem-authors'){const r=await client.rpc('bytequest_problem_credits',{viewer_id:owner,problem:data.problemId});rpcError(r.error);return enrich(r.data);}
-      if(action.startsWith('chat-')){const r=await client.rpc('bytequest_chat',{owner_id:owner,action,data});rpcError(r.error);return enrich(r.data);}
+      if(action.startsWith('chat-')){const r=await client.rpc('bytequest_chat_view',{owner_id:owner,action,data});rpcError(r.error);return enrich(r.data);}
       if(action==='live-events-poll'){const r=await client.rpc('bytequest_activity_feed',{owner_id:owner,after_id:data.after,announcements_after:data.announcementsAfter});rpcError(r.error);return enrich(r.data);}
       if(action.startsWith('submission-')){const r=await client.rpc('bytequest_submissions',{owner_id:owner,action,data});rpcError(r.error);return enrich(r.data);}
       if(action==="friend-analytics"){const {data:result,error}=await client.rpc("bytequest_friend_analytics",{viewer_id:owner,targets:data.targets});rpcError(error);return enrich(result);}

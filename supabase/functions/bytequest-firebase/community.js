@@ -1,6 +1,6 @@
 import {profileDetails} from './domain/profile-fields.js';
 import {HttpError} from './handler.js';
-const actions=new Set(['problem-authors','chat-list','chat-thread','chat-send','chat-read','live-events-poll','submission-list','submission-read','submission-history','friend-analytics','leaderboard','presence','profile-presence','friend-presence','self','profile-save','search','profile','follow','followers','following','notifications','notifications-read','roles','role-set']);
+const actions=new Set(['creator-search','problem-authors','chat-list','chat-thread','chat-send','chat-read','live-events-poll','submission-list','submission-read','submission-history','friend-analytics','leaderboard','presence','profile-presence','friend-presence','self','profile-save','search','profile','follow','followers','following','notifications','notifications-read','roles','role-set']);
 export const communityActions=actions;
 export function validateCommunity(action,body){
  const data={};
@@ -44,7 +44,9 @@ export function validateCommunity(action,body){
  if(action==='search'){
   if(typeof body.query!=='string'||body.query.length<2||body.query.length>50||!/^[a-zA-Z0-9_-]+$/.test(body.query))throw new HttpError(400,'Search with at least two username characters, or an exact profile ID.');data.query=body.query.toLowerCase();
  }
- if(['profile-presence','profile','follow','followers','following','role-set'].includes(action)){
+ if(action==='creator-search'){if(typeof body.query!=='string'||body.query.trim().length<2||body.query.trim().length>180||!/^[A-Za-z0-9_:@-]+$/.test(body.query.trim()))throw new HttpError(400,'Search by username, profile ID or exact Firebase user ID.');data.query=body.query.trim();}
+ if(action==='role-set'){if(typeof body.target!=='string'||body.target.trim().length<2||body.target.trim().length>180||!/^[A-Za-z0-9_:@-]+$/.test(body.target.trim()))throw new HttpError(400,'Choose a valid creator account.');data.target=body.target.trim();}
+ if(['profile-presence','profile','follow','followers','following'].includes(action)){
   if(typeof body.target!=='string'||body.target.length>50||!/^[a-zA-Z0-9_-]+$/.test(body.target))throw new HttpError(400,'Choose a valid username or profile ID.');data.target=body.target.toLowerCase();
  }
  if(action==='follow'){if(typeof body.following!=='boolean')throw new HttpError(400,'Choose follow or unfollow.');data.following=body.following;}

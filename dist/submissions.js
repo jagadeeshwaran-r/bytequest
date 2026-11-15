@@ -1,4 +1,4 @@
-import {profileAvatar,profileIcon,publicProfileHref} from './profile-view.js?v=profile-2';
+import {profileAvatar,profileIcon,publicProfileHref} from './profile-view.js?v=workbench-1';
 import {languageNames} from './profile-fields.js?v=profile-2';
 import {escapeHtml as h} from './community-model.js';
 export const runtimeLabel=value=>value===null||value===undefined?'Not measured':Number(value)<.001?'< 0.001 ms':Number(value).toFixed(3)+' ms';

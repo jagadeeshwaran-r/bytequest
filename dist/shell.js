@@ -1,4 +1,4 @@
-import {mountChat} from './chat.js?v=profile-2';
+import {mountChat} from './chat.js?v=workbench-1';
 import {mountLiveEvents} from './live-events.js?v=profile-2';
 import {mountAccountDeletion} from './account-deletion.js?v=next-1';
 import {mountPresence} from './presence.js';
@@ -28,7 +28,7 @@ export function mountShell(){
  toggle.onclick=()=>{hidePanels();menu.hidden=!menu.hidden;toggle.setAttribute('aria-expanded',String(!menu.hidden));};
  document.addEventListener('click',e=>{if(!e.target.closest('.profile-dropdown'))close();if(!e.target.closest('.header-tools'))hidePanels();});document.addEventListener('keydown',e=>{if(e.key==='Escape'){close();hidePanels();}});
  menu.querySelectorAll('a').forEach(a=>a.addEventListener('click',close));menu.querySelectorAll('[data-theme-choice]').forEach(b=>b.onclick=()=>{window.bytequestTheme(b.dataset.themeChoice);menu.querySelectorAll('[data-theme-choice]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));});
- return {connect(c){cloud=c;mountAccountDeletion(c);tracker=mountPresence(c);chat=mountChat(c,{notify:(friend,options)=>typeof friend==='string'?alert(friend):toasts.show(friend,options)});friends=mountLiveEvents(c,{onBatch:batch=>{chat.unread(batch.unread,batch.updatesUnread);for(const item of batch.announcements||[])chat.receiveAnnouncement(item);for(const event of batch.events||[]){if(event.kind==='friend_online')toasts.show(event.actor);else if(event.kind==='message')chat.receive(event);}},onResume:()=>chat.resume()});const before=c.onBeforeSignOut;c.onBeforeSignOut=()=>{before?.();friends.setOwner(null);chat.setOwner(null);toasts.clear();};},openChat(target){return chat?.open(target);},openInbox,focusSearch(){search.focus();},setAccount(user,profile){
+ return {connect(c){cloud=c;mountAccountDeletion(c);tracker=mountPresence(c);chat=mountChat(c,{notify:(friend,options)=>typeof friend==='string'?alert(friend):toasts.show(friend,options)});friends=mountLiveEvents(c,{onBatch:batch=>{chat.unread(batch.unread,batch.updatesUnread);chat.signals(batch.chatSignals);for(const item of batch.announcements||[])chat.receiveAnnouncement(item);for(const event of batch.events||[]){if(event.kind==='friend_online')toasts.show(event.actor);else if(event.kind==='message')chat.receive(event);}},onResume:()=>chat.resume()});const before=c.onBeforeSignOut;c.onBeforeSignOut=()=>{before?.();friends.setOwner(null);chat.setOwner(null);toasts.clear();};},openChat(target){return chat?.open(target);},openInbox,focusSearch(){search.focus();},setAccount(user,profile){
   // Cached names/photos are presentation only; verified Firebase identity still gates every API call.
   const resolved=cloud?.loginReady||cloud?.session?.ready;if(!user&&!resolved)return;
   const owner=user?.id||null,changed=identity!==owner;if(changed){identity=owner;epoch++;hidePanels();results.replaceChildren();if(card?.owner!==owner){card=null;painted=null;}}

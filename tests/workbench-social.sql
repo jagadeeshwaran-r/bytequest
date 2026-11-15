@@ -1,0 +1,45 @@
+-- Disposable identities only. All fixtures, grants, messages and solves roll back.
+begin;
+do $$
+declare a uuid;b uuid;c uuid;r jsonb;s jsonb;problem jsonb;first_id bigint;second_id bigint;sid text;i int;solved jsonb:='{}';begin
+ insert into public.bytequest_firebase_profiles(user_id,project_id,firebase_uid,email) select 'firebase:workbench-fixture:'||case when x='b' then 'MixedCaseFixtureUID' else 'uid-'||x end,'workbench-fixture',case when x='b' then 'MixedCaseFixtureUID' else 'uid-'||x end,x||'@workbench.example.invalid' from unnest(array['a','b','c','d']) x;
+ r:=public.bytequest_save_profile('firebase:workbench-fixture:uid-a','{"username":"fixture_workbench_a","display_name":"Fixture A","bio":"","avatar_url":"","discoverable":true,"show_presence":true}');a:=(r->'profile'->>'public_id')::uuid;
+ r:=public.bytequest_save_profile('firebase:workbench-fixture:MixedCaseFixtureUID','{"username":"fixture_workbench_b","display_name":"Fixture B","bio":"","avatar_url":"","discoverable":true,"show_presence":true}');b:=(r->'profile'->>'public_id')::uuid;
+ r:=public.bytequest_save_profile('firebase:workbench-fixture:uid-c','{"username":"fixture_workbench_c","display_name":"Private Fixture C","bio":"","avatar_url":"https://example.invalid/private-photo.png","discoverable":false,"show_presence":false}');c:=(r->'profile'->>'public_id')::uuid;
+ insert into public.bytequest_library_admins(user_id) values('firebase:workbench-fixture:uid-a');
+ begin perform public.bytequest_creator_search('firebase:workbench-fixture:MixedCaseFixtureUID','fixture');raise exception 'Non-admin creator search allowed';exception when insufficient_privilege then null;end;
+ r:=public.bytequest_creator_search('firebase:workbench-fixture:uid-a','MixedCaseFixtureUID');assert jsonb_array_length(r->'users')=1 and r->'users'->0->>'public_id'=b::text,'Firebase user ID is exact and preserves case';
+ assert jsonb_array_length(public.bytequest_creator_search('firebase:workbench-fixture:uid-a','mixedcasefixtureuid')->'users')=0,'Do not lowercase Firebase user IDs';
+ assert jsonb_array_length(public.bytequest_creator_search('firebase:workbench-fixture:uid-a',b::text)->'users')=1,'Public profile ID lookup';
+ assert jsonb_array_length(public.bytequest_creator_search('firebase:workbench-fixture:uid-a','@fixture_workbench_b')->'users')=1,'Username lookup';
+ r:=public.bytequest_creator_search('firebase:workbench-fixture:uid-a','fixture_workbench');assert jsonb_array_length(r->'users')=2,'Private profiles are excluded from prefix discovery';
+ r:=public.bytequest_creator_search('firebase:workbench-fixture:uid-a',c::text);assert r->'users'->0->>'avatar_url'='' and not (r->'users'->0?'owner_id') and not(r->'users'->0?'email'),'Exact admin lookup minimizes private profile metadata';
+ assert (public.bytequest_creator_search('firebase:workbench-fixture:uid-a','uid-d')->>'needsProfile')::boolean,'ID lookup explains accounts without profiles';
+ perform public.bytequest_set_creator('firebase:workbench-fixture:uid-a','MixedCaseFixtureUID',true);assert exists(select 1 from public.bytequest_firebase_editors where user_id='firebase:workbench-fixture:MixedCaseFixtureUID'),'Resolve creator grant using exact Firebase ID';
+ perform public.bytequest_set_creator('firebase:workbench-fixture:uid-a','@fixture_workbench_b',false);assert not exists(select 1 from public.bytequest_firebase_editors where user_id='firebase:workbench-fixture:MixedCaseFixtureUID'),'Username revoke is owner-bound';
+ begin perform public.bytequest_set_creator('firebase:workbench-fixture:MixedCaseFixtureUID',a::text,true);raise exception 'Non-admin grant allowed';exception when insufficient_privilege then null;end;
+ insert into public.bytequest_follows(follower,following) values(a,b),(b,a);
+ perform public.bytequest_update_presence_live('firebase:workbench-fixture:MixedCaseFixtureUID',gen_random_uuid(),1,true,0);
+ r:=public.bytequest_chat_signals('firebase:workbench-fixture:uid-a');assert jsonb_array_length(r->'presence')=1 and (r->'presence'->0->'presence'->>'online')::boolean,'Chat peers share current presence leases';
+ r:=public.bytequest_chat_view('firebase:workbench-fixture:uid-a','chat-send',jsonb_build_object('target',b,'body','Disposable fixture message','nonce',gen_random_uuid()));first_id:=(r->'message'->>'id')::bigint;
+ insert into public.bytequest_chat_messages(sender,recipient,client_nonce,body) values(a,b,gen_random_uuid(),'Second disposable fixture') returning id into second_id;
+ r:=public.bytequest_chat_view('firebase:workbench-fixture:MixedCaseFixtureUID','chat-read',jsonb_build_object('target',a,'through',first_id));assert (r->>'unread')::int=1 and (r->>'totalUnread')::int=1,'Partial visible reads retain later unread messages';
+ r:=public.bytequest_chat_signals('firebase:workbench-fixture:uid-a');assert (r->'receipts'->0->>'through')::bigint=first_id,'Receipt only for read outgoing messages';
+ assert jsonb_array_length(public.bytequest_chat_signals('firebase:workbench-fixture:uid-c')->'receipts')=0,'No outsider read receipts';assert jsonb_array_length(public.bytequest_chat_signals('firebase:workbench-fixture:uid-d')->'presence')=0,'No-profile accounts have empty chat state';
+ r:=public.bytequest_chat_view('firebase:workbench-fixture:uid-a','chat-thread',jsonb_build_object('target',b));assert (r->'messages'->0->>'read')::boolean and not (r->'messages'->1->>'read')::boolean,'Thread exposes participant read state';
+ begin perform public.bytequest_chat_view('firebase:workbench-fixture:uid-c','chat-thread',jsonb_build_object('target',a));raise exception 'Outsider transcript allowed';exception when no_data_found then null;end;
+ update public.bytequest_social_profiles set show_presence=false where public_id=b;
+ r:=public.bytequest_chat_signals('firebase:workbench-fixture:uid-a');assert not (r->'presence'->0->'presence'->>'visible')::boolean,'Chat honors presence opt-out';
+ select content into problem from public.bytequest_problems where id='two-sum';
+ for i in 0..29 loop sid:='fixture-workbench-recent-'||lpad(i::text,2,'0');insert into public.bytequest_problems(id,content,position,published) values(sid,problem||jsonb_build_object('id',sid,'title','Recent fixture '||i,'hiddenCount',0),999900+i,true);solved:=solved||jsonb_build_object(sid,extract(epoch from(now()-make_interval(days=>i+1)))*1000);end loop;
+ solved:=solved||jsonb_build_object('missing-problem',extract(epoch from now())*1000,'fixture-workbench-recent-29',extract(epoch from(now()+interval '1 day'))*1000);
+ insert into public.bytequest_firebase_progress(user_id,payload,revision) values('firebase:workbench-fixture:uid-a',jsonb_build_object('version',1,'solved',solved),1);
+ s:=jsonb_build_object('problemId','fixture-workbench-recent-20','revision',1,'language','python','source','private-solution-fixture-should-not-leak','shared',false,'runtimeMs',1,'memoryBytes',1200000,'memoryMetric','process_peak_rss','compiler','fixture','benchmarkVersion','bq-v1','suiteKind','public','testCount',5,'nonce',gen_random_uuid());perform public.bytequest_submission_record('firebase:workbench-fixture:uid-a',s);
+ r:=public.bytequest_profile_insights('firebase:workbench-fixture:MixedCaseFixtureUID',a::text);assert jsonb_array_length(r->'recentSolves')=25,'Recent list capped at 25 distinct published problems';assert r->'recentSolves'->0->>'problemId'='fixture-workbench-recent-20' and r->'recentSolves'->0->>'language'='python','Latest accepted solve overrides earlier legacy completion';assert position('private-solution-fixture-should-not-leak' in r::text)=0 and position('firebase:' in r::text)=0,'Recent solves do not expose source or owner IDs';
+ for i in 1..24 loop assert (r->'recentSolves'->(i-1)->>'solvedAt')::timestamptz>=(r->'recentSolves'->i->>'solvedAt')::timestamptz,'Latest to oldest order';end loop;
+ update public.bytequest_social_profiles set discoverable=false where public_id=a;
+ begin perform public.bytequest_profile_insights('firebase:workbench-fixture:MixedCaseFixtureUID',a::text);raise exception 'Private recent solves exposed';exception when no_data_found then null;end;
+ assert jsonb_array_length(public.bytequest_profile_insights('firebase:workbench-fixture:uid-a',a::text)->'recentSolves')=25,'Own private recent history stays available';
+ assert not has_function_privilege('anon','public.bytequest_chat_signals(text)','execute') and not has_function_privilege('authenticated','public.bytequest_creator_search(text,text)','execute'),'No direct browser RPC access';
+end $$;
+rollback;
