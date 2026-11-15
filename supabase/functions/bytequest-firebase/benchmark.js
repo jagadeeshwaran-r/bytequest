@@ -1,3 +1,4 @@
+import {linkedListJavaSource,hasLinkedListType} from './domain/java-structures.js';
 import {requestSandbox,sandboxDiagnostics} from './sandbox-provider.js';
 import {javaLiteral} from './domain/judge.js';
 import {buildNativeProgram,nativeResults} from './domain/languages.js';
@@ -6,7 +7,7 @@ export const benchmarkCompilers={java:'openjdk-jdk-21+35',python:'cpython-3.11.1
 function javaProgram(source,p,cases,nonce){
  const imports=(source.match(/^\s*import\s+[^;]+;\s*$/gm)||[]).join('\n'),solution=source.replace(/^\s*import\s+[^;]+;\s*$/gm,'').replace(/public\s+class\s+Solution\b/,'class Solution');
  const calls=cases.map((c,i)=>'System.out.println("\\n__BYTEQUEST_CASE_'+i+'__{\\\"ok\\\":true,\\\"actual\\\":"+repr(new Solution().'+p.method+'('+c.args.map((v,j)=>javaLiteral(v,p.params[j].type)).join(',')+'))+"}");').join('\n');
- return imports+'\n'+solution+`\nclass Wandbox {
+ return imports+'\n'+(hasLinkedListType(p)?linkedListJavaSource:'')+'\n'+solution+`\nclass Wandbox {
  static String repr(Object x){if(x instanceof int[]){int[] a=(int[])x;StringBuilder b=new StringBuilder("[");for(int i=0;i<a.length;i++){if(i>0)b.append(',');b.append(a[i]);}return b.append(']').toString();}if(x instanceof String){StringBuilder b=new StringBuilder();b.append((char)34);for(char c:((String)x).toCharArray()){if(c==34||c==92)b.append((char)92).append(c);else if(c<32)b.append((char)92).append('u').append(String.format("%04x",(int)c));else b.append(c);}return b.append((char)34).toString();}return String.valueOf(x);}
  static long peakRss(){try{for(String line:java.nio.file.Files.readAllLines(java.nio.file.Path.of("/proc/self/status"))){if(line.startsWith("VmHWM:"))return Long.parseLong(line.replaceAll("[^0-9]",""))*1024;}}catch(Exception ignored){}return -1;}
  static void suite() throws Exception {`+calls+`}
@@ -28,6 +29,7 @@ export function buildBenchmarkProgram(source,p,cases,language,nonce){
 export function makeBenchmarkJudge({fetchImpl=fetch,makeNonce=()=>crypto.randomUUID().replaceAll('-',''),wait,now,random}={}){
  return {async run(source,p,cases,language){
   if(!benchmarkCompilers[language])throw new Error('Unsupported benchmark language');
+  if(hasLinkedListType(p)&&language!=='java')return {accepted:false,status:'unavailable',message:'Linked-list problems currently support Java submissions only.'};
   const nonce=makeNonce(),code=buildBenchmarkProgram(source,p,cases,language,nonce);if(code.length>300000)return {accepted:false,status:'compile_error',message:'This suite is too large for the public benchmark.'};
   const response=await requestSandbox({compiler:benchmarkCompilers[language],code,save:false,options:language==='cpp'?'c++17':language==='c'?'c11':''},{fetchImpl,timeoutMs:language==='cpp'?75000:45000,wait,now,random});
   if(!response.ok)return response.result;const r=response.value;
