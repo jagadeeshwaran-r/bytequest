@@ -1,3 +1,4 @@
+import {hasLinkedListType} from './domain/java-structures.js';
 import {liveEventResponse} from './live-stream.js';
 import {submitSolution} from './submissions.js';
 import {avatarBytes} from "./avatar.js";
@@ -57,6 +58,7 @@ export function createHandler({projectId,allowedOrigins,verifyToken,db,privateJu
         if(!['c','cpp','python'].includes(body.language)||typeof body.source!=="string"||body.source.length>60000||typeof body.problemId!=="string"||! /^[a-z][a-z0-9-]{1,63}$/.test(body.problemId))throw new HttpError(400,"Choose a problem, language and source under 60 KB.");
         const row=await db.publicProblem(body.problemId);if(!row)throw new HttpError(404,"Problem not found.");
         if(body.revision!==undefined&&body.revision!==row.revision)throw new HttpError(409,"This problem changed. Reload it before running.");
+        if(hasLinkedListType(row.content))throw new HttpError(400,'Linked-list problems currently support Java only. Select Java 17.');
         const cases=body.cases;if(!Array.isArray(cases)||!cases.length||cases.length>108||JSON.stringify(cases).length>200000)throw new HttpError(400,"Use 1–108 public practice cases under 200 KB.");
         try{buildTests(row.content,cases);}catch{throw new HttpError(400,"Practice cases do not match the function contract.");}
         if(!await db.claimOnlineRun(identity.id))throw new HttpError(429,"Wait 5 seconds between runs. Online compilation allows up to 60 runs per hour.");
