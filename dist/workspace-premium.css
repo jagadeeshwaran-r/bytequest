@@ -1,3 +1,4 @@
+#practiceView .submission-view-note{margin:5px 0 0!important;color:var(--muted);font:10px/1.55 var(--font-sans)}
 /* ByteQuest premium practice workspace: one quiet, productive IDE surface. */
 #practiceView{min-width:0}
 #practiceView .lab{
