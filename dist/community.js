@@ -18,7 +18,7 @@ const viewCache=createViewCache();
 const cloud=new Cloud(()=>boot());shell.connect(cloud);
 const creatorAccess=mountCreatorAccess(cloud,{refresh:loadRoles,notify:message,isActive:()=>self?.admin&&!$('rolesPanel').hidden});
 $('organizationNames').replaceChildren(...companies.map(c=>new Option(c.name,c.name)));
-function message(text,error=false){$('communityMessage').textContent=text;$('communityMessage').classList.toggle('error',error);}
+function message(text,error=false){const status=$('communityMessage');status.textContent=text;status.classList.toggle('error',error);status.hidden=!text;}
 async function act(action,body={}){return cloud.request(action,body);}
 function people(users){return users.length?users.map(p=>'<article class="person-card"><a class="person-avatar-link" href="'+publicProfileHref(p)+'" aria-label="View '+h(p.display_name)+' profile">'+profileAvatar(p)+'</a><div><a href="#user/'+encodeURIComponent(p.username)+'">'+h(p.display_name)+'</a><small>@'+h(p.username)+'</small></div></article>').join(''):'<p class="muted">No users found.</p>';}
 async function boot(){
