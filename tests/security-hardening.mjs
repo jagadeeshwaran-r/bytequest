@@ -5,6 +5,7 @@ import {makeOnlineJudge} from "../supabase/functions/bytequest-firebase/online-j
 import {makeBenchmarkJudge} from "../supabase/functions/bytequest-firebase/benchmark.js";
 import {submitSolution} from "../supabase/functions/bytequest-firebase/submissions.js";
 import {createHandler} from "../supabase/functions/bytequest-firebase/handler.js";
+import {submissionFeedback} from "../dist/submission-feedback.js";
 import {problems} from "../dist/problems.js";
 
 const p=problems[0],cases=p.tests.slice(0,1);
@@ -65,6 +66,7 @@ await rejects(async()=>{throw new Error("PRIVATE INPUT VALUE FROM PROVIDER");});
 assert.equal(makePrivateJudge({url:"http://127.0.0.1:2358",languageId:62}).ready,false,
  "Only HTTPS configured trusted judge is allowed.");
 
+assert.equal(submissionFeedback({status:"time_limit_exceeded",message:"Timed out"}).title,"Time limit exceeded");
 const nonce="11111111-1111-4111-8111-111111111111";
 const body={problemId:p.id,revision:1,language:"java",source:p.reference,nonce,shared:false};
 for(const [errorKind] of [["time_limit_exceeded"],["compile_error"],["runtime_error"],["wrong_answer"]]){
