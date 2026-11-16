@@ -38,11 +38,31 @@ export function makeBenchmarkJudge({fetchImpl=fetch,makeNonce=()=>crypto.randomU
   const nonce=makeNonce(),code=buildBenchmarkProgram(source,p,cases,language,nonce);if(code.length>300000)return {accepted:false,status:'compile_error',message:'This suite is too large for the public benchmark.'};
   const response=await requestSandbox({compiler:benchmarkCompilers[language],code,save:false,options:language==='cpp'?'c++17':language==='c'?'c11':''},{fetchImpl,timeoutMs:language==='cpp'?75000:45000,wait,now,random});
   if(!response.ok)return response.result;const r=response.value;
-  if(String(r.status)!=='0'||r.signal)return sandboxExecutionFailure(r,{maxMessage:10000});
-  const output=String(r.program_output||''),results=nativeResults(output,p,cases),observations=output.split(/\r?\n/).filter(l=>/^__BYTEQUEST_CASE_\d+__/.test(l));const executions=language==='java'?1:4,consistent=observations.length===cases.length*executions&&Array.from({length:executions},(_,i)=>nativeResults(observations.slice(i*cases.length,(i+1)*cases.length).join('\n'),p,cases).every(c=>c.passed)).every(Boolean),passed=consistent?cases.length:results.filter(c=>c.passed).length;
-  const line=output.split(/\r?\n/).filter(l=>l.startsWith('__BYTEQUEST_BENCH_'+nonce+'__')).at(-1);let metric;try{metric=JSON.parse(line.slice(('__BYTEQUEST_BENCH_'+nonce+'__').length));}catch{}
+  if(String(r.status)!=='0'||r.signal)return sandboxExecutionFailure(r);
+  const output=String(r.program_output||'');
+  const lines=output.split(/\r?\n/),executions=language==='java'?1:4;
+  const observations=lines.filter(line=>line.startsWith('__BYTEQUEST_CASE_'));
+  const protocolValid=observations.length===cases.length*executions&&observations.every((line,index)=>{
+   const match=/^__BYTEQUEST_CASE_(\d+)__(.*)$/.exec(line);
+   if(!match||Number(match[1])!==index%cases.length)return false;
+   try{const value=JSON.parse(match[2]);return value&&typeof value==='object'&&!Array.isArray(value)&&typeof value.ok==='boolean';}catch{return false;}
+  });
+  // User code can print arbitrary stdout, so never accept duplicate, missing,
+  // reordered or malformed harness records as proof that a case was run.
+  if(!protocolValid)return{accepted:false,status:'runtime_error',message:'The compiler returned incomplete or malformed case results. Check for an early exit, crash, or reserved output markers.'};
+  const results=nativeResults(observations.slice(0,cases.length).join('\n'),p,cases);
+  const rounds=Array.from({length:executions},(_,i)=>nativeResults(observations.slice(i*cases.length,(i+1)*cases.length).join('\n'),p,cases));
+  const consistent=rounds.every(round=>round.every(c=>c.passed));
+  const passed=results.filter(c=>c.passed).length;
   if(!consistent)return{accepted:false,status:'wrong_answer',passed,total:cases.length,message:passed+' / '+cases.length+' public cases passed.',cases:results.filter(c=>!c.passed).slice(0,3)};
-  if(!metric||!Number.isFinite(metric.runtimeMs)||metric.runtimeMs<0||metric.runtimeMs>60000)return{accepted:false,status:'unavailable',message:'Tests ran, but a valid benchmark measurement was not returned. Retry to record this submission.'};
+  const measurementPrefix='__BYTEQUEST_BENCH_'+nonce+'__';
+  const nonempty=lines.filter(line=>line.trim());
+  const measurementLines=nonempty.filter(line=>line.startsWith('__BYTEQUEST_BENCH_'));
+  if(measurementLines.length!==1||!measurementLines[0].startsWith(measurementPrefix)||nonempty.at(-1)!==measurementLines[0])
+   return{accepted:false,status:'unavailable',message:'The compiler returned an invalid benchmark record. No submission was saved.'};
+  let metric;try{metric=JSON.parse(measurementLines[0].slice(measurementPrefix.length));}catch{}
+  if(!metric||typeof metric!=='object'||!Number.isFinite(metric.runtimeMs)||metric.runtimeMs<0||metric.runtimeMs>60000)
+   return{accepted:false,status:'unavailable',message:'Tests ran, but a valid benchmark measurement was not returned. Retry to record this submission.'};
   return{accepted:true,status:'accepted',passed,total:cases.length,runtimeMs:metric.runtimeMs,memoryBytes:Number.isSafeInteger(metric.memoryBytes)&&metric.memoryBytes>0&&metric.memoryBytes<2147483648?metric.memoryBytes:null,memoryMetric:'process_peak_rss',compiler:benchmarkCompilers[language],benchmarkVersion:language==='java'?'bq-v2-single-pass':benchmarkVersion,message:'All '+cases.length+' public cases passed.'};
  }};
 }
