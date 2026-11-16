@@ -328,11 +328,30 @@ function route(){
 addEventListener("hashchange",route);
 $("patternFilter").replaceChildren(new Option("All problem patterns",""),...[...new Set(problems.map(p=>p.pattern||p.topic))].sort().map(v=>new Option(v,v)));
 $("topicFilter").innerHTML+=[...topics].map(t=>'<option>'+html(t)+'</option>').join("");
-["topicFilter","patternFilter","techniqueFilter","difficultyFilter","statusFilter"].forEach(id=>$(id).onchange=renderMap);$("searchInput").oninput=renderMap;
+["topicFilter","patternFilter","techniqueFilter","difficultyFilter","statusFilter"].forEach(id=>$(id).onchange=renderMap);
+$("searchInput").oninput=renderMap;
+$("clearProblemSearch").onclick=()=>{
+  $("searchInput").value="";
+  renderMap();
+  $("searchInput").focus();
+};
+// Quick '/' search works only in the catalog, never in the code editor or dialogs.
+document.addEventListener("keydown",event=>{
+  const search=$("searchInput");
+  if(event.key==="Escape"&&document.activeElement===search&&search.value){
+    event.preventDefault();search.value="";renderMap();return;
+  }
+  if(event.key!=="/"||event.ctrlKey||event.metaKey||event.altKey||
+     $("mapView").hidden||document.querySelector("dialog[open]")||
+     event.target?.closest?.('input,textarea,select,[contenteditable="true"]'))return;
+  event.preventDefault();search.focus();
+});
 function renderMap(){
   const pattern=$("patternFilter").value,technique=$("techniqueFilter").value;
-  const query=$("searchInput").value.toLowerCase(),topic=$("topicFilter").value,level=$("difficultyFilter").value,status=$("statusFilter").value;
+  const query=$("searchInput").value.trim().toLowerCase(),topic=$("topicFilter").value,level=$("difficultyFilter").value,status=$("statusFilter").value;
   const list=problems.filter(p=>(p.title+" "+String(problems.indexOf(p)+1)).toLowerCase().includes(query)&&(!topic||p.topic===topic)&&(!pattern||(p.pattern||p.topic)===pattern)&&(!technique||(p.techniques||[]).includes(technique))&&(!level||p.difficulty===level)&&(!status||(status==="solved"?state.solved[p.id]:status==="new"?!state.solved[p.id]:due(p.id))));
+  $("clearProblemSearch").hidden=!$("searchInput").value;
+  $("visibleProblemCount").textContent=list.length===problems.length?"Showing all "+problems.length+" problems":"Showing "+list.length+" of "+problems.length+" problems";
   $("questGrid").innerHTML=list.length?'<table class="problem-table"><thead><tr><th>No.</th><th>Title</th><th>Companies</th><th>Difficulty</th><th>Status</th></tr></thead><tbody>'+list.map(p=>'<tr><td>'+String(problems.indexOf(p)+1).padStart(2,'0')+'</td><td><button class="problem-title" data-problem="'+p.id+'">'+html(p.title)+'</button></td><td>'+(companyIcons(p.companies)||'<span class="muted">—</span>')+'</td><td><span class="difficulty '+p.difficulty.toLowerCase()+'">'+html(p.difficulty)+'</span><small class="problem-points">'+pointsFor(p.difficulty)+' pts</small></td><td>'+ problemStatusMarkup(Boolean(state.solved[p.id]))+'</td></tr>').join('')+'</tbody></table><p class="company-note">Company tags are community-reported historical associations, not employer endorsements. <a href="https://github.com/duanehutchins/leetcode-questions-by-company" target="_blank" rel="noopener">Tag source</a></p>':'<p class="empty-state">No matching problems.</p>';
   $("questGrid").querySelectorAll("[data-problem]").forEach(b=>b.onclick=()=>changeProblem(b.dataset.problem));
 }
