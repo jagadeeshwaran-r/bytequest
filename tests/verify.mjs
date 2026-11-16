@@ -19,6 +19,7 @@ import "./avatar-cache.mjs";
 import "./scroll-performance.mjs";
 import "./problem-status.mjs";
 import "./workspace-layout.mjs";
+import "./submission-visibility.mjs";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from "node:fs";
