@@ -9,16 +9,18 @@ import {analyticsMarkup} from './profile-analytics.js?v=profile-2';
 import {mountShell} from './shell.js?v=workbench-1';
 import {prepareAvatar} from './avatar-upload.js';
 import {Cloud} from './cloud.js?v=catalog-1';
+import {createViewCache} from './view-cache.js?v=ranking-1';
 import {activityStats,escapeHtml as h} from './community-model.js';
 const shell=mountShell();let pendingPhoto=null;let analytics=null,catalog=[],viewedTarget=null,viewedPresence=null,presenceReading=false;
-const $=id=>document.getElementById(id);let epoch=0,self=null,latest=0;
+const $=id=>document.getElementById(id);let epoch=0,self=null,latest=0,lastOwner=null;
+const viewCache=createViewCache();
 const cloud=new Cloud(()=>boot());shell.connect(cloud);
 const creatorAccess=mountCreatorAccess(cloud,{refresh:loadRoles,notify:message,isActive:()=>self?.admin&&!$('rolesPanel').hidden});
 $('organizationNames').replaceChildren(...companies.map(c=>new Option(c.name,c.name)));
 function message(text,error=false){$('communityMessage').textContent=text;$('communityMessage').classList.toggle('error',error);}
 async function act(action,body={}){return cloud.request(action,body);}
 function people(users){return users.length?users.map(p=>'<article class="person-card"><a class="person-avatar-link" href="'+publicProfileHref(p)+'" aria-label="View '+h(p.display_name)+' profile">'+profileAvatar(p)+'</a><div><a href="#user/'+encodeURIComponent(p.username)+'">'+h(p.display_name)+'</a><small>@'+h(p.username)+'</small></div></article>').join(''):'<p class="muted">No users found.</p>';}
-async function boot(){const ticket=++epoch;self=null;creatorAccess.reset();pendingPhoto=null;$('profilePhotoFile').value='';shell.setAccount(cloud.user);$('signedOut').hidden=!!cloud.user;$('signedIn').hidden=!cloud.user;$('communityAccount').textContent=cloud.user?'Sign out':'Sign in with Google';
+async function boot(){const ticket=++epoch;const nextOwner=cloud.user?.id||null;if(lastOwner&&lastOwner!==nextOwner)viewCache.clearOwner(lastOwner);lastOwner=nextOwner;self=null;creatorAccess.reset();pendingPhoto=null;$('profilePhotoFile').value='';shell.setAccount(cloud.user);$('signedOut').hidden=!!cloud.user;$('signedIn').hidden=!cloud.user;$('communityAccount').textContent=cloud.user?'Sign out':'Sign in with Google';
  if(!cloud.user){message('Your next good idea starts with one small step.');return;}
  try{const own=await act('self');if(ticket!==epoch)return;self=own;shell.setAccount(cloud.user,self.profile);await route();await refreshInbox(false);message('Your account is connected.');}catch(e){if(ticket===epoch)message(e.message,true);}}
 async function route(){if(!self||!cloud.user)return;const ticket=++epoch,hash=location.hash.slice(1)||'me';for(const id of ['discover','profile','edit','inbox','roles'])$(id+'Panel').hidden=true;$('connections').replaceChildren();$('connectionsDialog').close();creatorAccess.reset();
@@ -29,14 +31,27 @@ async function route(){if(!self||!cloud.user)return;const ticket=++epoch,hash=lo
   if(hash==='roles'){if(!self.admin)throw new Error('Only library administrators can manage creator access.');$('rolesPanel').hidden=false;await loadRoles();return;}
   const target=hash.startsWith('user/')?decodeURIComponent(hash.slice(5)):self.profile?.username;
   if(!target){location.hash='edit';return;}
-  const result=await act('profile',{target});if(ticket!==epoch)return;renderProfile(result);$('profilePanel').hidden=false;
+  const owner=cloud.user.id,cached=viewCache.profile(owner,target);
+  if(cached){
+    if(ticket!==epoch||cloud.user?.id!==owner)return;
+    renderProfile(cached,{presencePending:true});$('profilePanel').hidden=false;
+    refreshPresence(true); // Always fetch online / last-seen independently of the cached profile.
+  }else{
+    const result=await act('profile',{target});if(ticket!==epoch||cloud.user?.id!==owner)return;
+    viewCache.saveProfile(owner,target,result);
+    renderProfile(result);$('profilePanel').hidden=false;
+  }
  }catch(e){if(ticket===epoch)message(e.message,true);}}
 function fillProfile(){const p=self.profile||{};for(const key of ['organization_type','organization_name','organization_url','linkedin_url'])document.getElementById('detail_'+key).value=p[key]||'';$('profileUsername').value=p.username||'';$('profileName').value=p.display_name||cloud.user?.user_metadata?.full_name||'';$('profileBio').value=p.bio||'';$('profileAvatar').value=p.uploadedAvatar?'':p.avatar_url||'';$('photoPreview').hidden=!p.avatar_url;$('photoPreview').src=p.avatar_url||'';const preferences=profilePreferences(self.profile);$('profileDiscoverable').checked=preferences.discoverable;$('profilePresence').checked=preferences.show_presence;}
-function renderProfile(r){viewedTarget=r.profile.public_id;if(analytics)analytics.epoch++;const p=r.profile;$('profileContent').innerHTML=profileMarkup(r,{catalogCount:catalog.length,admin:self.admin,canFollow:Boolean(self.profile?.discoverable)});
- viewedPresence=receivedPresence(r.presence);paintPresence($('profilePresenceStatus'),viewedPresence);$('profileContent').insertAdjacentHTML('beforeend',analyticsMarkup);analytics=new Dashboard({cloud,getState:()=>({solved:{},days:r.stats.days||[]}),getCatalog:()=>catalog,getEvents:()=>r.stats.solves||[],summary:{solved:r.stats.solved,active:(r.stats.days||[]).length},allowCompare:r.isOwn,name:r.isOwn?'You':'@'+p.username,profile:p});analytics.open();
+function renderProfile(r,{presencePending=false}={}){viewedTarget=r.profile.public_id;if(analytics)analytics.epoch++;const p=r.profile;$('profileContent').innerHTML=profileMarkup(r,{catalogCount:catalog.length,admin:self.admin,canFollow:Boolean(self.profile?.discoverable)});
+ viewedPresence=presencePending?null:receivedPresence(r.presence);
+ const presenceNode=$('profilePresenceStatus');
+ if(presencePending){presenceNode.dataset.status='checking';presenceNode.className='presence';presenceNode.textContent='Checking status…';}
+ else paintPresence(presenceNode,viewedPresence);
+ $('profileContent').insertAdjacentHTML('beforeend',analyticsMarkup);analytics=new Dashboard({cloud,getState:()=>({solved:{},days:r.stats.days||[]}),getCatalog:()=>catalog,getEvents:()=>r.stats.solves||[],summary:{solved:r.stats.solved,active:(r.stats.days||[]).length},allowCompare:r.isOwn,name:r.isOwn?'You':'@'+p.username,profile:p});analytics.open();
  const recentToggle=$('profileContent').querySelector('[data-recent-toggle]');if(recentToggle)recentToggle.onclick=()=>{const expanded=recentToggle.getAttribute('aria-expanded')!=='true',rows=$('profileContent').querySelectorAll('[data-recent-row]');rows.forEach((row,i)=>row.hidden=!expanded&&i>=3);recentToggle.setAttribute('aria-expanded',String(expanded));recentToggle.textContent=expanded?'Show less':'Show all '+rows.length+' ↗';};
  $('messageFriend')?.addEventListener('click',()=>shell.openChat(p.public_id));
- $('followBtn')?.addEventListener('click',async e=>{e.target.disabled=true;try{const fresh=await act('follow',{target:p.public_id,following:!r.isFollowing});renderProfile(fresh);}catch(err){message(err.message,true);e.target.disabled=false;}});
+ $('followBtn')?.addEventListener('click',async e=>{e.target.disabled=true;try{const fresh=await act('follow',{target:p.public_id,following:!r.isFollowing});viewCache.clearOwner(cloud.user?.id);renderProfile(fresh);}catch(err){message(err.message,true);e.target.disabled=false;}});
  $('profileContent').querySelectorAll('[data-connections]').forEach(b=>b.onclick=async()=>{const ticket=epoch,dialog=$('connectionsDialog'),kind=b.dataset.connections;$('connectionsTitle').textContent=(kind==='followers'?'Followers':'Following')+' ('+Number(kind==='followers'?r.followers:r.following)+')';$('connectionsList').textContent='Loading…';dialog.showModal();try{const list=await act(kind,{target:p.public_id});if(ticket===epoch&&dialog.open)$('connectionsList').innerHTML=list.users.length?people(list.users):'<p class="muted">'+(kind==='followers'?'No followers yet.':'Not following anyone yet.')+'</p>';}catch(e){if(ticket===epoch)$('connectionsList').textContent=e.message;}});
 }
 $('closeConnections').onclick=()=>$('connectionsDialog').close();$('connectionsList').addEventListener('click',e=>{if(e.target.closest('a'))$('connectionsDialog').close();});
@@ -44,7 +59,7 @@ async function refreshInbox(render){const r=await act('notifications');latest=r.
 async function loadRoles(){const r=await act('roles');$('creatorList').innerHTML=r.creators.length?r.creators.map(p=>'<article class="person-card"><div><b>'+h(p.display_name)+'</b><small>@'+h(p.username)+'</small></div><button class="button secondary" data-revoke="'+h(p.public_id)+'">Revoke</button></article>').join(''):'<p class="muted">No delegated creators yet.</p>';$('creatorList').querySelectorAll('[data-revoke]').forEach(b=>b.onclick=async()=>{if(!confirm('Revoke this account’s creator access?'))return;try{await act('role-set',{target:b.dataset.revoke,creator:false});await loadRoles();message('Creator access revoked.');}catch(e){message(e.message,true);}});}
 $('profilePhotoFile').onchange=async e=>{try{pendingPhoto=await prepareAvatar(e.target.files[0]);$('photoPreview').src='data:image/jpeg;base64,'+pendingPhoto;$('photoPreview').hidden=false;message('Photo ready. Save your profile to upload it.');}catch(err){pendingPhoto=null;e.target.value='';message(err.message,true);}};
 $('findForm').onsubmit=async e=>{e.preventDefault();const ticket=epoch;try{const r=await act('search',{query:$('peopleQuery').value.trim()});if(ticket===epoch)$('peopleResults').innerHTML=people(r.users);}catch(err){message(err.message,true);}};
-$('profileForm').onsubmit=async e=>{e.preventDefault();try{self=await act('profile-save',{username:$('profileUsername').value.trim().toLowerCase(),display_name:$('profileName').value.trim(),bio:$('profileBio').value,avatar_url:$('profileAvatar').value.trim(),discoverable:$('profileDiscoverable').checked,show_presence:$('profilePresence').checked,...profileDetails(Object.fromEntries(['organization_type','organization_name','organization_url','linkedin_url'].map(k=>[k,document.getElementById('detail_'+k).value])))});if(pendingPhoto){message('Uploading your photo…');self=await act('avatar-upload',{image:pendingPhoto});pendingPhoto=null;$('profilePhotoFile').value='';}shell.setAccount(cloud.user,self.profile);message('Your profile is saved.');if(location.hash==='#me')await route();else location.hash='me';}catch(err){message(err.message,true);}};
+$('profileForm').onsubmit=async e=>{e.preventDefault();try{self=await act('profile-save',{username:$('profileUsername').value.trim().toLowerCase(),display_name:$('profileName').value.trim(),bio:$('profileBio').value,avatar_url:$('profileAvatar').value.trim(),discoverable:$('profileDiscoverable').checked,show_presence:$('profilePresence').checked,...profileDetails(Object.fromEntries(['organization_type','organization_name','organization_url','linkedin_url'].map(k=>[k,document.getElementById('detail_'+k).value])))});if(pendingPhoto){message('Uploading your photo…');self=await act('avatar-upload',{image:pendingPhoto});pendingPhoto=null;$('profilePhotoFile').value='';}viewCache.clearOwner(cloud.user?.id);shell.setAccount(cloud.user,self.profile);message('Your profile is saved.');if(location.hash==='#me')await route();else location.hash='me';}catch(err){message(err.message,true);}};
 
 $('readAll').onclick=async()=>{try{await act('notifications-read',{id:latest});await refreshInbox(true);}catch(e){message(e.message,true);}};
 async function login(){try{message('Opening Google sign-in…');await cloud.signIn();}catch(e){message(e.message,true);}}
@@ -53,7 +68,7 @@ addEventListener('hashchange',route);addEventListener('focus',()=>{if(cloud.user
 cloud.init().then(async()=>{try{catalog=await cloud.publicCatalog()||[];}catch{}await boot();}).catch(e=>{message(e.message,true);$('signedOut').hidden=false;});
 
 // Status polls do not recreate the profile, charts or header avatar.
-async function refreshPresence(){if(presenceReading||!cloud.user||!viewedTarget||(document.visibilityState!=='visible'||!document.hasFocus())||$('profilePanel').hidden)return;presenceReading=true;const target=viewedTarget,ticket=epoch;try{const r=await act('profile-presence',{target});if(ticket===epoch&&target===viewedTarget){viewedPresence=receivedPresence(r.presence);paintPresence($('profilePresenceStatus'),viewedPresence);}}catch{}finally{presenceReading=false;}}
+async function refreshPresence(force=false){if((presenceReading&&!force)||!cloud.user||!viewedTarget||(!force&&(document.visibilityState!=='visible'||!document.hasFocus()))||$('profilePanel').hidden)return;presenceReading=true;const target=viewedTarget,ticket=epoch;try{const r=await act('profile-presence',{target});if(ticket===epoch&&target===viewedTarget){viewedPresence=receivedPresence(r.presence);paintPresence($('profilePresenceStatus'),viewedPresence);}}catch{}finally{presenceReading=false;}}
 setInterval(refreshPresence,5000);addEventListener('focus',refreshPresence);
 setInterval(()=>{if(document.visibilityState==='visible'&&!$('profilePanel').hidden)paintPresence($('profilePresenceStatus'),viewedPresence);},1000);
 function paintPresence(el,p){if(!el)return;const online=presenceOnline(p);const ago=relativeTime(p?.lastSeenMs??p?.lastSeen);const text=p?.visible?(ago?'Last seen '+ago:'Not active yet'):'Online status is private';const key=online?'online':text;if(el.dataset.status===key)return;el.dataset.status=key;el.className='presence'+(online?' online':'');el.replaceChildren();if(online){const dot=document.createElement('span');dot.className='presence-radar';dot.setAttribute('role','img');dot.setAttribute('aria-label','Online');dot.title='Online';el.append(dot);}else el.textContent=text;}
