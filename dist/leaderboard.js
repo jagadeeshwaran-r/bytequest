@@ -36,8 +36,20 @@ async function accountChanged(){
  // Show cached rankings immediately; load verified profile details independently.
  // Neither the account response nor notifications are cached.
  const rankings=load();
- try{const own=await cloud.request('self');if(ticket===accountGeneration&&cloud.user?.id===nextOwner){cache.saveSelf(nextOwner,own);shell.setAccount(cloud.user,own.profile);}}
- catch(e){if(ticket===accountGeneration)console.warn('ByteQuest profile details are temporarily unavailable:',e.message);}
+ const savedAccount=cache.self(nextOwner);
+ if(savedAccount){
+   // Account is already verified by Firebase; no duplicate self RPC within TTL.
+   shell.setAccount(cloud.user,savedAccount.profile);
+ }else{
+   try{
+     const own=await cloud.request('self');
+     if(ticket===accountGeneration&&cloud.user?.id===nextOwner){
+       cache.saveSelf(nextOwner,own);shell.setAccount(cloud.user,own.profile);
+     }
+   }catch(e){
+     if(ticket===accountGeneration)console.warn('ByteQuest profile details are temporarily unavailable:',e.message);
+   }
+ }
  await rankings;
 }
 async function login(){try{await cloud.signIn();}catch(e){setMessage(e.message,true);}}
