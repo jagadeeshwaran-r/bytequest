@@ -6,6 +6,24 @@ export const ACCOUNT_TTL_MS=2*60*1000;
 export const STALE_VIEW_MAX_MS=24*60*60*1000;
 const PREFIX="bytequest.views.v1:";
 const MAX_ENTRY_BYTES=750000;
+// Private avatar links are signed by the server for 600 seconds; old cache
+// snapshots must fall back to initials rather than display expired image URLs.
+const SIGNED_AVATAR_SAFE_AGE_MS=8*60*1000;
+function avatarStillValid(row,age){
+  if(!row||age<SIGNED_AVATAR_SAFE_AGE_MS||typeof row.avatar_url!=="string"
+    ||!row.avatar_url.includes("/storage/v1/object/sign/bytequest-avatars/"))return row;
+  return {...row,avatar_url:""};
+}
+function safeCachedImages(kind,value,age){
+  if(age<SIGNED_AVATAR_SAFE_AGE_MS)return value;
+  if(kind==="board")return {
+    ...value,
+    users:value.users.map(row=>avatarStillValid(row,age)),
+    me:avatarStillValid(value.me,age)
+  };
+  if(kind==="profile")return {...value,profile:avatarStillValid(value.profile,age)};
+  return value;
+}
 function browserSession(){
   try{return globalThis.sessionStorage||null;}catch{return null;}
 }
@@ -37,7 +55,7 @@ export function createViewCache({storage=browserSession(),now=()=>Date.now()}={}
       if(!raw||raw.length>MAX_ENTRY_BYTES)return null;
       const entry=JSON.parse(raw),age=now()-entry.at;
       if(entry.version!==1||!Number.isFinite(age)||age<0||age>=(allowStale?STALE_VIEW_MAX_MS:ttl)||!validate(entry.value))return null;
-      return entry.value;
+      return safeCachedImages(kind,entry.value,age);
     }catch{return null;}
   }
   function write(owner,kind,identity,value,validate){
