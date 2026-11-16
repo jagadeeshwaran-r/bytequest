@@ -23,7 +23,6 @@ import { buildBenchmarkProgram } from "../supabase/functions/bytequest-firebase/
 import { nativeResults } from "../supabase/functions/bytequest-firebase/domain/languages.js";
 import { submitSolution } from "../supabase/functions/bytequest-firebase/submissions.js";
 import { traceFor } from "../dist/traces.js";
-import "./auth-gate.mjs";
 
 for (const page of ["index.html", "studio.html"]) {
   const markup = readFileSync("dist/" + page, "utf8");
@@ -34,6 +33,19 @@ for (const page of ["index.html", "studio.html"]) {
     page + " return types must match supported Java catalog contracts");
 }
 console.log("✓ Studio return type selector supports ListNode and int[][] on both pages.");
+for(const page of ["index.html","studio.html"]){
+  const html=readFileSync("dist/"+page,"utf8");
+  assert.ok(!html.includes('id="authGate"'),page+" must not show a full-screen sign-in gate");
+  assert.ok(!html.includes('data-bytequest-auth'),page+" must not show a Firebase loading overlay");
+  assert.ok(html.includes('id="accountDialog"'),page+" must keep the original account sign-in dialog");
+  assert.ok(html.includes('id="googleSignInBtn"'),page+" must keep Google sign-in");
+  assert.ok(html.includes('id="guestContinue"'),page+" must keep optional sign-in");
+}
+const appSource=readFileSync("dist/app.js","utf8");
+assert.ok(!appSource.includes('mountSignInGate'),"Problem page must not block navigation on account login");
+assert.ok(appSource.includes('googleSignInBtn'),"Google sign-in handler must remain available");
+console.log("✓ Original optional Google sign-in restored without a loading or login overlay.");
+
 
 // A consistent header brand across the practice, Studio and community pages.
 for (const page of ["index.html", "studio.html", "leaderboard.html", "community.html"]) {
