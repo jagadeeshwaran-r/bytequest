@@ -2,6 +2,17 @@ const endpoint='https://wandbox.org/api/compile.json';
 const maxOutputBytes=1000000;
 const transientContainerError=/(?:OCI runtime (?:error|create failed)[^\n]*(?:crun|runc|clone|resource temporarily unavailable|cannot allocate memory)|(?:crun|runc):[^\n]*(?:clone|fork)[^\n]*resource temporarily unavailable|failed to (?:create|start) (?:the )?(?:container|sandbox)[^\n]*(?:resource temporarily unavailable|temporarily unavailable))/i;
 export function sandboxDiagnostics(result){return ['compiler_message','compiler_error','program_error','error','message'].map(k=>typeof result?.[k]==='string'?result[k]:'').filter(Boolean).join('\n');}
+// Distinguish code compilation failures from execution failures. Infrastructure
+// outages are never classified as a wrong answer or a learner syntax error.
+export function sandboxExecutionFailure(result,{maxMessage=10000}={}){
+ const compiler=typeof result?.compiler_error==='string'&&result.compiler_error.trim()
+  ?result.compiler_error:typeof result?.compiler_message==='string'&&result.compiler_message.trim()?result.compiler_message:'';
+ const runtime=typeof result?.program_error==='string'&&result.program_error.trim()?result.program_error:'';
+ const signal=result?.signal;
+ if(compiler)return{status:'compile_error',accepted:false,message:String(compiler).slice(0,maxMessage)};
+ if(runtime||signal)return{status:'runtime_error',accepted:false,message:String(runtime||'Program exited after receiving a runtime signal.').slice(0,maxMessage)};
+ return{status:'runtime_error',accepted:false,message:'Program execution did not complete successfully. Check for an uncaught exception or nonzero exit.'};
+}
 export function sandboxUnavailable({busy=false,timedOut=false,retried=false,retryAfterMs=5000}={}){
  return{status:'unavailable',accepted:false,retryable:true,code:timedOut?'compiler_timeout':busy?'compiler_busy':'compiler_unavailable',retryAfterMs,message:timedOut?'The online compiler did not finish within the request time limit. Your code is saved. No solution verdict was recorded; please try again shortly.':busy?'The shared compiler is temporarily at capacity.'+(retried?' Automatic retries could not start a sandbox.':'')+' Your code is saved. No verdict was recorded; you can safely submit again later.':'The online compiler is temporarily unavailable. Your code is saved. No solution verdict was recorded; please try again shortly.'};
 }
