@@ -1,6 +1,6 @@
 import {mountShell} from './shell.js?v=workbench-1';
 import {Cloud} from './cloud.js?v=catalog-1';
-import {leaderboardRow,latestLeaderboard} from './leaderboard-model.js?v=workbench-1';
+import {leaderboardRow,latestLeaderboard} from './leaderboard-model.js?v=avatar-1';
 import {createViewCache} from './view-cache.js?v=avatar-1';
 import {hydrateLeaderboardAvatars,releaseAvatarObjectUrls} from './avatar-cache.js?v=avatar-1';
 const $=id=>document.getElementById(id),shell=mountShell();let page=0,scope=location.hash==='#friends'?'friends':'global',accountGeneration=0,lastOwner=null;
