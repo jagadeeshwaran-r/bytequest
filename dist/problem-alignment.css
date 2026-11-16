@@ -1,0 +1,130 @@
+/* Stable alignment for the problem catalog and the description/editor workspace.
+ * Layout-only; preserve clickable logo hover previews and resizable coding panes.
+ */
+#mapView #questGrid{width:100%;min-width:0}
+#mapView .problem-table{
+  width:100%;
+  table-layout:fixed;
+  border-collapse:collapse;
+}
+#mapView .problem-table :is(th,td){
+  box-sizing:border-box;
+  vertical-align:middle;
+  line-height:1.5;
+  padding:14px 14px;
+  text-align:left;
+}
+#mapView .problem-table th:first-child{width:68px}
+#mapView .problem-table th:nth-child(2){width:auto}
+#mapView .problem-table th:nth-child(3){width:190px}
+#mapView .problem-table th:nth-child(4){width:124px}
+#mapView .problem-table th:nth-child(5){width:105px}
+#mapView .problem-table :is(th,td):nth-child(5){text-align:center}
+#mapView .problem-table td:nth-child(2){min-width:0;overflow-wrap:anywhere}
+#mapView .problem-table .problem-title{
+  display:inline-block;
+  max-width:100%;
+  padding:0;
+  vertical-align:middle;
+  font-size:12px;
+  font-weight:500;
+  line-height:1.5;
+  text-align:left;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+#mapView .problem-table td:nth-child(3){
+  white-space:nowrap;
+  line-height:0;
+}
+#mapView .problem-table td:nth-child(3)>.company-logo,
+#mapView .problem-table td:nth-child(3)>.company-overflow{
+  margin-block:0;
+  margin-right:5px;
+  vertical-align:middle;
+}
+#mapView .problem-table td:nth-child(3)>.company-overflow{margin-right:0}
+#mapView .problem-table .company-overflow-count{
+  height:27px;
+  min-width:28px;
+  border-radius:7px;
+  font-size:10px;
+  vertical-align:middle;
+}
+#mapView .problem-table td:nth-child(4){white-space:nowrap}
+#mapView .problem-table .difficulty{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:25px;
+  vertical-align:middle;
+  line-height:1;
+}
+#mapView .problem-table td:nth-child(4) small.problem-points{
+  display:inline-block!important;
+  vertical-align:middle;
+  margin:0 0 0 7px;
+  font-size:9px;
+  line-height:1.5;
+  white-space:nowrap;
+}
+#practiceView .lab>.problem-pane,
+#practiceView .lab>.editor-pane{min-width:0}
+#practiceView .pane-tabs{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+#practiceView .pane-tabs button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-width:0;
+  white-space:nowrap;
+  line-height:1.35;
+}
+#practiceView .pane-tabs svg{width:15px;height:15px}
+#practiceView .learning-content{
+  text-align:left;
+  overflow-wrap:break-word;
+}
+#practiceView .learning-content h3{
+  margin-bottom:14px;
+  line-height:1.25;
+}
+#practiceView .learning-content h4{margin:22px 0 8px;line-height:1.4}
+#practiceView .learning-content .body-copy{
+  margin:0;
+  line-height:1.8;
+  white-space:pre-line;
+}
+#practiceView .learning-content .example-card{
+  margin:12px 0;
+  padding:16px;
+  text-align:left;
+}
+#practiceView .learning-content .example-card code{
+  display:block;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+#practiceView .editor-top,
+#practiceView .test-header{
+  display:flex;
+  align-items:center;
+}
+#practiceView .file-tab{display:inline-flex;align-items:center;gap:6px;min-width:0}
+@media(max-width:850px){
+  #mapView #questGrid{overflow-x:auto!important;overscroll-behavior-x:contain}
+  #mapView .problem-table{min-width:655px!important}
+  #mapView .problem-table :is(th,td){padding:12px 10px}
+  #mapView .problem-table th:first-child{width:49px}
+  #mapView .problem-table th:nth-child(3){width:157px}
+  #mapView .problem-table th:nth-child(4){width:112px}
+  #mapView .problem-table th:nth-child(5){width:81px}
+  #mapView .problem-table .company-logo{width:24px;height:24px}
+  #mapView .problem-table .company-logo img{width:14px;height:14px}
+  #practiceView .pane-tabs{gap:0;overflow-x:auto;scrollbar-width:thin}
+  #practiceView .pane-tabs button{padding-inline:12px;flex:0 0 auto}
+}
