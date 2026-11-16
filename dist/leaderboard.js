@@ -33,7 +33,12 @@ async function accountChanged(){
  const ticket=++accountGeneration;loader.cancel();const nextOwner=cloud.user?.id||null;if(lastOwner&&lastOwner!==nextOwner)cache.clearOwner(lastOwner);lastOwner=nextOwner;shell.setAccount(cloud.user);clearResults();const signedIn=!!cloud.user;
  $('leaderAuthMessage').hidden=signedIn;$('leaderSignedOut').hidden=signedIn;$('leaderSignedIn').hidden=!signedIn;$('communityAccount').textContent=signedIn?'Sign out':'Sign in with Google';
  if(!signedIn){setMessage('Sign in to see the community and your friends.');return;}
- try{const own=await cloud.request('self');if(ticket!==accountGeneration)return;shell.setAccount(cloud.user,own.profile);await load();}catch(e){if(ticket===accountGeneration){setMessage(e.message,true);$('leaderLoading').hidden=true;$('leaderError').hidden=false;$('leaderErrorText').textContent=e.message;}}
+ // Show cached rankings immediately; load verified profile details independently.
+ // Neither the account response nor notifications are cached.
+ const rankings=load();
+ try{const own=await cloud.request('self');if(ticket===accountGeneration)shell.setAccount(cloud.user,own.profile);}
+ catch(e){if(ticket===accountGeneration)console.warn('ByteQuest profile details are temporarily unavailable:',e.message);}
+ await rankings;
 }
 async function login(){try{await cloud.signIn();}catch(e){setMessage(e.message,true);}}
 $('leaderSignIn').onclick=login;$('communityAccount').onclick=async()=>{try{if(cloud.user)await cloud.signOut();else await login();}catch(e){setMessage(e.message,true);}};
