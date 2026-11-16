@@ -1,4 +1,5 @@
 import "./profile-inbox.mjs";
+import "./profile-compact.mjs";
 import "./editor-operators.mjs";
 import "./workbench.mjs";
 import "./compiler-recovery.mjs";
