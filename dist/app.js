@@ -2,6 +2,7 @@ import {profileAvatar,publicProfileHref} from './profile-view.js?v=workbench-1';
 import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=workbench-1';
 import {launchCelebration} from './celebration.js?v=next-1';
 import {mountEditorTools} from './editor-tools.js?v=workbench-1';
+import {mountWorkspaceLayout} from './workspace-layout.js?v=workspace-1';
 import {submissionFeedback} from './submission-feedback.js?v=security-1';
 import {pointsFor,totalPoints} from './rewards.js?v=upgrade-2';
 import {companyIcons} from './companies.js?v=company-3';
@@ -58,6 +59,7 @@ let timerStarted = null, timerUsed = 0, timerProblem = current.id, timerTick;
 let referenceUsed = false,creditEpoch=0;
 const reviewDays = [2,7,21];
 const codeTools=mountEditorTools($("codeEditor"),{getLanguage:()=>language,getProblem:()=>current,notify});
+mountWorkspaceLayout($("practiceView"));
 const loadEditor=value=>codeTools.load((accountOwner||"guest")+":"+draftId(),value);
 const topicEmoji = {"Hash maps":"🗂️","Strings":"🔤","Binary search":"🔎","Two pointers":"👉","Arrays":"🌿","Sliding window":"🪟","Stacks":"🧱","Dynamic programming":"🌱","Math":"✳️"};
 const javaJudge = new JavaJudge(message => {
@@ -132,8 +134,8 @@ function renderLearning(){
   if(tab==="submissions"){submissions.mount($("learningContent"),current,language);return;}
   let content=timerHtml();
   if(tab==="problem"){
-    content+='<h3>'+html(current.title)+'</h3><div id="problemCredits" class="problem-credits"></div><p class="body-copy">'+html(current.description)+'</p><h4>Input</h4><p class="body-copy">'+html(current.inputGuide||current.params.map(p=>p.name+' ('+p.type+')').join(', '))+'</p><h4>Output</h4><p class="body-copy">'+html(current.outputGuide||('Return '+current.returns+' from '+current.method+'.'))+'</p><h4>Examples</h4>';
-    current.tests.slice(0,2).forEach((c,i)=>{content+='<div class="example-card"><code>Input: <b>'+html(formatArgs(c.args))+'</b>\nOutput: <b>'+html(JSON.stringify(c.expected))+'</b></code><p>'+html(c.label)+'</p></div>';});
+    content+='<div class="problem-heading"><p class="problem-eyebrow">Problem '+String(problems.indexOf(current)+1).padStart(2,'0')+'</p><div class="problem-title-row"><h3>'+html(current.title)+'</h3><div class="problem-badges"><span class="problem-difficulty '+html(current.difficulty.toLowerCase())+'">'+html(current.difficulty)+'</span>'+(state.solved[current.id]?'<span class="problem-solved"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>Solved</span>':'')+'</div></div></div><div id="problemCredits" class="problem-credits"></div><p class="body-copy">'+html(current.description)+'</p><h4>Input</h4><p class="body-copy">'+html(current.inputGuide||current.params.map(p=>p.name+' ('+p.type+')').join(', '))+'</p><h4>Output</h4><p class="body-copy">'+html(current.outputGuide||('Return '+current.returns+' from '+current.method+'.'))+'</p><h4>Examples</h4>';
+    current.tests.slice(0,2).forEach((c,i)=>{content+='<div class="example-card"><div class="example-label">Example '+(i+1)+'</div><code>Input: <b>'+html(formatArgs(c.args))+'</b>\nOutput: <b>'+html(JSON.stringify(c.expected))+'</b></code><p>'+html(c.label)+'</p></div>';});
     content+='<h4>Constraints</h4><div class="constraints">'+html(current.constraints)+'</div><details class="concept-hint"><summary>Reveal the key concept</summary><p>'+html(current.topic)+(current.pattern&&current.pattern!==current.topic?' · '+html(current.pattern):'')+'</p></details>';
   } else if(tab==="learn"){
     content+='<span class="pattern-tag">EDITORIAL</span><h3>Approach</h3><p class="body-copy">'+html(current.idea)+'</p><div class="pattern-callout"><strong>Invariant</strong>'+html(current.invariant)+'</div><div class="complexity-row"><div class="complexity-box"><small>TIME</small><b>'+html(current.complexity.time)+'</b></div><div class="complexity-box"><small>EXTRA SPACE</small><b>'+html(current.complexity.space)+'</b></div></div><p class="tradeoff">'+html(current.complexity.tradeoff)+'</p><button id="referenceBtn" class="reference-button">Show Java solution</button><div id="referenceContent"></div>';
@@ -256,7 +258,7 @@ async function submitOnline(){
   if(epoch!==runEpoch||account!==accountEpoch||cloud.user?.id!==user)return;
   if(result.status!=='unavailable')logAttempt(p,result.passed||0,result.total||p.tests.length);
   const output=$("resultOutput"),feedback=submissionFeedback(result);output.innerHTML=feedback.html;notify(feedback.announcement);output.tabIndex=-1;output.focus({preventScroll:true});output.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
-  if(result.accepted){const metrics=document.createElement('p');metrics.className='benchmark-note';metrics.textContent=runtimeLabel(result.runtimeMs??result.submission?.runtime_ms)+' · '+memoryLabel(result.memoryBytes??result.submission?.memory_bytes)+' · measured test suite';output.append(metrics);const link=document.createElement('button');link.className='reference-button';link.textContent='View submissions →';link.onclick=()=>{tab='submissions';renderLearning();};output.append(link);completeQuest(p);if(tab==='submissions')submissions.refresh();}
+  if(result.accepted){const header=output.querySelector('.submission-verdict>header');const metrics=document.createElement('div');metrics.className='verdict-metrics';const runtime=document.createElement('span');runtime.textContent=runtimeLabel(result.runtimeMs??result.submission?.runtime_ms);const memory=document.createElement('span');memory.textContent=memoryLabel(result.memoryBytes??result.submission?.memory_bytes);metrics.append(runtime,memory);const link=document.createElement('button');link.className='verdict-link';link.textContent='View submissions';link.onclick=()=>{tab='submissions';renderLearning();};(header||output).append(metrics,link);completeQuest(p);if(tab==='submissions')submissions.refresh();}
  }catch(e){if(epoch===runEpoch&&account===accountEpoch){const text=e?.name==='TimeoutError'?'The submission request timed out. Your code is saved. Check My submissions before retrying.':e.message,feedback=submissionFeedback({status:'error',message:text});$("resultOutput").innerHTML=feedback.html;notify(feedback.announcement+': '+text);$("resultOutput").scrollIntoView({block:'nearest'});}}
  finally{if(epoch===runEpoch&&account===accountEpoch){clearTimeout(watchdog);setBusy(false);$("runStatus").textContent=languages[language].name+' · ready';persist();updateStats();}}
 }
