@@ -68,11 +68,12 @@ assert.ok(dashboard.includes("this.cloud.request('friend-analytics'"),'Keep serv
 assert.ok(dashboard.includes('this.selected=new Set(this.friends'),'Keep compare-all action');
 assert.ok(dashboard.includes('topicProgress(catalog,this.topicInsights,events,opts)'),'Use current catalog and verified insights');
 assert.ok(dashboard.includes('aria-valuenow'),'Expose true solved problem count to assistive technology');
-assert.ok(dashboard.includes('topic-progress-toggle'),'Offer all topics without overwhelming the page');
+assert.ok(dashboard.includes('topic-directory-toggle'),'Offer searchable topic navigation without overwhelming the page');
 assert.ok(profile.includes("topicInsights:r.insights?.skills||[]"));
 assert.ok(html.includes('analytics-accurate.css?v=accurate-1'));
-assert.ok(html.includes('community.js?v=backtested-1'));
-assert.ok(css.includes('.topic-progress-bar'));
+assert.ok(html.includes('community.js?v=topic-directory-1'));
+assert.ok(css.includes('.graph-precise-line'));
+assert.ok(html.includes('topic-directory.css?v=topic-directory-1'));
 assert.ok(css.includes('.graph-precise-line'));
 assert.ok(css.includes('@media(max-width:600px)'));
 console.log('PASS: exact integer graph, cumulative comparison, UTC future clip, published-catalog topic progress and friend controls.');
