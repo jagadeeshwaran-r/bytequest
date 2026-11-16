@@ -1,6 +1,7 @@
 import {mountCreatorAccess} from './creator-access.js?v=workbench-1';
 import {companies} from './companies.js?v=social-1';
-import {profileMarkup,profileAvatar,publicProfileHref} from './profile-view.js?v=workbench-1';
+import {profileMarkup,profileAvatar,publicProfileHref} from './profile-view.js?v=profile-compact-1';
+import {hydrateRecentProblemNumbers} from './profile-extras.js?v=profile-compact-1';
 import {profileDetails} from './profile-fields.js?v=profile-2';
 import {rankCup} from './rewards.js?v=upgrade-2';
 import {receivedPresence,presenceOnline,relativeTime,profilePreferences} from './presence-model.js?v=social-1';
@@ -86,7 +87,7 @@ async function route(){if(!self||!cloud.user)return;const ticket=++epoch,hash=lo
   }
  }catch(e){if(ticket===epoch)message(e.message,true);}}
 function fillProfile(){const p=self.profile||{};for(const key of ['organization_type','organization_name','organization_url','linkedin_url'])document.getElementById('detail_'+key).value=p[key]||'';$('profileUsername').value=p.username||'';$('profileName').value=p.display_name||cloud.user?.user_metadata?.full_name||'';$('profileBio').value=p.bio||'';$('profileAvatar').value=p.uploadedAvatar?'':p.avatar_url||'';$('photoPreview').hidden=!p.avatar_url;$('photoPreview').src=p.avatar_url||'';const preferences=profilePreferences(self.profile);$('profileDiscoverable').checked=preferences.discoverable;$('profilePresence').checked=preferences.show_presence;}
-function renderProfile(r,{presencePending=false}={}){viewedTarget=r.profile.public_id;if(analytics){analytics.epoch++;analytics.accountGeneration++;}const p=r.profile;$('profileContent').innerHTML=profileMarkup(r,{catalogCount:catalog.length,admin:self.admin,canFollow:Boolean(self.profile?.discoverable)});
+function renderProfile(r,{presencePending=false}={}){viewedTarget=r.profile.public_id;if(analytics){analytics.epoch++;analytics.accountGeneration++;}const p=r.profile;$('profileContent').innerHTML=profileMarkup(r,{catalogCount:catalog.length,catalog,admin:self.admin,canFollow:Boolean(self.profile?.discoverable)});
  viewedPresence=presencePending?null:receivedPresence(r.presence);
  const presenceNode=$('profilePresenceStatus');
  if(presencePending){presenceNode.dataset.status='checking';presenceNode.className='presence';presenceNode.textContent='Checking status…';}
@@ -112,7 +113,7 @@ addEventListener('hashchange',route);addEventListener('focus',()=>{if(cloud.user
 // profile rendering on a catalog request (even during an offline fallback).
 catalog=cloud.readCatalogCache()?.problems||[];
 void cloud.publicCatalog().then(rows=>{
-  if(rows){catalog=rows;analytics?.render();}
+  if(rows){catalog=rows;hydrateRecentProblemNumbers($('profileContent'),catalog);analytics?.render();}
 }).catch(()=>{});
 cloud.init().then(boot).catch(e=>{message(e.message,true);$('signedOut').hidden=false;});
 
