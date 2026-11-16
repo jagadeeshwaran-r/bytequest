@@ -1,14 +1,15 @@
 // Local visual effects only. Learning state and account data are untouched.
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
 const precise=matchMedia('(hover: hover) and (pointer: fine)');
-const revealSelector='#mapView>.section-heading,#mapView>.filters,#questGrid,#practiceView>.quest-strip,#practiceView>.lab,.leader-heading,.leader-summary,.leader-controls,.leader-table-wrap,.leader-signed-out,#profileContent>.white-card,#profileAnalytics>.dashboard-heading,#profileAnalytics>.dashboard-totals,#profileAnalytics>.white-card,#studioView>.section-heading,.studio-grid>.white-card,.studio-gate,.privacy-page';
+// Limit entrance motion to small headings. Large tables, profile cards and
+// analytics should appear immediately, not animate into view while scrolling.
+const revealSelector='#mapView>.section-heading,.leader-heading,#studioView>.section-heading';
 const spotlightSelector='#questGrid,.white-card,.leader-summary,.leader-signed-out,.leader-table-wrap';
 const seen=new WeakSet();let observer,refreshFrame=0,pointerFrame=0,scrollFrame=0,hovered=null,point=null;
 const header=document.querySelector('.minimal-header');
 function reveal(el,index=0){
  if(reduced.matches||!el.animate)return;
- const opacityOnly=el.matches('.lab,.leader-table-wrap');
- el.animate([{opacity:0,transform:opacityOnly?'none':'translateY(15px)'},{opacity:1,transform:'none'}],{duration:650,delay:Math.min(index*35,140),easing:'cubic-bezier(.22,1,.36,1)'});
+ el.animate([{opacity:0.86,transform:'translateY(5px)'},{opacity:1,transform:'none'}],{duration:220,delay:0,easing:'ease-out'});
 }
 function refresh(){
  refreshFrame=0;
