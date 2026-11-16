@@ -7,7 +7,12 @@ export class Dashboard{
  constructor({cloud,getState,getCatalog,getEvents=null,summary=null,name='You',profile=null,viewerProfile=null,topicInsights=[],allowCompare=true}){
   Object.assign(this,{cloud,getState,getCatalog,getEvents,summary,name,profile,viewerProfile,topicInsights,allowCompare,topicsExpanded:false,epoch:0,accountGeneration:0,loadedFor:null,friends:[],selected:new Set(),cache:new Map()});this.$=id=>document.getElementById(id);
   this.$('graphMonth').value=new Date().toISOString().slice(0,7);this.$('graphYear').value=new Date().getUTCFullYear();
-  for(const id of ['graphMode','graphMeasure','graphMonth','graphYear','graphTopic'])this.$(id).onchange=()=>this.render();
+  // Profile has graphMeasure; the legacy problem-library dashboard doesn't.
+  // Optional controls must not prevent the entire problem page from booting.
+  for(const id of ['graphMode','graphMeasure','graphMonth','graphYear','graphTopic']){
+   const control=this.$(id);
+   if(control)control.onchange=()=>this.render();
+  }
   const host=this.$('frequencyChart').closest('section'),controls=host.querySelector('.comparison-controls');
   controls.innerHTML='<details class="friend-picker"><summary>Compare with friends <span class="compare-count"></span></summary><div class="friend-picker-panel"><div class="friend-picker-actions"><button type="button" data-all>All friends</button><button type="button" data-clear>Clear</button></div><input class="friend-filter" type="search" placeholder="Filter friends…" aria-label="Filter comparison friends"><div class="friend-checks"></div></div></details>';
   controls.hidden=!this.allowCompare;this.picker=controls.querySelector('.friend-picker');controls.querySelector('[data-all]').onclick=()=>{this.selected=new Set(this.friends.map(p=>p.public_id));this.paintPicker();this.render();};controls.querySelector('[data-clear]').onclick=()=>{this.selected.clear();this.paintPicker();this.render();};controls.querySelector('input').oninput=()=>this.paintPicker();
@@ -79,7 +84,7 @@ async render(){
  }
  draw(series){
   const $=this.$,chart=$('frequencyChart'),keys=series[0].data.keys,w=900,left=38,top=20,plotH=175;
-  const measure=$('graphMeasure').value;
+  const measure=$('graphMeasure')?.value==='cumulative'?'cumulative':'period';
   const visible=visiblePeriodCount(keys,$('graphMode').value);
   const lines=series.map(s=>({...s,values:chartValues(s.data.values,measure)}));
   const domain=chartDomain(Math.max(0,...lines.flatMap(s=>s.values.slice(0,visible))));
