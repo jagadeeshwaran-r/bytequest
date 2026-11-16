@@ -5,7 +5,7 @@ import {hydrateRecentProblemNumbers} from './profile-extras.js?v=profile-compact
 import {profileDetails} from './profile-fields.js?v=profile-2';
 import {rankCup} from './rewards.js?v=upgrade-2';
 import {receivedPresence,presenceOnline,relativeTime,profilePreferences} from './presence-model.js?v=social-1';
-import {Dashboard} from './dashboard.js?v=accurate-1';
+import {Dashboard} from './dashboard.js?v=forecast-1';
 import {analyticsMarkup} from './profile-analytics.js?v=accurate-1';
 import {mountShell} from './shell.js?v=workbench-1';
 import {prepareAvatar} from './avatar-upload.js';

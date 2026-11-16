@@ -80,5 +80,6 @@ assert.ok(app.includes('dashboard.js?v=compat-1'),'Load compatible dashboard mod
 assert.ok(app.includes('renderMap();'),'Problem catalog should still be rendered');
 assert.ok(dashboard.includes("this.$(id)"),'Chart checks optional controls');
 assert.ok(dashboard.includes("if(control)control.onchange"));
-assert.ok(dashboard.includes("const measure=$('graphMeasure')?.value"));
+assert.ok(dashboard.includes("const $=this.$,chart=$('frequencyChart')"));
+assert.ok(dashboard.includes("$('graphMeasure')?.value"),'Measure remains optional for legacy Problems page');
 console.log('PASS: Problems page boots with legacy chart markup; profile measure selector remains optional.');
