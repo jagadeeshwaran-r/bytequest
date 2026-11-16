@@ -23,7 +23,6 @@ import { buildBenchmarkProgram } from "../supabase/functions/bytequest-firebase/
 import { nativeResults } from "../supabase/functions/bytequest-firebase/domain/languages.js";
 import { submitSolution } from "../supabase/functions/bytequest-firebase/submissions.js";
 import { traceFor } from "../dist/traces.js";
-import "./auth-gate.mjs";
 
 for (const page of ["index.html", "studio.html"]) {
   const markup = readFileSync("dist/" + page, "utf8");
