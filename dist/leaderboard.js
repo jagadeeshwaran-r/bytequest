@@ -1,6 +1,6 @@
 import {mountShell} from './shell.js?v=workbench-1';
 import {Cloud} from './cloud.js?v=catalog-1';
-import {leaderboardRow,latestLeaderboard} from './leaderboard-model.js?v=avatar-1';
+import {leaderboardRow,latestLeaderboard,leaderboardContextLabel} from './leaderboard-model.js?v=leaderboard-3';
 import {createViewCache} from './view-cache.js?v=avatar-1';
 import {hydrateLeaderboardAvatars,releaseAvatarObjectUrls} from './avatar-cache.js?v=avatar-1';
 const $=id=>document.getElementById(id),shell=mountShell();let page=0,scope=location.hash==='#friends'?'friends':'global',accountGeneration=0,lastOwner=null;
@@ -14,7 +14,7 @@ const loader=latestLeaderboard(async(action,query,owner)=>{
  return {...fresh,_cached:false};
 });
 function setMessage(text,error=false){$('leaderMessage').textContent=text;$('leaderMessage').classList.toggle('error',error);$('leaderAuthMessage').textContent=text;$('leaderAuthMessage').classList.toggle('error',error);}
-function selectScope(){for(const button of document.querySelectorAll('[data-board]')){const active=button.dataset.board===scope;button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;}const selected=document.querySelector('[data-board="'+scope+'"]');$('leaderPanel').setAttribute('aria-labelledby',selected.id);$('boardHeading').textContent=scope==='friends'?'Friends leaderboard':'Global leaderboard';$('boardDescription').textContent=scope==='friends'?'You and the people you follow, in one place.':'A shared place for every discoverable learner.';}
+function selectScope(){for(const button of document.querySelectorAll('[data-board]')){const active=button.dataset.board===scope;button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;}const selected=document.querySelector('[data-board="'+scope+'"]');$('leaderPanel').setAttribute('aria-labelledby',selected.id);$('boardHeading').textContent=scope==='friends'?'Friends leaderboard':'Global leaderboard';$('boardDescription').textContent=scope==='friends'?'You and the people you follow, in one place.':'A shared place for every discoverable learner.';$('leaderContext').textContent=leaderboardContextLabel(scope,$('leaderPeriod').value);}
 function clearResults(){releaseAvatarObjectUrls();for(const id of ['yourRank','yourPoints','yourSolved','rankedLearners'])$(id).textContent='—';$('leaderRows').replaceChildren();$('leaderFindMe').hidden=true;$('leaderEmpty').hidden=true;$('leaderError').hidden=true;$('leaderPager').hidden=true;$('yourPosition').hidden=true;$('profileNudge').hidden=true;}
 async function load({force=false}={}){
  const owner=cloud.user?.id;if(!owner)return;selectScope();clearResults();$('leaderPanel').setAttribute('aria-busy','true');$('leaderLoading').hidden=false;$('leaderRefresh').disabled=true;setMessage('Loading rankings…');
