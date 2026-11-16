@@ -36,6 +36,8 @@ async function boot(){
    self=cachedSelf;shell.setAccount(cloud.user,self.profile);
    void route();
    void refreshInbox(false).catch(()=>{}); // Notifications are always fetched live.
+   message('Profile ready.');
+   return; // Fresh (2-minute) account cache: no redundant self query.
  }
  try{
    const own=await act('self');
@@ -89,7 +91,7 @@ function renderProfile(r,{presencePending=false}={}){viewedTarget=r.profile.publ
  const presenceNode=$('profilePresenceStatus');
  if(presencePending){presenceNode.dataset.status='checking';presenceNode.className='presence';presenceNode.textContent='Checking status…';}
  else paintPresence(presenceNode,viewedPresence);
- $('profileContent').insertAdjacentHTML('beforeend',analyticsMarkup);analytics=new Dashboard({cloud,getState:()=>({solved:{},days:r.stats.days||[]}),getCatalog:()=>catalog,getEvents:()=>r.stats.solves||[],summary:{solved:r.stats.solved,active:(r.stats.days||[]).length},allowCompare:r.isOwn,name:r.isOwn?'You':'@'+p.username,profile:p});analytics.open();
+ $('profileContent').insertAdjacentHTML('beforeend',analyticsMarkup);analytics=new Dashboard({cloud,getState:()=>({solved:{},days:r.stats.days||[]}),getCatalog:()=>catalog,getEvents:()=>r.stats.solves||[],summary:{solved:r.stats.solved,active:(r.stats.days||[]).length},allowCompare:r.isOwn,name:r.isOwn?'You':'@'+p.username,profile:p,viewerProfile:self?.profile||null});analytics.open();
  const recentToggle=$('profileContent').querySelector('[data-recent-toggle]');if(recentToggle)recentToggle.onclick=()=>{const expanded=recentToggle.getAttribute('aria-expanded')!=='true',rows=$('profileContent').querySelectorAll('[data-recent-row]');rows.forEach((row,i)=>row.hidden=!expanded&&i>=3);recentToggle.setAttribute('aria-expanded',String(expanded));recentToggle.textContent=expanded?'Show less':'Show all '+rows.length+' ↗';};
  $('messageFriend')?.addEventListener('click',()=>shell.openChat(p.public_id));
  $('followBtn')?.addEventListener('click',async e=>{e.target.disabled=true;try{const fresh=await act('follow',{target:p.public_id,following:!r.isFollowing});viewCache.clearOwner(cloud.user?.id);viewCache.saveSelf(cloud.user?.id,self);renderProfile(fresh);}catch(err){message(err.message,true);e.target.disabled=false;}});
