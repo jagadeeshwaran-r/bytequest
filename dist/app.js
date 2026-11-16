@@ -1,5 +1,5 @@
 import {profileAvatar,publicProfileHref} from './profile-view.js?v=workbench-1';
-import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=workbench-1';
+import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=share-default-1';
 import {launchCelebration} from './celebration.js?v=next-1';
 import {mountEditorTools} from './editor-tools.js?v=workbench-1';
 import {mountWorkspaceLayout} from './workspace-layout.js?v=workspace-1';
@@ -10,7 +10,7 @@ import {problemStatusMarkup} from './problem-status.js?v=solved-1';
 import {canRevealEditorialSolution,editorialSolutionGateMarkup} from './editorial-access.js?v=editorial-1';
 import {mountWorkspace} from './workspace.js';
 import {mountShell} from "./shell.js?v=workbench-1";
-import {Dashboard} from "./dashboard.js?v=backtested-1";
+import {Dashboard} from "./dashboard.js?v=topic-directory-1";
 import {languages,starterFor,NativeJudge} from "./languages.js?v=structural-2";
 import {problems as bundledProblems} from "./problems.js";
 import {Cloud} from "./cloud.js?v=catalog-1";

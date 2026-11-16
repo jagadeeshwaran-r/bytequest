@@ -5,8 +5,8 @@ import {hydrateRecentProblemNumbers} from './profile-extras.js?v=profile-compact
 import {profileDetails} from './profile-fields.js?v=profile-2';
 import {rankCup} from './rewards.js?v=upgrade-2';
 import {receivedPresence,presenceOnline,relativeTime,profilePreferences} from './presence-model.js?v=social-1';
-import {Dashboard} from './dashboard.js?v=backtested-1';
-import {analyticsMarkup} from './profile-analytics.js?v=accurate-1';
+import {Dashboard} from './dashboard.js?v=topic-directory-1';
+import {analyticsMarkup} from './profile-analytics.js?v=topic-directory-1';
 import {mountShell} from './shell.js?v=workbench-1';
 import {prepareAvatar} from './avatar-upload.js';
 import {Cloud} from './cloud.js?v=catalog-1';
@@ -18,7 +18,7 @@ const viewCache=createViewCache();
 const cloud=new Cloud(()=>boot());shell.connect(cloud);
 const creatorAccess=mountCreatorAccess(cloud,{refresh:loadRoles,notify:message,isActive:()=>self?.admin&&!$('rolesPanel').hidden});
 $('organizationNames').replaceChildren(...companies.map(c=>new Option(c.name,c.name)));
-function message(text,error=false){$('communityMessage').textContent=text;$('communityMessage').classList.toggle('error',error);}
+function message(text,error=false){const status=$('communityMessage');status.textContent=text;status.classList.toggle('error',error);status.hidden=!text;}
 async function act(action,body={}){return cloud.request(action,body);}
 function people(users){return users.length?users.map(p=>'<article class="person-card"><a class="person-avatar-link" href="'+publicProfileHref(p)+'" aria-label="View '+h(p.display_name)+' profile">'+profileAvatar(p)+'</a><div><a href="#user/'+encodeURIComponent(p.username)+'">'+h(p.display_name)+'</a><small>@'+h(p.username)+'</small></div></article>').join(''):'<p class="muted">No users found.</p>';}
 async function boot(){
@@ -37,7 +37,7 @@ async function boot(){
    self=cachedSelf;shell.setAccount(cloud.user,self.profile);
    void route();
    void refreshInbox(false).catch(()=>{}); // Notifications are always fetched live.
-   message('Profile ready.');
+   message('');
    return; // Fresh (2-minute) account cache: no redundant self query.
  }
  try{
@@ -51,7 +51,7 @@ async function boot(){
    }
    if(!cachedSelf||renamed)await route();
    if(!cachedSelf)await refreshInbox(false);
-   if(ticket===bootEpoch)message('Your account is connected.');
+   if(ticket===bootEpoch)message('');
  }catch(e){
    if(ticket===bootEpoch)message(cachedSelf?'Showing saved profile while account data reconnects.':e.message,true);
  }

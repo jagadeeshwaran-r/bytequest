@@ -1,11 +1,12 @@
 import {bucketSolves,solveEvents,chartValues,chartDomain,straightPath,visiblePeriodCount,topicProgress,forecastSolvePace,smoothPath} from './dashboard-model.js?v=backtested-1';
 import {escapeHtml as h} from './community-model.js';
+import {topicCoverageSummary,topicExplorerPage} from './topic-explorer.js?v=topics-1';
 const photo=p=>p?.avatar_url&&/^https:\/\//.test(p.avatar_url)?p.avatar_url:'';
 const initial=p=>(p?.display_name||p?.username||'You').trim().charAt(0).toUpperCase();
 const avatar=p=>'<span class="chart-avatar">'+(photo(p)?'<img src="'+h(photo(p))+'" alt="" referrerpolicy="no-referrer">':h(initial(p)))+'</span>';
 export class Dashboard{
  constructor({cloud,getState,getCatalog,getEvents=null,summary=null,name='You',profile=null,viewerProfile=null,topicInsights=[],allowCompare=true}){
-  Object.assign(this,{cloud,getState,getCatalog,getEvents,summary,name,profile,viewerProfile,topicInsights,allowCompare,topicsExpanded:false,epoch:0,accountGeneration:0,loadedFor:null,friends:[],selected:new Set(),cache:new Map()});this.$=id=>document.getElementById(id);
+  Object.assign(this,{cloud,getState,getCatalog,getEvents,summary,name,profile,viewerProfile,topicInsights,allowCompare,topicsExpanded:false,topicQuery:"",topicStatus:"all",topicPage:0,epoch:0,accountGeneration:0,loadedFor:null,friends:[],selected:new Set(),cache:new Map()});this.$=id=>document.getElementById(id);
   this.$('graphMonth').value=new Date().toISOString().slice(0,7);this.$('graphYear').value=new Date().getUTCFullYear();
   // Profile has graphMeasure; the legacy problem-library dashboard doesn't.
   // Optional controls must not prevent the entire problem page from booting.
@@ -67,20 +68,71 @@ async render(){
   }catch(e){if(ticket===this.epoch)$('dashboardMessage').textContent=e.message;}
  }
  paintTopics(rows){
-  const $=this.$,host=$('topicBreakdown');
+  const host=this.$('topicBreakdown');
+  if(!host)return;
+  this.topicRows=rows;
   if(!rows.length){
-   host.innerHTML='<p class="topic-unavailable">Topic totals are unavailable until the published problem catalog loads.</p>';
+   host.innerHTML='<p class="topic-unavailable">Topic coverage is available when the published catalog loads.</p>';
    return;
   }
-  const shown=this.topicsExpanded?rows:rows.slice(0,5);
-  host.innerHTML='<p class="topic-progress-caption">Solved / available in the current catalog · Growth in the selected period</p>'+
-   shown.map(t=>'<div class="topic-progress-row"><div class="topic-progress-heading"><span>'+h(t.name)+'</span><strong>'+t.solved+' / '+t.total+'</strong></div>'+
-    '<div class="topic-progress-bar" role="progressbar" aria-label="'+h(t.name)+' completion" aria-valuemin="0" aria-valuemax="'+t.total+'" aria-valuenow="'+t.solved+'"><i style="width:'+t.percent+'%"></i></div>'+
-    '<div class="topic-progress-meta"><span>'+t.percent+'% complete</span><span>'+(t.period?'<b>+'+t.period+'</b> this period':'No new solves this period')+'</span></div></div>').join('')+
-   (rows.length>5?'<button id="toggleTopicGrowth" class="topic-progress-toggle" type="button" aria-expanded="'+this.topicsExpanded+'">'+(this.topicsExpanded?'Show fewer topics':'Show all '+rows.length+' topics')+'</button>':'');
-  const toggle=host.querySelector('#toggleTopicGrowth');
-  if(toggle)toggle.onclick=()=>{this.topicsExpanded=!this.topicsExpanded;this.paintTopics(rows);};
+  const stats=topicCoverageSummary(rows);
+  host.innerHTML='<div class="topic-coverage-stats">'+
+   '<div class="topic-coverage-metric"><strong>'+stats.practiced+' <small>/ '+stats.topics+'</small></strong><span>Topics practiced</span></div>'+
+   '<div class="topic-coverage-metric"><strong>'+stats.completed+'</strong><span>Topics completed</span></div>'+
+   '<div class="topic-coverage-metric"><strong>'+stats.solved+' <small>/ '+stats.total+'</small></strong><span>Problems solved</span></div>'+
+   '</div><div class="topic-coverage-bottom"><p>Browse published topics, see completion and find what to learn next.</p>'+
+   '<button type="button" class="topic-directory-toggle" id="toggleTopicGrowth" aria-expanded="'+this.topicsExpanded+'" aria-controls="topicDirectory">'+(this.topicsExpanded?'Hide topic explorer':'Browse '+stats.topics+' topics')+'</button></div>'+
+   '<div id="topicDirectory" class="topic-directory" '+(this.topicsExpanded?'':'hidden')+'>'+
+   '<div class="topic-directory-filters"><input id="topicSearch" type="search" placeholder="Find a topic…" aria-label="Search topics" autocomplete="off" value="'+h(this.topicQuery)+'">'+
+   '<select id="topicProgressFilter" aria-label="Filter topic progress">'+
+   [['all','All topics'],['active','In progress'],['completed','Completed'],['unstarted','Not started']].map(([key,label])=>'<option value="'+key+'" '+(key===this.topicStatus?'selected':'')+'>'+label+'</option>').join('')+
+   '</select></div><p id="topicResultCount" class="topic-result-count" role="status"></p>'+
+   '<div id="topicDirectoryList" class="topic-directory-list"></div>'+
+   '<div class="topic-directory-pager"><button id="topicPrevious" type="button">Previous</button><span id="topicPageLabel"></span><button id="topicNext" type="button">Next</button></div></div>';
+  host.querySelector('#toggleTopicGrowth').onclick=()=>{
+   this.topicsExpanded=!this.topicsExpanded;
+   this.paintTopics(this.topicRows);
+  };
+  if(!this.topicsExpanded)return;
+  host.querySelector('#topicSearch').oninput=event=>{
+   this.topicQuery=event.target.value;
+   this.topicPage=0;
+   this.paintTopicRows();
+  };
+  host.querySelector('#topicProgressFilter').onchange=event=>{
+   this.topicStatus=event.target.value;
+   this.topicPage=0;
+   this.paintTopicRows();
+  };
+  host.querySelector('#topicPrevious').onclick=()=>{
+   this.topicPage--;
+   this.paintTopicRows();
+  };
+  host.querySelector('#topicNext').onclick=()=>{
+   this.topicPage++;
+   this.paintTopicRows();
+  };
+  this.paintTopicRows();
  }
+ paintTopicRows(){
+  const host=this.$('topicBreakdown');
+  if(!host||!this.topicsExpanded)return;
+  const data=topicExplorerPage(this.topicRows,{
+   query:this.topicQuery,status:this.topicStatus,page:this.topicPage,pageSize:10
+  });
+  this.topicPage=data.page;
+  const list=host.querySelector('#topicDirectoryList');
+  list.innerHTML=data.items.length?data.items.map(t=>
+   '<div class="topic-directory-row"><span class="topic-directory-name" title="'+h(t.name)+'">'+h(t.name)+'</span>'+
+   '<span class="topic-directory-progress" role="progressbar" aria-label="'+h(t.name)+' completion" aria-valuemin="0" aria-valuemax="'+t.total+'" aria-valuenow="'+t.solved+'"><i style="width:'+t.percent+'%"></i></span>'+
+   '<strong>'+t.solved+' / '+t.total+'</strong><span class="topic-directory-gain">'+(t.period?'+'+t.period+' this period':t.percent+'% complete')+'</span></div>'
+  ).join(''):'<p class="topic-directory-empty">No matching topics.</p>';
+  host.querySelector('#topicResultCount').textContent=data.count+' matching '+(data.count===1?'topic':'topics');
+  host.querySelector('#topicPageLabel').textContent='Page '+(data.page+1)+' of '+data.pages;
+  host.querySelector('#topicPrevious').disabled=data.page===0;
+  host.querySelector('#topicNext').disabled=data.page>=data.pages-1;
+ }
+
  draw(series){
   const $=this.$,chart=$('frequencyChart'),baseKeys=series[0].data.keys,w=900,left=38,top=20,plotH=175;
   const mode=$('graphMode').value,measure=$('graphMeasure')?.value==='cumulative'?'cumulative':'period';
