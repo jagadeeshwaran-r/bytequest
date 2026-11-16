@@ -1,4 +1,4 @@
-import {requestSandbox,sandboxDiagnostics} from './sandbox-provider.js';
+import {requestSandbox,sandboxExecutionFailure} from './sandbox-provider.js';
 import {buildNativeProgram,nativeResults} from './domain/languages.js';
 // A fixed remote sandbox provider; no arbitrary URLs, credentials or profile data leave this API.
 export function makeOnlineJudge({fetchImpl=fetch,wait,now,random}={}){
@@ -7,7 +7,7 @@ export function makeOnlineJudge({fetchImpl=fetch,wait,now,random}={}){
  try{
   const response=await requestSandbox({compiler:compiler[language],code,save:false,options:language==='cpp'?'c++17':language==='c'?'c11':''},{fetchImpl,timeoutMs:language==='cpp'?60000:30000,wait,now,random});
   if(!response.ok)return response.result;const r=response.value;
-  if(String(r.status)!=='0'||r.signal)return{status:'compile_error',message:String(sandboxDiagnostics(r)||r.signal||'Compilation or execution failed.').slice(0,12000)};
+  if(String(r.status)!=='0'||r.signal)return sandboxExecutionFailure(r,{maxMessage:12000});
   const output=String(r.program_output||'');return{status:'ok',cases:nativeResults(output,p,cases),stdout:output.replace(/^__BYTEQUEST_CASE_.*$/gm,'').trim().slice(0,12000),elapsedMs:Date.now()-start};
  }catch{return{status:'unavailable',accepted:false,retryable:true,code:'compiler_unavailable',message:'Could not reach the online compiler. Your code is saved; try again shortly.'};}}
  };
