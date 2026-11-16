@@ -51,7 +51,7 @@ async function boot(){
    }
    if(!cachedSelf||renamed)await route();
    if(!cachedSelf)await refreshInbox(false);
-   if(ticket===bootEpoch)message('Your account is connected.');
+   if(ticket===bootEpoch)message('');
  }catch(e){
    if(ticket===bootEpoch)message(cachedSelf?'Showing saved profile while account data reconnects.':e.message,true);
  }
