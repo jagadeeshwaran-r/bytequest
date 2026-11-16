@@ -162,4 +162,23 @@ assert.ok(dashboardOpen.includes('let viewer=this.viewerProfile;'),'Analytics mu
 assert.ok(leader.includes('const savedAccount=cache.self(nextOwner)'),'Leaderboard should reuse the recent account snapshot.');
 assert.ok(appSource.includes('communityCache.clearOwner(previousOwner)'),'Account switches must clear snapshots.');
 
+
+// Avatar storage signed URLs are valid for 600 seconds; cached rankings/profiles
+// can be displayed longer than that, but expired signed photos must not break.
+entries.clear();now=15000000;
+const signedAvatar='https://example.supabase.co/storage/v1/object/sign/bytequest-avatars/u/photo.jpg?token=short-lived';
+const externalAvatar='https://lh3.googleusercontent.com/example.png';
+const signedBoard={users:[{...ranking.users[0],avatar_url:signedAvatar},{username:'other',avatar_url:externalAvatar}],total:2,me:{avatar_url:signedAvatar}};
+cache.saveBoard(viewer,query,signedBoard);
+cache.saveProfile(viewer,'fixture',{...profile,profile:{...profile.profile,avatar_url:signedAvatar}});
+assert.equal(cache.board(viewer,query).users[0].avatar_url,signedAvatar,'Fresh signed avatars should be visible.');
+now+=9*60*1000;
+const oldBoard=cache.board(viewer,query,{allowStale:true});
+assert.equal(oldBoard.users[0].avatar_url,'','Expired signed rank avatars should use initials.');
+assert.equal(oldBoard.me.avatar_url,'','Expired signed self avatars should use initials.');
+assert.equal(oldBoard.users[1].avatar_url,externalAvatar,'Non-expiring external avatars stay visible.');
+assert.equal(cache.profile(viewer,'fixture',{allowStale:true}).profile.avatar_url,'','Expired signed profile avatar should use initials.');
+assert.equal(JSON.parse([...entries.values()].find(x=>x.includes('"users"'))).value.users[0].avatar_url,signedAvatar,
+  'Rendering must not mutate the cached snapshot; server refresh can re-sign avatars.');
+
 console.log('PASS: rankings/profile cache isolation and TTLs, manual rank refresh, live presence/chat/notifications, and +N company hover overflow.');
