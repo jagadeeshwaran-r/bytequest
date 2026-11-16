@@ -18,7 +18,7 @@ export function mountSignInGate({doc=document,signIn,reload=()=>location.reload(
     button.disabled=next==="checking"||next==="signing-in"||next==="unlocked";
     button.textContent=next==="error"?"Reload and retry":"Continue with Google";
     status.textContent=message||(
-      next==="checking"?"Checking your Google sign-in…":
+      next==="checking"?"Opening ByteQuest…":
       next==="signing-in"?"Opening Google sign-in…":
       next==="error"?"Sign-in is unavailable. Reload to try again.":
       next==="locked"?"Sign in to access the problem library.":""
