@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {createViewCache,LEADERBOARD_TTL_MS,PROFILE_TTL_MS} from '../dist/view-cache.js';
+import {createViewCache,LEADERBOARD_TTL_MS,PROFILE_TTL_MS,ACCOUNT_TTL_MS,prefetchCommunityViews} from '../dist/view-cache.js';
 import {companyIcons} from '../dist/companies.js';
 
 const entries=new Map();
@@ -85,14 +85,81 @@ for(const page of ['index.html','studio.html']){
 const app=readFileSync('dist/app.js','utf8');
 assert.ok(app.includes('companyIcons(p.companies)'),'Problem listing must use the 3-plus-more renderer.');
 const leader=readFileSync('dist/leaderboard.js','utf8');
-assert.ok(leader.includes("cache.board(owner,filters)"));
+assert.ok(leader.includes("cache.board(owner,filters,{allowStale:true})"));
 assert.ok(leader.includes("load({force:true})"),'Refresh must bypass cached ranks.');
 assert.ok(leader.includes("cache.saveBoard(owner,filters,fresh)"));
 const community=readFileSync('dist/community.js','utf8');
-assert.ok(community.includes('viewCache.profile(owner,target)'),'Profiles should use cached snapshots.');
+assert.ok(community.includes('viewCache.profile(owner,target,{allowStale:true})'),'Profiles should use cached snapshots.');
 assert.ok(community.includes('refreshPresence(true)'),'Cached profiles must immediately fetch live presence.');
 assert.ok(community.includes("act('profile-presence'"),'Presence must still come from live database requests.');
 assert.ok(community.includes("act('notifications'"),'Notifications must remain uncached.');
 const chat=readFileSync('dist/chat.js','utf8');
 assert.ok(chat.includes("cloud.request('chat-list'")&&chat.includes("cloud.request('chat-thread'"));
+
+const account={admin:true,profile:{public_id:'user-123',username:'fixture',display_name:'Example'}};
+entries.clear();now=9000000;
+cache.saveSelf(viewer,account);
+assert.deepEqual(make().self(viewer),account,'Verified account metadata must survive same-tab navigation.');
+assert.equal(cache.self(other),null,'Account bootstrap must be partitioned by Firebase owner.');
+now+=ACCOUNT_TTL_MS+1;assert.equal(cache.self(viewer),null,'Account bootstrap expires after two minutes.');
+now=9000000;cache.saveBoard(viewer,query,ranking);cache.saveProfile(viewer,'fixture',profile);
+now+=LEADERBOARD_TTL_MS+10;
+assert.equal(cache.board(viewer,query),null,'Expired rankings are not fresh.');
+assert.deepEqual(cache.board(viewer,query,{allowStale:true}),ranking,'Saved rankings render without waiting for manual refresh.');
+assert.equal(cache.profile(viewer,'fixture'),null,'Expired profiles are not fresh.');
+assert.equal(cache.profile(viewer,'fixture',{allowStale:true}).profile.username,'fixture','Expired snapshots render immediately then refresh in background.');
+now+=24*60*60*1000;
+assert.equal(cache.board(viewer,query,{allowStale:true}),null,'Never reuse a snapshot older than 24 hours.');
+assert.equal(cache.profile(viewer,'fixture',{allowStale:true}),null,'Never reuse a profile older than 24 hours.');
+
+entries.clear();now=11000000;
+const warmRequests=[];
+const warmCloud={
+ user:{id:viewer},
+ async request(action,body,owner){
+   warmRequests.push([action,body,owner]);
+   if(action==='leaderboard')return ranking;
+   if(action==='profile')return profile;
+   throw new Error('Prefetch must never fetch '+action);
+ }
+};
+assert.equal((await prefetchCommunityViews(warmCloud,{owner:viewer,profile:account.profile,cache})).length,2);
+assert.deepEqual(warmRequests.map(x=>x[0]),['leaderboard','profile'],'Prefetch fetches only ranking and own profile.');
+assert.deepEqual(cache.board(viewer,{scope:'global',period:'all',page:0}),ranking);
+assert.equal(cache.profile(viewer,'fixture').profile.username,'fixture');
+await prefetchCommunityViews(warmCloud,{owner:viewer,profile:account.profile,cache});
+assert.equal(warmRequests.length,2,'Fresh prewarmed data avoids extra database requests.');
+await prefetchCommunityViews(warmCloud,{owner:other,profile:account.profile,cache});
+assert.equal(warmRequests.length,2,'Never prefetch another user under the current Firebase session.');
+let finishProfile;
+const changedUser={
+ user:{id:viewer},
+ async request(action){
+   if(action==='leaderboard')return ranking;
+   return new Promise(resolve=>{finishProfile=resolve});
+ }
+};
+entries.clear();
+const warmFlight=prefetchCommunityViews(changedUser,{owner:viewer,profile:account.profile,cache});
+changedUser.user={id:other};
+finishProfile(profile);await warmFlight;
+assert.equal(cache.profile(viewer,'fixture'),null,'An account switch must discard late profile prefetch results.');
+
+const appSource=readFileSync('dist/app.js','utf8');
+assert.ok(appSource.includes('communityCache.saveSelf(owner,loaded[2].value)'));
+assert.ok(appSource.includes('scheduleCommunityWarmup(owner,publicProfile)'));
+const communitySource=readFileSync('dist/community.js','utf8');
+assert.ok(!communitySource.includes('catalog=await cloud.publicCatalog()'),'Catalog must never block profile boot.');
+assert.ok(communitySource.includes('const cachedSelf=viewCache.self(owner)'),'Profile should bootstrap from verified account cache.');
+assert.ok(communitySource.includes('return; // Fresh (2-minute) account cache'),'Cached profile should not refetch self while fresh.');
+assert.ok(communitySource.includes('viewerProfile:self?.profile||null'),'Profile chart receives the already-verified viewer.');
+assert.ok(communitySource.includes('void route();'),'Cached profile route should start without a backend self await.');
+assert.ok(communitySource.includes('void refreshPresence(true)'),'Presence must stay independently live.');
+const dashboardSource=readFileSync('dist/dashboard.js','utf8');
+const dashboardOpen=dashboardSource.slice(dashboardSource.indexOf('async open()'),dashboardSource.indexOf('async render()'));
+assert.ok(dashboardOpen.indexOf('this.render();')<dashboardOpen.indexOf("this.cloud.request('self')"),'Chart must paint before extra account and friends calls.');
+assert.ok(dashboardOpen.includes('let viewer=this.viewerProfile;'),'Analytics must reuse existing verified account data.');
+assert.ok(leader.includes('const savedAccount=cache.self(nextOwner)'),'Leaderboard should reuse the recent account snapshot.');
+assert.ok(appSource.includes('communityCache.clearOwner(previousOwner)'),'Account switches must clear snapshots.');
+
 console.log('PASS: rankings/profile cache isolation and TTLs, manual rank refresh, live presence/chat/notifications, and +N company hover overflow.');

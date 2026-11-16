@@ -1,13 +1,13 @@
 import {mountShell} from './shell.js?v=workbench-1';
 import {Cloud} from './cloud.js?v=catalog-1';
 import {leaderboardRow,latestLeaderboard} from './leaderboard-model.js?v=workbench-1';
-import {createViewCache} from './view-cache.js?v=ranking-1';
+import {createViewCache} from './view-cache.js?v=instant-1';
 const $=id=>document.getElementById(id),shell=mountShell();let page=0,scope=location.hash==='#friends'?'friends':'global',accountGeneration=0,lastOwner=null;
 const cloud=new Cloud(()=>accountChanged());shell.connect(cloud);
 const cache=createViewCache();
 const loader=latestLeaderboard(async(action,query,owner)=>{
  const {force=false,...filters}=query;
- if(!force){const saved=cache.board(owner,filters);if(saved)return {...saved,_cached:true};}
+ if(!force){const saved=cache.board(owner,filters,{allowStale:true});if(saved)return {...saved,_cached:true};}
  const fresh=await cloud.request(action,filters,owner);
  if(cloud.user?.id===owner)cache.saveBoard(owner,filters,fresh);
  return {...fresh,_cached:false};
@@ -26,7 +26,7 @@ async function load({force=false}={}){
   $('friendHint').hidden=scope!=='friends'||r.total>1;
   const start=page*r.pageSize+1,end=Math.min((page+1)*r.pageSize,r.total);$('pageRange').textContent=r.total?start+'–'+end+' of '+r.total+' learners':'0 learners';$('leaderPager').hidden=r.total<=r.pageSize;$('leaderPrevious').disabled=page===0;$('leaderNext').disabled=end>=r.total;
   $('yourPosition').hidden=!r.me||r.users.some(p=>p.isYou);$('yourPosition').textContent=r.me?'Your position: #'+r.me.rank+' · '+r.me.points+' points · '+r.me.solved+' solved in this period.':'';
-  setMessage(r._cached?'Cached rankings · Refresh to update your rank.':'Rankings updated from the server.');$('leaderLoading').hidden=true;$('leaderPanel').setAttribute('aria-busy','false');$('leaderRefresh').disabled=false;
+  setMessage(r._cached?'Saved rankings · Press Refresh ranks for the latest positions.':'Rankings updated from the server.');$('leaderLoading').hidden=true;$('leaderPanel').setAttribute('aria-busy','false');$('leaderRefresh').disabled=false;
  }catch(e){if(cloud.user?.id!==owner)return;$('leaderLoading').hidden=true;$('leaderError').hidden=false;$('leaderErrorText').textContent=e.message;$('leaderPanel').setAttribute('aria-busy','false');$('leaderRefresh').disabled=false;setMessage('Rankings could not be loaded.',true);}
 }
 async function accountChanged(){
@@ -36,8 +36,20 @@ async function accountChanged(){
  // Show cached rankings immediately; load verified profile details independently.
  // Neither the account response nor notifications are cached.
  const rankings=load();
- try{const own=await cloud.request('self');if(ticket===accountGeneration)shell.setAccount(cloud.user,own.profile);}
- catch(e){if(ticket===accountGeneration)console.warn('ByteQuest profile details are temporarily unavailable:',e.message);}
+ const savedAccount=cache.self(nextOwner);
+ if(savedAccount){
+   // Account is already verified by Firebase; no duplicate self RPC within TTL.
+   shell.setAccount(cloud.user,savedAccount.profile);
+ }else{
+   try{
+     const own=await cloud.request('self');
+     if(ticket===accountGeneration&&cloud.user?.id===nextOwner){
+       cache.saveSelf(nextOwner,own);shell.setAccount(cloud.user,own.profile);
+     }
+   }catch(e){
+     if(ticket===accountGeneration)console.warn('ByteQuest profile details are temporarily unavailable:',e.message);
+   }
+ }
  await rankings;
 }
 async function login(){try{await cloud.signIn();}catch(e){setMessage(e.message,true);}}
