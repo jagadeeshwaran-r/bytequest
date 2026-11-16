@@ -379,7 +379,8 @@ function refreshAccountUi(){
 }
 async function changeAccount(user){
   const owner=user?.id||null;if(owner===accountOwner&&accountReady)return;
-  const epoch=++accountEpoch;clearTimeout(communityWarmupTimer);publicProfile=null;accountOwner=owner;accountReady=false;clearTimeout(syncTimer);syncing=false;syncAgain=false;
+  const previousOwner=accountOwner;
+  const epoch=++accountEpoch;clearTimeout(communityWarmupTimer);if(previousOwner&&previousOwner!==owner)communityCache.clearOwner(previousOwner);publicProfile=null;accountOwner=owner;accountReady=false;clearTimeout(syncTimer);syncing=false;syncAgain=false;
   document.querySelectorAll('.submit-confirm[open],#successDialog[open]').forEach(d=>d.close());
   if(busy)stopRun();studio.accountChanged();dashboard.accountChanged();storageKey=owner?"bytequest.user."+owner:guestStorageKey;
   state=readLocal(storageKey);current=problems.find(p=>p.id===state.current)||problems[0]||null;
