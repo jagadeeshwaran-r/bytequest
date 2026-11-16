@@ -1,0 +1,47 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {canRevealEditorialSolution,editorialSolutionGateMarkup} from '../dist/editorial-access.js';
+
+const problemId='middle-of-linked-list';
+assert.equal(canRevealEditorialSolution({},problemId),false);
+assert.equal(canRevealEditorialSolution({solved:{}},problemId),false);
+assert.equal(canRevealEditorialSolution({solved:{[problemId]:0}},problemId),false);
+assert.equal(canRevealEditorialSolution({solved:{[problemId]:'not accepted'}},problemId),false);
+assert.equal(canRevealEditorialSolution({solved:{[problemId]:Infinity}},problemId),false);
+assert.equal(canRevealEditorialSolution({solved:{'other-problem':Date.now()}},problemId),false);
+assert.equal(canRevealEditorialSolution({solved:{[problemId]:Date.now()}},problemId),true);
+assert.equal(canRevealEditorialSolution(null,problemId),false);
+assert.equal(canRevealEditorialSolution({solved:{[problemId]:Date.now()}},''),false);
+
+const locked=editorialSolutionGateMarkup(false);
+const unlocked=editorialSolutionGateMarkup(true);
+assert.match(locked,/Java solution locked/);
+assert.match(locked,/Submit an accepted solution/);
+assert.ok(!locked.includes('id="referenceBtn"'),'Unsolved problems must not render a reveal control');
+assert.ok(!locked.includes('<pre'),'Unsolved problems must not render reference source');
+assert.ok(locked.includes('id="referenceContent"'),'Keep editor tab mounting consistent');
+assert.match(unlocked,/Java solution unlocked/);
+assert.ok(unlocked.includes('id="referenceBtn"'));
+assert.ok(!unlocked.includes('<pre'),'Reveal still requires an explicit click');
+
+const html=readFileSync('dist/index.html','utf8');
+const app=readFileSync('dist/app.js','utf8');
+const css=readFileSync('dist/catalog-refined.css','utf8');
+assert.ok(html.includes('catalog-refined.css?v=catalog-1'));
+assert.ok(html.includes('id="clearProblemSearch"'));
+assert.ok(html.includes('id="visibleProblemCount"'));
+assert.ok(html.includes('<h2>Problem library</h2>'));
+assert.ok(html.includes('role="search"'));
+assert.ok(app.includes('editorialSolutionGateMarkup(canRevealEditorialSolution(state,current.id))'));
+assert.ok(app.includes('if(!canRevealEditorialSolution(state,current.id))return;'));
+assert.ok(app.includes('if(tab==="learn"&&current.id===p.id)renderLearning();'),
+  'Immediately show unlocked editorial state on accepted solve');
+assert.ok(app.includes('if(event.key!=="/"'),'Slash shortcut should only operate in catalog');
+assert.ok(app.includes('$("mapView").hidden'),'Do not steal editor keystrokes');
+assert.ok(app.includes('$("visibleProblemCount").textContent='));
+assert.ok(css.includes('#mapView .section-heading h2'));
+assert.ok(css.includes('#mapView .catalog-search-wrap'));
+assert.ok(css.includes('#practiceView :is(.reference-lock,.reference-unlocked)'));
+assert.ok(css.includes('@media(max-width:620px)'));
+assert.ok(css.includes('prefers-reduced-motion'));
+console.log('PASS: Editorial spoiler lock, accepted unlock, catalog search and responsive presentation.');
