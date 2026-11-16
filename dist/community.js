@@ -84,7 +84,7 @@ async function route(){if(!self||!cloud.user)return;const ticket=++epoch,hash=lo
   }
  }catch(e){if(ticket===epoch)message(e.message,true);}}
 function fillProfile(){const p=self.profile||{};for(const key of ['organization_type','organization_name','organization_url','linkedin_url'])document.getElementById('detail_'+key).value=p[key]||'';$('profileUsername').value=p.username||'';$('profileName').value=p.display_name||cloud.user?.user_metadata?.full_name||'';$('profileBio').value=p.bio||'';$('profileAvatar').value=p.uploadedAvatar?'':p.avatar_url||'';$('photoPreview').hidden=!p.avatar_url;$('photoPreview').src=p.avatar_url||'';const preferences=profilePreferences(self.profile);$('profileDiscoverable').checked=preferences.discoverable;$('profilePresence').checked=preferences.show_presence;}
-function renderProfile(r,{presencePending=false}={}){viewedTarget=r.profile.public_id;if(analytics)analytics.epoch++;const p=r.profile;$('profileContent').innerHTML=profileMarkup(r,{catalogCount:catalog.length,admin:self.admin,canFollow:Boolean(self.profile?.discoverable)});
+function renderProfile(r,{presencePending=false}={}){viewedTarget=r.profile.public_id;if(analytics){analytics.epoch++;analytics.accountGeneration++;}const p=r.profile;$('profileContent').innerHTML=profileMarkup(r,{catalogCount:catalog.length,admin:self.admin,canFollow:Boolean(self.profile?.discoverable)});
  viewedPresence=presencePending?null:receivedPresence(r.presence);
  const presenceNode=$('profilePresenceStatus');
  if(presencePending){presenceNode.dataset.status='checking';presenceNode.className='presence';presenceNode.textContent='Checking status…';}
