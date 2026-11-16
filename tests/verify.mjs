@@ -2,6 +2,7 @@ import "./profile-inbox.mjs";
 import "./editor-operators.mjs";
 import "./workbench.mjs";
 import "./compiler-recovery.mjs";
+import "./security-hardening.mjs";
 import "./next-features.mjs";
 import "./upgrades.mjs";
 import "./presence.mjs";

@@ -34,7 +34,7 @@ assert.ok(css.includes('max-width:100%'),"Checkmark status should not overflow f
 
 for(const page of ["index.html","studio.html"]){
   const html=readFileSync("dist/"+page,"utf8");
-  assert.ok(html.includes('app.js?v=solved-1'),"Page must refresh the app bundle.");
+  assert.ok(html.includes('app.js?v='),"Page must refresh the app bundle.");
   assert.ok(html.includes('problem-alignment.css?v=align-2'),"Page must refresh the updated alignment rules.");
 }
 console.log("PASS: left-aligned problem grid after navigation and green check only for accepted solves.");

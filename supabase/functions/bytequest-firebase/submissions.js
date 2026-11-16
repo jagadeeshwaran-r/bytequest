@@ -18,14 +18,19 @@ export async function submitSolution({owner,body,db,benchmarkJudge,privateJudge,
  if(!await db.claimOnlineRun(owner))throw new HttpError(429,'Wait 5 seconds between submissions. Online execution allows up to 60 runs per hour.');
  let result;
  if(hasHidden&&privateJudge?.ready){
-  const verdict=await privateJudge.run(data.source,row.content,[...row.content.tests,...row.hidden]);if(!verdict.accepted)return{...verdict,status:'wrong_answer'};
+  const verdict=await privateJudge.run(data.source,row.content,[...row.content.tests,...row.hidden]);
+  if(!verdict.accepted)return{...verdict,status:['compile_error','runtime_error','time_limit_exceeded','wrong_answer','unavailable'].includes(verdict.status)?verdict.status:'wrong_answer'};
   result={accepted:true,status:'accepted',runtimeMs:verdict.runtimeMs??null,memoryBytes:verdict.memoryBytes??null,memoryMetric:'process_peak_rss',compiler:'trusted-private-java',benchmarkVersion:'bq-private-v1',total:row.content.tests.length+row.hidden.length,message:verdict.message};
  }else if(hasHidden&&allowExternalHiddenJudge){
   // Hosted compiler fallback: the full suite runs ONLY on the server, not in the
   // browser. Hidden inputs are transmitted to Wandbox, the existing compiler
   // provider; do not expose diagnostics, outputs, expected values, or failures.
   const verdict=await benchmarkJudge.run(data.source,row.content,[...row.content.tests,...row.hidden],'java');
-  if(!verdict.accepted)return{accepted:false,status:verdict.status==='unavailable'?'unavailable':verdict.status==='compile_error'?'compile_error':'wrong_answer',message:verdict.status==='unavailable'?'The server-side Java judge is temporarily unavailable. Retry shortly.':verdict.status==='compile_error'?'Java could not compile in the hosted judge. Check your code using Run.':'The submission did not pass every test. Recheck edge cases.'};
+  if(!verdict.accepted){
+   // Do not ever forward private cases, actual output, or remote diagnostics.
+   const status=['unavailable','compile_error','runtime_error','time_limit_exceeded','wrong_answer'].includes(verdict.status)?verdict.status:'unavailable';
+   return{accepted:false,status,message:status==='unavailable'?'The server-side Java judge is temporarily unavailable. Retry shortly.':status==='compile_error'?'Java could not compile in the hosted judge. Check your code using Run.':status==='runtime_error'?'The private suite stopped on a runtime error.':status==='time_limit_exceeded'?'The private suite exceeded the execution time limit.':'The submission did not pass every test. Recheck edge cases.'};
+  }
   result={accepted:true,status:'accepted',runtimeMs:verdict.runtimeMs??null,memoryBytes:verdict.memoryBytes??null,memoryMetric:verdict.memoryMetric||'process_peak_rss',compiler:verdict.compiler,benchmarkVersion:verdict.benchmarkVersion,total:row.content.tests.length+row.hidden.length,message:'All server-side tests passed.'};
  }else result=await benchmarkJudge.run(data.source,row.content,row.content.tests,data.language);
  if(!result.accepted)return result;

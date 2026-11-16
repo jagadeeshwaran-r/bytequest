@@ -1,5 +1,5 @@
 import {javaInputStructures,requiresJavaStructures} from './domain/java-structures.js';
-import {requestSandbox,sandboxDiagnostics} from './sandbox-provider.js';
+import {requestSandbox,sandboxExecutionFailure} from './sandbox-provider.js';
 import {javaLiteral} from './domain/judge.js';
 import {buildNativeProgram,nativeResults} from './domain/languages.js';
 export const benchmarkVersion='bq-v1';
@@ -38,7 +38,7 @@ export function makeBenchmarkJudge({fetchImpl=fetch,makeNonce=()=>crypto.randomU
   const nonce=makeNonce(),code=buildBenchmarkProgram(source,p,cases,language,nonce);if(code.length>300000)return {accepted:false,status:'compile_error',message:'This suite is too large for the public benchmark.'};
   const response=await requestSandbox({compiler:benchmarkCompilers[language],code,save:false,options:language==='cpp'?'c++17':language==='c'?'c11':''},{fetchImpl,timeoutMs:language==='cpp'?75000:45000,wait,now,random});
   if(!response.ok)return response.result;const r=response.value;
-  if(String(r.status)!=='0'||r.signal)return{accepted:false,status:'compile_error',message:String(sandboxDiagnostics(r)||r.signal||'Compilation or execution failed.').slice(0,10000)};
+  if(String(r.status)!=='0'||r.signal)return sandboxExecutionFailure(r,{maxMessage:10000});
   const output=String(r.program_output||''),results=nativeResults(output,p,cases),observations=output.split(/\r?\n/).filter(l=>/^__BYTEQUEST_CASE_\d+__/.test(l));const executions=language==='java'?1:4,consistent=observations.length===cases.length*executions&&Array.from({length:executions},(_,i)=>nativeResults(observations.slice(i*cases.length,(i+1)*cases.length).join('\n'),p,cases).every(c=>c.passed)).every(Boolean),passed=consistent?cases.length:results.filter(c=>c.passed).length;
   const line=output.split(/\r?\n/).filter(l=>l.startsWith('__BYTEQUEST_BENCH_'+nonce+'__')).at(-1);let metric;try{metric=JSON.parse(line.slice(('__BYTEQUEST_BENCH_'+nonce+'__').length));}catch{}
   if(!consistent)return{accepted:false,status:'wrong_answer',passed,total:cases.length,message:passed+' / '+cases.length+' public cases passed.',cases:results.filter(c=>!c.passed).slice(0,3)};
