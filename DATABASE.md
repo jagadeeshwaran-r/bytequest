@@ -162,6 +162,12 @@ To connect a trusted provider, configure these server-side values:
 
 The adapter requires network isolation and resource limits. Never run visitors' source directly in an application server process. Private inputs and expected values are excluded from learner responses.
 
+### Faster Java submissions
+
+When a trusted Judge0-compatible Java judge is configured, **all Java submissions** (including problems with only public tests) now use that server-side judge directly, instead of waiting for a shared Wandbox compilation. The verified API still loads the current published revision, checks the full server-owned suite, enforces quotas, and saves an accepted result only after a trusted verdict. Private test cases remain exclusively on the trusted judge. Python/C/C++ routing is unchanged. If no trusted Java judge is configured, public Java submissions retain the existing Wandbox route; this change alone cannot remove that provider's queue or cold-start delay.
+
+The database loads the published problem and its private test-suite row in parallel, reducing the critical path by one sequential database read on first-time submissions. Do not treat the browser Java Run result as acceptance. Actual speed-up depends on judge queue/worker startup and DB latency: measure browser-to-API response p50/p95 before and after deploying, rather than extrapolating from execution time reported by Java. Trusted-judge runtime/memory metrics have a different benchmark version from public Wandbox metrics and should not be compared directly.
+
 ## Deploy and verify
 
 Deploy the complete `supabase/functions/bytequest-firebase/` tree, including `deno.json` and all `domain/` files. Set entrypoint `index.ts`, import map `deno.json`, and `verify_jwt=false` while preserving application-level Firebase verification. The platform supplies `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.

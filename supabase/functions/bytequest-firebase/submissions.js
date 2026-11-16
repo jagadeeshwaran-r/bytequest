@@ -17,7 +17,11 @@ export async function submitSolution({owner,body,db,benchmarkJudge,privateJudge,
  if(hasHidden&&!row.hidden?.length)throw new HttpError(503,'The private suite is unavailable. No acceptance was recorded.');
  if(!await db.claimOnlineRun(owner))throw new HttpError(429,'Wait 5 seconds between submissions. Online execution allows up to 60 runs per hour.');
  let result;
- if(hasHidden&&privateJudge?.ready){
+ // Prefer a configured trusted Java judge for *all* Java submissions,
+ // including public-only problems. It avoids the shared Wandbox queue and
+ // compiler startup; acceptance still requires the server-owned full suite.
+ // Without a configured trusted judge, public Java keeps its Wandbox fallback.
+ if(data.language==='java'&&privateJudge?.ready){
   const verdict=await privateJudge.run(data.source,row.content,[...row.content.tests,...row.hidden]);
   if(!verdict.accepted)return{...verdict,status:['compile_error','runtime_error','time_limit_exceeded','wrong_answer','unavailable'].includes(verdict.status)?verdict.status:'wrong_answer'};
   result={accepted:true,status:'accepted',runtimeMs:verdict.runtimeMs??null,memoryBytes:verdict.memoryBytes??null,memoryMetric:'process_peak_rss',compiler:'trusted-private-java',benchmarkVersion:'bq-private-v1',total:row.content.tests.length+row.hidden.length,message:verdict.message};

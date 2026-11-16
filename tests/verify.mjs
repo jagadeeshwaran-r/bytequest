@@ -4,6 +4,7 @@ import "./workbench.mjs";
 import "./compiler-recovery.mjs";
 import "./security-hardening.mjs";
 import "./next-features.mjs";
+import './java-submit-fast.mjs';
 import "./upgrades.mjs";
 import "./presence.mjs";
 import "./social.mjs";
