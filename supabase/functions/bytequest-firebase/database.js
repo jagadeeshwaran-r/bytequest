@@ -45,7 +45,18 @@ export function createDatabase(url,serviceKey,{fetchImpl=fetch}={}){
     async publicProblem(id){return checked(await client.from("bytequest_problems").select("content,revision").eq("id",id).eq("published",true).maybeSingle());},
     async claimOnlineRun(owner){return checked(await client.rpc("bytequest_claim_online_run",{owner_id:owner}));},
     async claimJudge(owner){return checked(await client.rpc("bytequest_claim_judge",{owner_id:owner}));},
-    async privateProblem(id){const row=checked(await client.from("bytequest_problems").select("content,revision").eq("id",id).eq("published",true).maybeSingle());if(!row)return null;const suite=checked(await client.from("bytequest_problem_private").select("hidden_tests").eq("problem_id",id).maybeSingle());return {...row,hidden:suite?.hidden_tests||[]};},
+    async privateProblem(id){
+      // Both reads are service-only and independent. Fetch them concurrently
+      // so a submission pays one database round trip rather than two.
+      const [published,privateSuite]=await Promise.all([
+        client.from("bytequest_problems").select("content,revision").eq("id",id).eq("published",true).maybeSingle(),
+        client.from("bytequest_problem_private").select("hidden_tests").eq("problem_id",id).maybeSingle()
+      ]);
+      const row=checked(published);
+      const suite=checked(privateSuite);
+      if(!row)return null;
+      return {...row,hidden:suite?.hidden_tests||[]};
+    },
     async problems(owner,all=false){let ids=null;if(!all){ids=checked(await client.from("bytequest_problem_authors").select("problem_id").eq("user_id",owner).limit(1000)).map(r=>r.problem_id);if(!ids.length)return [];}let q=client.from("bytequest_problems").select("*").order("position").order("id").limit(1000);if(ids)q=q.in("id",ids);const rows=checked(await q);if(!rows.length)return [];const hidden=checked(await client.from("bytequest_problem_private").select("problem_id,hidden_tests").in("problem_id",rows.map(r=>r.id)));return rows.map(r=>({...r,hiddenTests:hidden.find(h=>h.problem_id===r.id)?.hidden_tests||[]}));},
     async saveProblem(problem,{owner,published,position,revision,hidden,correction}){
       const {data,error}=await client.rpc("bytequest_save_problem",{owner_id:owner,problem,hidden_cases:hidden,publish:published,position_number:position,expected_revision:revision,correction});rpcError(error);return data;
