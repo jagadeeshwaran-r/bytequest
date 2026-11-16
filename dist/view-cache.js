@@ -2,6 +2,8 @@
 // presence, Firebase identity, and private progress never pass through this module.
 export const LEADERBOARD_TTL_MS=5*60*1000;
 export const PROFILE_TTL_MS=2*60*1000;
+export const ACCOUNT_TTL_MS=2*60*1000;
+export const STALE_VIEW_MAX_MS=24*60*60*1000;
 const PREFIX="bytequest.views.v1:";
 const MAX_ENTRY_BYTES=750000;
 function browserSession(){
@@ -17,17 +19,24 @@ function validProfile(value){
     &&typeof value.profile.username==="string"
     &&value.stats&&typeof value.stats==="object";
 }
+function validAccount(value){
+  return !!value&&typeof value==="object"&&typeof value.admin==="boolean"
+    &&(value.profile===null||
+      !!value.profile&&typeof value.profile==="object"
+      &&typeof value.profile.public_id==="string"
+      &&typeof value.profile.username==="string");
+}
 export function createViewCache({storage=browserSession(),now=()=>Date.now()}={}){
   const key=(owner,kind,identity)=>owner&&typeof identity==="string"
     ?PREFIX+encodeURIComponent(owner)+":"+kind+":"+encodeURIComponent(identity):null;
-  function read(owner,kind,identity,ttl,validate){
+  function read(owner,kind,identity,ttl,validate,allowStale=false){
     const id=key(owner,kind,identity);
     if(!id||!storage)return null;
     try{
       const raw=storage.getItem(id);
       if(!raw||raw.length>MAX_ENTRY_BYTES)return null;
       const entry=JSON.parse(raw),age=now()-entry.at;
-      if(entry.version!==1||!Number.isFinite(age)||age<0||age>=ttl||!validate(entry.value))return null;
+      if(entry.version!==1||!Number.isFinite(age)||age<0||age>=(allowStale?STALE_VIEW_MAX_MS:ttl)||!validate(entry.value))return null;
       return entry.value;
     }catch{return null;}
   }
@@ -55,10 +64,17 @@ export function createViewCache({storage=browserSession(),now=()=>Date.now()}={}
   }
   const boardId=({scope="global",period="all",page=0}={})=>scope+":"+period+":"+page;
   return {
-    board(owner,query){return read(owner,"board",boardId(query),LEADERBOARD_TTL_MS,validBoard);},
+    board(owner,query,{allowStale=false}={}){return read(owner,"board",boardId(query),LEADERBOARD_TTL_MS,validBoard,allowStale);},
+    self(owner){return read(owner,"self","current",ACCOUNT_TTL_MS,validAccount);},
+    saveSelf(owner,response){
+      if(!response||typeof response!=="object")return;
+      // Only the fields required for immediate profile navigation, never tokens,
+      // progress, notifications, messages, or live presence.
+      write(owner,"self","current",{admin:response.admin===true,profile:response.profile??null},validAccount);
+    },
     saveBoard(owner,query,value){write(owner,"board",boardId(query),value,validBoard);},
     invalidateBoard(owner,query){remove(owner,"board",boardId(query));},
-    profile(owner,target){return read(owner,"profile",String(target||"").toLowerCase(),PROFILE_TTL_MS,validProfile);},
+    profile(owner,target,{allowStale=false}={}){return read(owner,"profile",String(target||"").toLowerCase(),PROFILE_TTL_MS,validProfile,allowStale);},
     saveProfile(owner,target,value){
       if(!validProfile(value))return;
       // Do not persist presence: live online and last-seen are fetched independently.
