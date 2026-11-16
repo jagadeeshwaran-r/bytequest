@@ -7,7 +7,7 @@ const cloud=new Cloud(()=>accountChanged());shell.connect(cloud);
 const cache=createViewCache();
 const loader=latestLeaderboard(async(action,query,owner)=>{
  const {force=false,...filters}=query;
- if(!force){const saved=cache.board(owner,filters);if(saved)return {...saved,_cached:true};}
+ if(!force){const saved=cache.board(owner,filters,{allowStale:true});if(saved)return {...saved,_cached:true};}
  const fresh=await cloud.request(action,filters,owner);
  if(cloud.user?.id===owner)cache.saveBoard(owner,filters,fresh);
  return {...fresh,_cached:false};
@@ -26,7 +26,7 @@ async function load({force=false}={}){
   $('friendHint').hidden=scope!=='friends'||r.total>1;
   const start=page*r.pageSize+1,end=Math.min((page+1)*r.pageSize,r.total);$('pageRange').textContent=r.total?start+'–'+end+' of '+r.total+' learners':'0 learners';$('leaderPager').hidden=r.total<=r.pageSize;$('leaderPrevious').disabled=page===0;$('leaderNext').disabled=end>=r.total;
   $('yourPosition').hidden=!r.me||r.users.some(p=>p.isYou);$('yourPosition').textContent=r.me?'Your position: #'+r.me.rank+' · '+r.me.points+' points · '+r.me.solved+' solved in this period.':'';
-  setMessage(r._cached?'Cached rankings · Refresh to update your rank.':'Rankings updated from the server.');$('leaderLoading').hidden=true;$('leaderPanel').setAttribute('aria-busy','false');$('leaderRefresh').disabled=false;
+  setMessage(r._cached?'Saved rankings · Press Refresh ranks for the latest positions.':'Rankings updated from the server.');$('leaderLoading').hidden=true;$('leaderPanel').setAttribute('aria-busy','false');$('leaderRefresh').disabled=false;
  }catch(e){if(cloud.user?.id!==owner)return;$('leaderLoading').hidden=true;$('leaderError').hidden=false;$('leaderErrorText').textContent=e.message;$('leaderPanel').setAttribute('aria-busy','false');$('leaderRefresh').disabled=false;setMessage('Rankings could not be loaded.',true);}
 }
 async function accountChanged(){
