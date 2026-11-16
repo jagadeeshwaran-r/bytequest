@@ -86,7 +86,7 @@ const fakeNode={dataset:{avatarKey:key},isConnected:true,
 const fakeContainer={querySelectorAll:()=>[fakeNode],contains:node=>node===fakeNode};
 globalThis.document={createElement:()=>({alt:"",decoding:""})};
 try{
-  await hydrateLeaderboardAvatars(fakeContainer,owner,{cacheStorage});
+  await hydrateLeaderboardAvatars(fakeContainer,owner,{cacheStorage,now:()=>clock});
   assert.ok(appended?.src?.startsWith("blob:"),"Expired avatar should render from stored JPEG bytes.");
 }finally{
  releaseAvatarObjectUrls();
