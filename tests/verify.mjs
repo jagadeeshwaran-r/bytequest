@@ -37,8 +37,8 @@ console.log("✓ Studio return type selector supports ListNode and int[][] on bo
 // A consistent header brand across the practice, Studio and community pages.
 for (const page of ["index.html", "studio.html", "leaderboard.html", "community.html"]) {
   const html = readFileSync("dist/" + page, "utf8");
-  assert.match(html, /<span class="wordmark-byte">Byte<\\/span><span class="wordmark-quest">Quest<\\/span>/, page + " must show a joined ByteQuest wordmark");
-  assert.match(html, /reference-style\\.css\\?v=brand-20261116/, page + " must refresh branded styles");
+  assert.ok(html.includes('<span class="wordmark-byte">Byte</span><span class="wordmark-quest">Quest</span>'), page + " must show the joined ByteQuest wordmark");
+  assert.ok(html.includes('reference-style.css?v=brand-20261116'), page + " must refresh branded styles");
 }
 console.log("✓ ByteQuest wordmark and branding styles across all four pages.");
 mkdirSync("build/tests", {recursive:true});
