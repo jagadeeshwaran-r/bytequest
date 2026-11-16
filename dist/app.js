@@ -7,6 +7,7 @@ import {submissionFeedback} from './submission-feedback.js?v=security-1';
 import {pointsFor,totalPoints} from './rewards.js?v=upgrade-2';
 import {companyIcons} from './companies.js?v=company-3';
 import {problemStatusMarkup} from './problem-status.js?v=solved-1';
+import {canRevealEditorialSolution,editorialSolutionGateMarkup} from './editorial-access.js?v=editorial-1';
 import {mountWorkspace} from './workspace.js';
 import {mountShell} from "./shell.js?v=workbench-1";
 import {Dashboard} from "./dashboard.js?v=next-1";
@@ -138,7 +139,7 @@ function renderLearning(){
     current.tests.slice(0,2).forEach((c,i)=>{content+='<div class="example-card"><div class="example-label">Example '+(i+1)+'</div><code>Input: <b>'+html(formatArgs(c.args))+'</b>\nOutput: <b>'+html(JSON.stringify(c.expected))+'</b></code><p>'+html(c.label)+'</p></div>';});
     content+='<h4>Constraints</h4><div class="constraints">'+html(current.constraints)+'</div><details class="concept-hint"><summary>Reveal the key concept</summary><p>'+html(current.topic)+(current.pattern&&current.pattern!==current.topic?' · '+html(current.pattern):'')+'</p></details>';
   } else if(tab==="learn"){
-    content+='<span class="pattern-tag">EDITORIAL</span><h3>Approach</h3><p class="body-copy">'+html(current.idea)+'</p><div class="pattern-callout"><strong>Invariant</strong>'+html(current.invariant)+'</div><div class="complexity-row"><div class="complexity-box"><small>TIME</small><b>'+html(current.complexity.time)+'</b></div><div class="complexity-box"><small>EXTRA SPACE</small><b>'+html(current.complexity.space)+'</b></div></div><p class="tradeoff">'+html(current.complexity.tradeoff)+'</p><button id="referenceBtn" class="reference-button">Show Java solution</button><div id="referenceContent"></div>';
+    content+='<span class="pattern-tag">EDITORIAL</span><h3>Approach</h3><p class="body-copy">'+html(current.idea)+'</p><div class="pattern-callout"><strong>Invariant</strong>'+html(current.invariant)+'</div><div class="complexity-row"><div class="complexity-box"><small>TIME</small><b>'+html(current.complexity.time)+'</b></div><div class="complexity-box"><small>EXTRA SPACE</small><b>'+html(current.complexity.space)+'</b></div></div><p class="tradeoff">'+html(current.complexity.tradeoff)+'</p>'+editorialSolutionGateMarkup(canRevealEditorialSolution(state,current.id))+'';
   } else {
     content+='<span class="pattern-tag">A LITTLE MOVING PICTURE</span><h3>Watch the idea click.</h3><p class="body-copy">A guided trace of the reference approach. Your code runs separately in the editor.</p><div id="traceBoard" class="trace-board"></div><p id="traceCaption" class="trace-caption"></p><div class="trace-controls"><button id="traceBack" aria-label="Previous animation step">←</button><button id="tracePlay" class="play-trace">▶ Play</button><button id="traceNext" aria-label="Next animation step">→</button><button id="traceReset" aria-label="Restart animation">↻</button><span id="traceCounter" class="trace-counter"></span></div><div class="code-note">Pause at any step. Say out loud: <i>“What do I know so far, and what changes next?”</i></div>';
   }
@@ -147,6 +148,8 @@ function renderLearning(){
   if(tab==="problem")loadCredits(current,creditEpoch);
   if($("timerButton")){$("timerButton").onclick=toggleTimer;updateTimer();}
   if($("referenceBtn"))$("referenceBtn").onclick=()=>{
+    // The code is never inserted until the current problem is solved.
+    if(!canRevealEditorialSolution(state,current.id))return;
     referenceUsed=true;
     $("referenceContent").innerHTML='<p class="reference-reveal-note">Trace the idea, then close this and try it yourself.</p><pre class="reference-code">'+html(current.reference)+'</pre>';
     $("referenceBtn").hidden=true;
@@ -277,7 +280,7 @@ function completeQuest(p){
   $("successCopy").textContent=(first?"+"+pointsFor(p.difficulty)+" points! ":isReview?"Review complete! ":"")+p.title+" passed the problem test suite. "+(first?"Your first review is in 2 days.":isReview?"Review progress saved.":"Try explaining why your approach works.");
   $("successNote").value=state.notes[p.id]||"";
   document.querySelectorAll("[data-confidence]").forEach(b=>b.classList.toggle("selected",Number(b.dataset.confidence)===state.confidence[p.id]));
-  persist();updateStats();$("successDialog").showModal();celebrate();
+  persist();updateStats();if(tab==="learn"&&current.id===p.id)renderLearning();$("successDialog").showModal();celebrate();
 }
 function celebrate(){launchCelebration();}
 $("successNote").addEventListener("input",()=>{state.notes[current.id]=$("successNote").value.slice(0,4000);touch("notes",current.id);persist();});
