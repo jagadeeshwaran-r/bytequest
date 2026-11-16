@@ -1,6 +1,11 @@
 import {rankCup} from './rewards.js?v=upgrade-2';
 import {escapeHtml as h} from './community-model.js';
 import {avatarKeyFromRow} from './avatar-cache.js?v=avatar-1';
+// The scorecard context mirrors the active leaderboard filters.
+export function leaderboardContextLabel(scope='global',period='all'){
+ const periods={all:'All time',week:'This week',month:'This month'};
+ return (scope==='friends'?'Friends':'Global')+' · '+(periods[period]||periods.all);
+}
 export function leaderboardRow(p){
  const rank=Number(p.rank)||0,solved=Number(p.solved)||0,url='./community.html#user/'+encodeURIComponent(p.username);
  const photo=p.avatar_url&&/^https:\/\//.test(p.avatar_url)?'<img src="'+h(p.avatar_url)+'" alt="" referrerpolicy="no-referrer" decoding="async" loading="lazy">':'';

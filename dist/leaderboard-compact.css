@@ -1,0 +1,149 @@
+/*
+ * A compact, neutral leaderboard header and scorecard.
+ * Scoped to leaderboard only; other ByteQuest views and themes are unchanged.
+ */
+.leaderboard-page main.leaderboard-main{
+  max-width:1240px!important;
+  padding-top:23px!important;
+}
+.leaderboard-page .leader-heading{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:24px;
+  margin:0 0 22px!important;
+}
+.leaderboard-page .leader-heading-copy{
+  min-width:0;
+}
+.leaderboard-page .leader-heading .eyebrow{
+  margin:0 0 10px;
+  letter-spacing:.08em;
+  font:500 9px/1.5 var(--font-mono);
+  color:var(--muted);
+}
+.leaderboard-page .leader-heading-title{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px 15px;
+}
+.leaderboard-page .leader-heading h1{
+  margin:0!important;
+  color:var(--text)!important;
+  font:650 clamp(28px,2.8vw,33px)/1.2 var(--font-sans)!important;
+  letter-spacing:-.04em!important;
+}
+.leaderboard-page .leader-context{
+  display:inline-flex;
+  align-items:center;
+  border:1px solid var(--border);
+  background:var(--surface-2);
+  color:var(--muted);
+  border-radius:99px;
+  padding:6px 10px;
+  font:500 10px/1.3 var(--font-sans);
+  white-space:nowrap;
+}
+.leaderboard-page .leader-heading p{
+  font:400 12px/1.6 var(--font-sans)!important;
+  color:var(--muted)!important;
+  margin:7px 0 0!important;
+}
+.leaderboard-page .leader-practice{
+  flex-shrink:0;
+  color:var(--muted);
+  font:500 11px/1.5 var(--font-sans);
+  text-decoration:none;
+  border-bottom:1px solid var(--border);
+  padding:6px 0;
+}
+.leaderboard-page .leader-practice:hover,
+.leaderboard-page .leader-practice:focus-visible{
+  color:var(--accent);
+  border-color:var(--accent);
+}
+
+/* Four calm, separate metrics; only the rank is accented. */
+.leaderboard-page .leader-summary{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  margin:0 0 23px!important;
+  padding:0!important;
+  min-height:0;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+.leaderboard-page .leader-summary>div,
+.leaderboard-page .leader-summary>div:last-child{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:9px;
+  min-width:0;
+  min-height:105px;
+  padding:16px 21px!important;
+  border:1px solid var(--border)!important;
+  border-radius:12px;
+  background:var(--surface)!important;
+  background-image:none!important;
+  box-shadow:none!important;
+  transition:border-color .15s ease;
+}
+.leaderboard-page .leader-summary>div span{
+  min-height:0!important;
+  font:500 11px/1.35 var(--font-sans)!important;
+  text-transform:none;
+  letter-spacing:0;
+  color:var(--muted)!important;
+  white-space:nowrap;
+}
+.leaderboard-page .leader-summary>div strong,
+.leaderboard-page .leader-summary>div:not(:first-child) strong{
+  font:650 clamp(28px,2.6vw,32px)/1.12 var(--font-sans)!important;
+  letter-spacing:-.045em!important;
+  font-variant-numeric:tabular-nums;
+  color:var(--text)!important;
+}
+.leaderboard-page .leader-summary>div:first-child strong{
+  font:650 clamp(28px,2.6vw,32px)/1.12 var(--font-sans)!important;
+  letter-spacing:-.045em!important;
+  color:var(--accent)!important;
+}
+.leaderboard-page::before{
+  opacity:.38!important;
+}
+@media(max-width:760px){
+  .leaderboard-page .leader-heading{
+    align-items:flex-start;
+    gap:10px;
+    margin-bottom:18px!important;
+  }
+  .leaderboard-page .leader-heading h1{font-size:29px!important}
+  .leaderboard-page .leader-context{padding:5px 9px;font-size:9px}
+  .leaderboard-page .leader-summary{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:9px;
+    margin-bottom:18px!important;
+  }
+  .leaderboard-page .leader-summary>div,
+  .leaderboard-page .leader-summary>div:last-child{
+    min-height:92px;
+    padding:13px 15px!important;
+    gap:7px;
+  }
+  .leaderboard-page .leader-summary>div span{font-size:10px!important}
+  .leaderboard-page .leader-summary>div strong{font-size:27px!important}
+  .leaderboard-page .leader-summary>div:first-child strong{font-size:27px!important}
+}
+@media(max-width:380px){
+  .leaderboard-page .leader-heading-title{gap:8px}
+  .leaderboard-page .leader-context{max-width:100%}
+}
+@media(prefers-reduced-motion:reduce){
+  .leaderboard-page .leader-summary>div{transition:none}
+}

@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import {validateCommunity} from '../supabase/functions/bytequest-firebase/community.js';
 import {createHandler} from '../supabase/functions/bytequest-firebase/handler.js';
 import {createDatabase} from '../supabase/functions/bytequest-firebase/database.js';
-import {leaderboardRow,latestLeaderboard} from '../dist/leaderboard-model.js';
+import {leaderboardRow,latestLeaderboard,leaderboardContextLabel} from '../dist/leaderboard-model.js';
+import {readFileSync} from 'node:fs';
 assert.deepEqual(validateCommunity('leaderboard',{}),{scope:'global',period:'all',page:0});
 assert.deepEqual(validateCommunity('leaderboard',{scope:'friends',period:'month',page:2,viewer_id:'forged'}),{scope:'friends',period:'month',page:2});
 for(const patch of [{scope:'all-users'},{period:'year'},{page:-1},{page:1.5},{page:1000001},{page:'1'}])assert.throws(()=>validateCommunity('leaderboard',patch));
@@ -21,4 +22,21 @@ const malicious=leaderboardRow({...row,display_name:'<script>alert(1)</script>',
 const pending=[];const loader=latestLeaderboard((...args)=>new Promise((resolve,reject)=>pending.push({args,resolve,reject})));
 const first=loader.load({scope:'global'},'owner-a'),second=loader.load({scope:'friends'},'owner-a');pending[1].resolve({scope:'friends'});assert.deepEqual(await second,{result:{scope:'friends'}});pending[0].resolve({scope:'global'});assert.equal(await first,null,'Slow responses cannot replace the selected board.');
 const beforeSwitch=loader.load({},'owner-a');loader.cancel();pending[2].reject(new Error('stale account'));assert.equal(await beforeSwitch,null,'Old-account failures cannot overwrite the new page state.');
+// Compact leaderboard stats remain grounded in the currently selected
+// board and ranking period without adding another network round trip.
+assert.equal(leaderboardContextLabel('global','all'),'Global · All time');
+assert.equal(leaderboardContextLabel('friends','week'),'Friends · This week');
+assert.equal(leaderboardContextLabel('global','month'),'Global · This month');
+const compactHtml=readFileSync('dist/leaderboard.html','utf8');
+const compactCss=readFileSync('dist/leaderboard-compact.css','utf8');
+const leaderApp=readFileSync('dist/leaderboard.js','utf8');
+assert.ok(compactHtml.includes('<h1>Leaderboard</h1>'),'Use a concise sans-serif title');
+assert.ok(compactHtml.includes('id="leaderContext"'),'Show selected scope and period');
+assert.ok(compactHtml.includes('leaderboard-compact.css?v=leaderboard-3'),'Load scorecard styles last');
+assert.ok(leaderApp.includes('leaderboardContextLabel(scope,$(\'leaderPeriod\').value)'),'Context changes with filters');
+assert.ok(compactCss.includes('repeat(4,minmax(0,1fr))'),'Keep four metric tiles on desktop');
+assert.ok(compactCss.includes('repeat(2,minmax(0,1fr))'),'Keep two metric columns on mobile');
+assert.ok(compactCss.includes('.leader-summary>div:first-child strong'),'Only rank is highlighted');
+assert.ok(compactCss.includes('box-shadow:none!important'),'Avoid decorative metric shadows');
+
 console.log('PASS: leaderboard filters, verified viewer binding, unsigned rejection, private avatar signing, safe profile rendering and stale-response cancellation.');
