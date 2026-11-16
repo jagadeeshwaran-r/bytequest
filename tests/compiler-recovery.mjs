@@ -9,12 +9,18 @@ const json=value=>new Response(JSON.stringify(value));
 const busy=()=>json({status:'1',program_error:oci});
 const noWait=async()=>{};
 const output='__BYTEQUEST_CASE_0__{"ok":true,"actual":[0,1]}\n';
-const measured=output.repeat(4)+'__BYTEQUEST_BENCH_fixture__{"runtimeMs":0.5,"memoryBytes":12000000}\n';
+const measured=output+'__BYTEQUEST_BENCH_fixture__{"runtimeMs":0.5,"memoryBytes":12000000}\n';
 let calls=0,bodies=[],delays=[];
 const recovering=makeBenchmarkJudge({makeNonce:()=> 'fixture',wait:async ms=>delays.push(ms),random:()=>0,fetchImpl:async(url,options)=>{
  assert.equal(url,'https://wandbox.org/api/compile.json');assert.deepEqual(Object.keys(options.headers),['Content-Type']);assert.equal(options.headers.Authorization,undefined);bodies.push(options.body);calls++;return calls===1?busy():json({status:'0',program_output:measured});}});
 const recovered=await recovering.run(p.reference,p,cases,'java');assert.equal(recovered.accepted,true);assert.equal(calls,2);assert.equal(bodies[0],bodies[1],'Same generated program, compiler and nonce on retry');assert.equal(JSON.parse(bodies[0]).save,false);assert.deepEqual(delays,[800]);
-let exhaustedCalls=0;const exhausted=makeBenchmarkJudge({makeNonce:()=> 'fixture',wait:noWait,fetchImpl:async()=>{exhaustedCalls++;return busy();}});const unavailable=await exhausted.run(p.reference,p,cases,'java');assert.equal(exhaustedCalls,2,'Exactly one retry');assert.equal(unavailable.status,'unavailable');assert.equal(unavailable.accepted,false);assert.equal(unavailable.code,'compiler_busy');assert.equal(unavailable.retryable,true);assert.ok(!unavailable.message.includes('OCI'));assert.ok(!unavailable.message.includes('crun'));
+let exhaustedCalls=0;const exhausted=makeBenchmarkJudge({makeNonce:()=> 'fixture',wait:noWait,fetchImpl:async()=>{exhaustedCalls++;return busy();}});const unavailable=await exhausted.run(p.reference,p,cases,'java');assert.equal(exhaustedCalls,3,'At most two retries for known capacity errors');assert.equal(unavailable.status,'unavailable');assert.equal(unavailable.accepted,false);assert.equal(unavailable.code,'compiler_busy');assert.equal(unavailable.retryable,true);assert.ok(!unavailable.message.includes('OCI'));assert.ok(!unavailable.message.includes('crun'));
+let recoveredAfterTwo=0;
+const delayedRecovery=makeBenchmarkJudge({makeNonce:()=> 'fixture',wait:noWait,random:()=>0,fetchImpl:async()=>{
+ recoveredAfterTwo++;return recoveredAfterTwo<3?busy():json({status:'0',program_output:measured});
+}});
+assert.equal((await delayedRecovery.run(p.reference,p,cases,'java')).accepted,true,'Recover on the final bounded retry');
+assert.equal(recoveredAfterTwo,3);
 let syntaxCalls=0;const syntax=makeBenchmarkJudge({wait:noWait,fetchImpl:async()=>{syntaxCalls++;return json({status:'1',compiler_error:'prog.java: syntax error'});}});assert.equal((await syntax.run(p.reference,p,cases,'java')).status,'compile_error');assert.equal(syntaxCalls,1,'Do not rerun invalid solutions');
 let runtimeCalls=0;const runtime=makeOnlineJudge({wait:noWait,fetchImpl:async()=>{runtimeCalls++;return json({status:'1',program_error:'NullPointerException'});}});assert.match((await runtime.run('code',p,cases,'python')).message,/NullPointerException/);assert.equal(runtimeCalls,1,'Executed program errors are not transient capacity errors');
 let nativeCalls=0;const native=makeOnlineJudge({wait:noWait,fetchImpl:async()=>++nativeCalls===1?busy():json({status:'0',program_output:output})});assert.equal((await native.run('code',p,cases,'python')).cases[0].passed,true);assert.equal(nativeCalls,2);
