@@ -96,8 +96,9 @@ clock+=24*60*60*1000;
 assert.equal(await readCachedAvatar(owner,key,{cacheStorage,now:()=>clock}),null,
   "Very old image bytes must not be reused indefinitely.");
 await clearAvatarImages(owner,{cacheStorage});
-assert.equal(await readCachedAvatar(owner,key,{cacheStorage,now:()=>clock}),null);
 assert.ok(![...files.keys()].some(name=>name.endsWith(encodeURIComponent(owner))),"Sign-out should clear only the owner's private image bytes.");
+assert.equal(await readCachedAvatar(owner,key,{cacheStorage,now:()=>clock}),null,
+  "A new empty image cache must not restore a previous account's avatar.");
 
 const viewSource=readFileSync("dist/view-cache.js","utf8");
 assert.ok(viewSource.includes('warmAvatarImages(owner,[...value.users,value.me])'));
