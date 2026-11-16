@@ -111,7 +111,7 @@ function renderPractice() {
   for(const option of $("languageSelect").options)option.disabled=javaOnlyProblem(current)&&option.value!=="java";
   warmJavaSoon();
   pauseTrace();
-  $("languageSelect").value=language;$("languageSelect").disabled=busy;$("codeFilename").textContent=languages[language].file;$("runStatus").textContent=languages[language].name+(language==="java"?" · browser compiler":" · online via Wandbox");
+  $("languageSelect").value=language;$("languageSelect").disabled=busy;$("codeFilename").textContent=languages[language].file;$("editorProblemNumber").textContent="#"+String(problems.indexOf(current)+1).padStart(2,"0");$("runStatus").textContent=languages[language].name+(language==="java"?" · browser compiler":" · online via Wandbox");
   $("practiceView").classList.toggle("empty-catalog",!current);$("catalogEmpty").hidden=!!current;
   if(!current)return;
   $("questTitle").textContent=current.title; $("questTopic").textContent=current.topic;
@@ -134,7 +134,7 @@ function renderLearning(){
   if(tab==="submissions"){submissions.mount($("learningContent"),current,language);return;}
   let content=timerHtml();
   if(tab==="problem"){
-    content+='<div class="problem-heading"><p class="problem-eyebrow">Problem '+String(problems.indexOf(current)+1).padStart(2,'0')+'</p><div class="problem-title-row"><h3>'+html(current.title)+'</h3><div class="problem-badges"><span class="problem-difficulty '+html(current.difficulty.toLowerCase())+'">'+html(current.difficulty)+'</span>'+(state.solved[current.id]?'<span class="problem-solved"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>Solved</span>':'')+'</div></div></div><div id="problemCredits" class="problem-credits"></div><p class="body-copy">'+html(current.description)+'</p><h4>Input</h4><p class="body-copy">'+html(current.inputGuide||current.params.map(p=>p.name+' ('+p.type+')').join(', '))+'</p><h4>Output</h4><p class="body-copy">'+html(current.outputGuide||('Return '+current.returns+' from '+current.method+'.'))+'</p><h4>Examples</h4>';
+    content+='<div class="problem-heading"><p class="problem-eyebrow">Coding challenge</p><div class="problem-title-row"><h3>'+String(problems.indexOf(current)+1)+'. '+html(current.title)+'</h3><div class="problem-badges"><span class="problem-difficulty '+html(current.difficulty.toLowerCase())+'">'+html(current.difficulty)+'</span>'+(state.solved[current.id]?'<span class="problem-solved"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>Solved</span>':'')+'</div></div></div><div id="problemCredits" class="problem-credits"></div><p class="body-copy">'+html(current.description)+'</p><h4>Input</h4><p class="body-copy">'+html(current.inputGuide||current.params.map(p=>p.name+' ('+p.type+')').join(', '))+'</p><h4>Output</h4><p class="body-copy">'+html(current.outputGuide||('Return '+current.returns+' from '+current.method+'.'))+'</p><h4>Examples</h4>';
     current.tests.slice(0,2).forEach((c,i)=>{content+='<div class="example-card"><div class="example-label">Example '+(i+1)+'</div><code>Input: <b>'+html(formatArgs(c.args))+'</b>\nOutput: <b>'+html(JSON.stringify(c.expected))+'</b></code><p>'+html(c.label)+'</p></div>';});
     content+='<h4>Constraints</h4><div class="constraints">'+html(current.constraints)+'</div><details class="concept-hint"><summary>Reveal the key concept</summary><p>'+html(current.topic)+(current.pattern&&current.pattern!==current.topic?' · '+html(current.pattern):'')+'</p></details>';
   } else if(tab==="learn"){
