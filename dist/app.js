@@ -11,6 +11,7 @@ import {Dashboard} from "./dashboard.js?v=next-1";
 import {languages,starterFor,NativeJudge} from "./languages.js?v=structural-2";
 import {problems as bundledProblems} from "./problems.js";
 import {Cloud} from "./cloud.js?v=catalog-1";
+import {createViewCache,prefetchCommunityViews} from "./view-cache.js?v=instant-1";
 import {blankProgress, validateProgress, mergeProgress, solveStreak} from "./progress.js?v=next-1";
 import {Studio} from "./studio.js?v=structural-2";
 const problems=[...bundledProblems];
@@ -31,6 +32,18 @@ let state=blank(),storageOK=true;
 function readLocal(key){try{const saved=JSON.parse(localStorage.getItem(key));return saved?validateProgress(saved):blank();}catch{return blank();}}
 state=readLocal(storageKey);
 let publicProfile=null;
+const communityCache=createViewCache();
+let communityWarmupTimer=null;
+function scheduleCommunityWarmup(owner,profile){
+  clearTimeout(communityWarmupTimer);
+  if(!owner||!cloud.enabled||navigator.connection?.saveData)return;
+  communityWarmupTimer=setTimeout(()=>{
+    if(cloud.user?.id!==owner||!accountReady||busy||document.hidden||!navigator.onLine)return;
+    // Non-blocking, best-effort fetch of only ranking and own profile snapshots.
+    void prefetchCommunityViews(cloud,{owner,profile,cache:communityCache});
+  },350);
+}
+
 let syncTimer,syncing=false,syncAgain=false,accountEpoch=0,accountOwner,accountReady=false;
 const cloud=new Cloud(user=>changeAccount(user));shell.connect(cloud);
 const studio=new Studio({cloud,notify:message=>notify(message),onCatalogChanged:()=>refreshCatalog()});
@@ -366,7 +379,7 @@ function refreshAccountUi(){
 }
 async function changeAccount(user){
   const owner=user?.id||null;if(owner===accountOwner&&accountReady)return;
-  const epoch=++accountEpoch;publicProfile=null;accountOwner=owner;accountReady=false;clearTimeout(syncTimer);syncing=false;syncAgain=false;
+  const epoch=++accountEpoch;clearTimeout(communityWarmupTimer);publicProfile=null;accountOwner=owner;accountReady=false;clearTimeout(syncTimer);syncing=false;syncAgain=false;
   document.querySelectorAll('.submit-confirm[open],#successDialog[open]').forEach(d=>d.close());
   if(busy)stopRun();studio.accountChanged();dashboard.accountChanged();storageKey=owner?"bytequest.user."+owner:guestStorageKey;
   state=readLocal(storageKey);current=problems.find(p=>p.id===state.current)||problems[0]||null;
@@ -381,11 +394,12 @@ async function changeAccount(user){
       setSyncStatus("synced",remote.revision?"Saved to cloud":"Cloud connected");
     }else{setSyncStatus("failed","Saved on this device");$("authMessage").textContent="Could not load cloud progress. Your account’s local work is kept. Use Sync now to retry.";}
     if(loaded[1].status==="rejected")cloud.admin=false;
-    if(loaded[2].status==="fulfilled")publicProfile=loaded[2].value.profile;
+    if(loaded[2].status==="fulfilled"){publicProfile=loaded[2].value.profile;communityCache.saveSelf(owner,loaded[2].value);}
   }else setSyncStatus("","On this device");
   if(epoch!==accountEpoch)return;
   current=problems.find(p=>p.id===state.current)||problems[0]||null;
   persist();accountReady=true;$("codeEditor").readOnly=false;refreshAccountUi();renderPractice();updateStats();route();
+  if(owner)scheduleCommunityWarmup(owner,publicProfile);
   if(needsSync)syncTimer=setTimeout(()=>syncCloud(),500);
 }
 async function syncCloud(){
