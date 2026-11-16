@@ -1,0 +1,30 @@
+/* Small visual fix for code-editor horizontal-scroll chrome.
+   Keep horizontal scrolling available, and retain the keyboard-accessible
+   draggable splitter; avoid drawing two prominent bars next to each other. */
+#practiceView .code-scroll textarea::-webkit-scrollbar:horizontal,
+#practiceView .code-scroll::-webkit-scrollbar:horizontal,
+#practiceView .code-scroll pre::-webkit-scrollbar:horizontal{
+ height:0!important;
+}
+#practiceView .editor-resizer{
+ height:6px!important;
+ min-height:6px!important;
+ background:var(--surface)!important;
+ border-block:0!important;
+ border-bottom:1px solid var(--border)!important;
+ transition:background .15s ease;
+}
+#practiceView .editor-resizer:after{
+ width:28px!important;height:2px!important;
+ left:calc(50% - 14px)!important;
+ top:1px!important;
+ background:var(--muted)!important;
+ opacity:.65;
+}
+#practiceView .editor-resizer:hover,
+#practiceView .editor-resizer:focus-visible{
+ background:var(--surface-2)!important;
+}
+@media(prefers-reduced-motion:reduce){
+ #practiceView .editor-resizer{transition:none!important}
+}
