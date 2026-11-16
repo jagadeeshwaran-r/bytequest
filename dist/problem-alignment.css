@@ -35,7 +35,7 @@
 }
 #mapView .problem-table td:nth-child(3){
   white-space:nowrap;
-  line-height:0;
+  line-height:1.4;
 }
 #mapView .problem-table td:nth-child(3)>.company-logo,
 #mapView .problem-table td:nth-child(3)>.company-overflow{
