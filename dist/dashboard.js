@@ -1,4 +1,4 @@
-import {bucketSolves,solveEvents,chartValues,chartDomain,straightPath,visiblePeriodCount,topicProgress,forecastSolvePace,smoothPath} from './dashboard-model.js?v=forecast-1';
+import {bucketSolves,solveEvents,chartValues,chartDomain,straightPath,visiblePeriodCount,topicProgress,forecastSolvePace,smoothPath} from './dashboard-model.js?v=backtested-1';
 import {escapeHtml as h} from './community-model.js';
 const photo=p=>p?.avatar_url&&/^https:\/\//.test(p.avatar_url)?p.avatar_url:'';
 const initial=p=>(p?.display_name||p?.username||'You').trim().charAt(0).toUpperCase();
@@ -9,7 +9,7 @@ export class Dashboard{
   this.$('graphMonth').value=new Date().toISOString().slice(0,7);this.$('graphYear').value=new Date().getUTCFullYear();
   // Profile has graphMeasure; the legacy problem-library dashboard doesn't.
   // Optional controls must not prevent the entire problem page from booting.
-  for(const id of ['graphMode','graphMeasure','graphForecast','graphMonth','graphYear','graphTopic']){
+  for(const id of ['graphMode','graphMeasure','graphForecast','graphForecastHorizon','graphMonth','graphYear','graphTopic']){
    const control=this.$(id);
    if(control)control.onchange=()=>this.render();
   }
@@ -82,26 +82,34 @@ async render(){
   if(toggle)toggle.onclick=()=>{this.topicsExpanded=!this.topicsExpanded;this.paintTopics(rows);};
  }
  draw(series){
-  const $=this.$,chart=$('frequencyChart'),keys=series[0].data.keys,w=900,left=38,top=20,plotH=175;
+  const $=this.$,chart=$('frequencyChart'),baseKeys=series[0].data.keys,w=900,left=38,top=20,plotH=175;
   const mode=$('graphMode').value,measure=$('graphMeasure')?.value==='cumulative'?'cumulative':'period';
-  const visible=visiblePeriodCount(keys,mode),today=new Date().toISOString().slice(0,10);
+  const visible=visiblePeriodCount(baseKeys,mode),today=new Date().toISOString().slice(0,10);
   const toggle=$('graphForecast'),toggleLabel=toggle?.closest('.graph-forecast-toggle');
-  const inCurrentMonth=mode==='daily'&&visible>0&&visible<keys.length&&keys[visible-1]===today;
+  const horizonSelect=$('graphForecastHorizon');
+  const inCurrentMonth=mode==='daily'&&visible>0&&visible<=baseKeys.length&&baseKeys[visible-1]===today;
   if(toggleLabel)toggleLabel.hidden=!inCurrentMonth;
+  if(horizonSelect)horizonSelect.hidden=!inCurrentMonth;
   const requested=!!toggle?.checked&&inCurrentMonth;
-  const horizon=requested?Math.min(7,keys.length-visible):0;
+  const chosenDays=Number(horizonSelect?.value)||7;
+  const horizon=requested?([7,14,30].includes(chosenDays)?chosenDays:7):0;
   const selectedTopic=$('graphTopic').value;
   const lines=series.map(s=>{
    const values=chartValues(s.data.values,measure);
-   const raw=horizon?forecastSolvePace(s.events||[],{today,topic:selectedTopic,horizon}):{values:[],sample:0};
+   const raw=horizon?forecastSolvePace(s.events||[],{today,topic:selectedTopic,horizon}):{values:[],sample:0,model:null,mae:null,backtests:0,historyDays:0};
    let total=values[visible-1]||0;
    const forecast=raw.values.map(value=>{
     if(measure==='cumulative'){total+=value;return Number(total.toFixed(2));}
     return value;
    });
-   return {...s,values,forecast,forecastSample:raw.sample};
+   return {...s,values,forecast,forecastSample:raw.sample,forecastModel:raw.model,
+    forecastMae:raw.mae,forecastBacktests:raw.backtests,forecastDays:raw.historyDays};
   });
   const projectionDays=Math.max(0,...lines.map(s=>s.forecast.length));
+  const startOfTomorrow=Date.parse(today+'T00:00:00Z')+86400000;
+  const keys=projectionDays
+   ?[...baseKeys.slice(0,visible),...Array.from({length:projectionDays},(_,i)=>new Date(startOfTomorrow+i*86400000).toISOString().slice(0,10))]
+   :baseKeys;
   const allNumbers=lines.flatMap(s=>[...s.values.slice(0,visible),...s.forecast]);
   const domain=chartDomain(Math.max(0,...allNumbers));
   const x=i=>left+i*(w-left-18)/Math.max(1,keys.length-1);
@@ -128,7 +136,7 @@ async render(){
     }
    }
   }
-  keys.forEach((key,i)=>{if(i===0||i===keys.length-1||i%Math.ceil(keys.length/7)===0)svg+='<text x="'+x(i)+'" y="221" text-anchor="middle">'+h(key.length===10?key.slice(-2):key.length===7?key.slice(-2):key)+'</text>';});
+  keys.forEach((key,i)=>{if(i===0||i===keys.length-1||i%Math.ceil(keys.length/7)===0)svg+='<text x="'+x(i)+'" y="221" text-anchor="middle">'+h(key.length===10?key.slice(5):key.length===7?key.slice(-2):key)+'</text>';});
   if(!visible)svg+='<text x="460" y="105" text-anchor="middle" class="graph-no-data">This period is in the future</text>';
   svg+='<line id="chartCrosshair" class="chart-crosshair" x1="38" x2="38" y1="16" y2="200" visibility="hidden"/>';
   chart.innerHTML=svg;
@@ -139,8 +147,8 @@ async render(){
   if(note){
    note.hidden=!requested;
    if(requested)note.textContent=projectionDays
-    ?'Dotted = rough estimate from the past 14 UTC days (3+ recent solves required). Solid = actual. Forecasts are not guaranteed.'
-    :'No forecast yet: at least 3 accepted solves in the past 14 days are needed for you or a selected friend.';
+    ?'Dotted lines use up to 180 UTC days with rolling seven-day MAE backtests. '+lines.filter(s=>s.forecast.length).map(s=>s.name+': '+s.forecastModel+(s.forecastMae===null?'':', past MAE '+s.forecastMae+' solves/day')).join(' · ')+'. Estimates are not guaranteed.'
+    :'No forecast yet: each learner needs at least 56 days of solving history, 10 accepted problems and 7 distinct solve days. Historical outcomes cannot guarantee the future.';
   }
   if($('chartTable'))$('chartTable').innerHTML='<table><thead><tr><th>Period</th>'+lines.map(s=>'<th>'+h(s.name)+'</th>').join('')+'</tr></thead><tbody>'+
    keys.slice(0,visible+projectionDays).map((key,i)=>{
