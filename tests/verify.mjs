@@ -1,3 +1,4 @@
+import './compiler-security.mjs';
 import "./profile-inbox.mjs";
 import "./editor-operators.mjs";
 import "./workbench.mjs";
