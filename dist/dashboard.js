@@ -5,7 +5,7 @@ const initial=p=>(p?.display_name||p?.username||'You').trim().charAt(0).toUpperC
 const avatar=p=>'<span class="chart-avatar">'+(photo(p)?'<img src="'+h(photo(p))+'" alt="" referrerpolicy="no-referrer">':h(initial(p)))+'</span>';
 export class Dashboard{
  constructor({cloud,getState,getCatalog,getEvents=null,summary=null,name='You',profile=null,allowCompare=true}){
-  Object.assign(this,{cloud,getState,getCatalog,getEvents,summary,name,profile,allowCompare,epoch:0,loadedFor:null,friends:[],selected:new Set(),cache:new Map()});this.$=id=>document.getElementById(id);
+  Object.assign(this,{cloud,getState,getCatalog,getEvents,summary,name,profile,allowCompare,epoch:0,accountGeneration:0,loadedFor:null,friends:[],selected:new Set(),cache:new Map()});this.$=id=>document.getElementById(id);
   this.$('graphMonth').value=new Date().toISOString().slice(0,7);this.$('graphYear').value=new Date().getUTCFullYear();
   for(const id of ['graphMode','graphMonth','graphYear','graphTopic'])this.$(id).onchange=()=>this.render();
   const host=this.$('frequencyChart').closest('section'),controls=host.querySelector('.comparison-controls');
@@ -13,14 +13,14 @@ export class Dashboard{
   controls.hidden=!this.allowCompare;this.picker=controls.querySelector('.friend-picker');controls.querySelector('[data-all]').onclick=()=>{this.selected=new Set(this.friends.map(p=>p.public_id));this.paintPicker();this.render();};controls.querySelector('[data-clear]').onclick=()=>{this.selected.clear();this.paintPicker();this.render();};controls.querySelector('input').oninput=()=>this.paintPicker();
   this.tooltip=document.createElement('div');this.tooltip.className='chart-tooltip';this.tooltip.hidden=true;this.tooltip.setAttribute('role','status');this.$('frequencyChart').closest('.graph-scroll').append(this.tooltip);this.paintPicker();
  }
- accountChanged(){this.epoch++;this.loadedFor=null;this.friends=[];this.selected.clear();this.cache.clear();this.paintPicker();}
+ accountChanged(){this.epoch++;this.accountGeneration++;this.loadedFor=null;this.friends=[];this.selected.clear();this.cache.clear();this.paintPicker();}
  paintPicker(){const q=(this.picker.querySelector('input').value||'').toLowerCase(),list=this.picker.querySelector('.friend-checks');this.picker.querySelector('.compare-count').textContent=this.selected.size?'('+this.selected.size+')':'';list.innerHTML=this.friends.length?this.friends.filter(p=>(p.username+' '+p.display_name).toLowerCase().includes(q)).map(p=>'<label>'+avatar(p)+'<span>'+h(p.display_name)+'<small>@'+h(p.username)+'</small></span><input type="checkbox" data-friend="'+h(p.public_id)+'" '+(this.selected.has(p.public_id)?'checked':'')+'></label>').join(''):'<p class="muted">Follow discoverable profiles to compare their activity.</p>';list.querySelectorAll('[data-friend]').forEach(input=>input.onchange=()=>{if(input.checked)this.selected.add(input.dataset.friend);else this.selected.delete(input.dataset.friend);this.picker.querySelector('.compare-count').textContent=this.selected.size?'('+this.selected.size+')':'';this.render();});}
  async open(){
   // Paint the profile graph from the snapshot immediately. Friends and account
   // details may load afterward; never make the chart wait for two API calls.
   this.render();
   if(!this.allowCompare)return;
-  const owner=this.cloud.user?.id,ticket=this.epoch;if(owner&&this.loadedFor!==owner){this.loadedFor=owner;try{const own=await this.cloud.request('self');if(this.cloud.user?.id!==owner||ticket!==this.epoch)return;if(!this.profile)this.profile=own.profile;if(own.profile){const r=await this.cloud.request('following',{target:own.profile.public_id});if(this.cloud.user?.id!==owner||ticket!==this.epoch)return;this.friends=(r.users||[]).filter(p=>p.discoverable!==false&&p.public_id!==this.profile?.public_id);this.paintPicker();}}catch(e){this.$('dashboardMessage').textContent=e.message;this.loadedFor=null;}}}
+  const owner=this.cloud.user?.id,ticket=this.accountGeneration;if(owner&&this.loadedFor!==owner){this.loadedFor=owner;try{const own=await this.cloud.request('self');if(this.cloud.user?.id!==owner||ticket!==this.accountGeneration)return;if(!this.profile)this.profile=own.profile;if(own.profile){const r=await this.cloud.request('following',{target:own.profile.public_id});if(this.cloud.user?.id!==owner||ticket!==this.accountGeneration)return;this.friends=(r.users||[]).filter(p=>p.discoverable!==false&&p.public_id!==this.profile?.public_id);this.paintPicker();}}catch(e){this.$('dashboardMessage').textContent=e.message;this.loadedFor=null;}}}
  async render(){
   const ticket=++this.epoch,$=this.$,catalog=this.getCatalog(),selected=$('graphTopic').value,topics=[...new Set([...catalog.map(p=>p.topic),...(this.getEvents?.()||[]).map(e=>e.topic)])].filter(Boolean).sort();$('graphTopic').replaceChildren(new Option('All topics',''),...topics.map(t=>new Option(t,t)));if(topics.includes(selected))$('graphTopic').value=selected;
   const opts={mode:$('graphMode').value,month:$('graphMonth').value,year:Number($('graphYear').value),topic:$('graphTopic').value};$('graphMonth').hidden=opts.mode!=='daily';$('graphYear').hidden=opts.mode==='daily';let own;
