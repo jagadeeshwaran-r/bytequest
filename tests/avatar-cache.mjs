@@ -115,6 +115,6 @@ assert.ok(css.includes("#practiceView .learning-content .example-card"));
 assert.ok(css.includes("#practiceView .pane-tabs button"));
 for(const page of ["index.html","studio.html"]){
  const html=readFileSync("dist/"+page,"utf8");
- assert.ok(html.includes('problem-alignment.css?v=align-1'));
+ assert.ok(html.includes('problem-alignment.css?v=align-2'));
 }
 console.log("PASS: signed avatar warm-cache/restore/isolation/expiry/sign-out and aligned problem catalog/detail layouts.");
