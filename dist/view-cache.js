@@ -85,3 +85,25 @@ export function createViewCache({storage=browserSession(),now=()=>Date.now()}={}
     clearOwner
   };
 }
+
+/** Warm only the initial public-facing ranking and the user's own profile.
+ * This is optional: any network failure leaves normal on-demand fetch intact.
+ * Never prefetch chat, notifications, presence, tokens, or private progress.
+ */
+export async function prefetchCommunityViews(cloud,{owner,profile,cache=createViewCache()}={}){
+  if(!owner||cloud?.user?.id!==owner)return [];
+  const jobs=[];
+  const defaultBoard={scope:"global",period:"all",page:0};
+  if(!cache.board(owner,defaultBoard,{allowStale:true})){
+    jobs.push(cloud.request("leaderboard",defaultBoard,owner).then(result=>{
+      if(cloud.user?.id===owner)cache.saveBoard(owner,defaultBoard,result);
+    }));
+  }
+  const username=profile?.username;
+  if(typeof username==="string"&&username&&!cache.profile(owner,username,{allowStale:true})){
+    jobs.push(cloud.request("profile",{target:username},owner).then(result=>{
+      if(cloud.user?.id===owner)cache.saveProfile(owner,username,result);
+    }));
+  }
+  return Promise.allSettled(jobs);
+}
