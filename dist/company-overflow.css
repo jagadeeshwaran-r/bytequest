@@ -6,7 +6,7 @@
 .company-overflow-count:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .company-overflow-panel{position:absolute;z-index:100;right:0;top:100%;display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px;min-width:max-content;max-width:258px;max-width:min(258px,78vw);padding:9px;border:1px solid var(--border);border-radius:10px;background:var(--surface);box-shadow:0 12px 32px #0002;visibility:hidden;opacity:0;pointer-events:none;transform:translateY(3px);transition:opacity .12s ease,transform .12s ease,visibility .12s}
 .company-overflow-panel .company-logo{margin:0}
-.company-overflow:hover .company-overflow-panel,.company-overflow:focus-within .company-overflow-panel{visibility:visible;opacity:1;pointer-events:auto;transform:translateY(0)}
-/* A mouse pointer leaving the trigger/panel removes :hover automatically. */
+.company-overflow:hover .company-overflow-panel,.company-overflow:has(:focus-visible) .company-overflow-panel{visibility:visible;opacity:1;pointer-events:auto;transform:translateY(0)}
+/* Mouse exit collapses the panel; keyboard-visible focus keeps it accessible. */
 @media(hover:none){.company-overflow-count{cursor:pointer}}
 @media(prefers-reduced-motion:reduce){.company-overflow-panel{transition:none;transform:none}}
