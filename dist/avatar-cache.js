@@ -9,6 +9,7 @@ const MAX_IMAGE_BYTES=256*1024;
 const KEY_PATTERN=/^[a-zA-Z0-9_-]{1,128}\/avatar\.(?:jpg|jpeg|png|webp)$/i;
 const fallbackStorage=()=>{try{return globalThis.caches||null;}catch{return null;}};
 const cacheName=owner=>PREFIX+encodeURIComponent(owner);
+const ownerGenerations=new Map(); // Discard image downloads that finish after logout.
 const requestFor=key=>new Request("https://bytequest-avatar-cache.invalid/media/"+encodeURIComponent(key));
 
 export function avatarKeyFromSignedUrl(value){
@@ -43,6 +44,7 @@ export async function readCachedAvatar(owner,key,{cacheStorage=fallbackStorage()
 export async function warmAvatarImages(owner,rows,{cacheStorage=fallbackStorage(),
   fetchImpl=globalThis.fetch,now=()=>Date.now(),max=30}={}){
   if(!owner||!cacheStorage||typeof fetchImpl!=="function"||!Array.isArray(rows))return;
+  const generation=ownerGenerations.get(owner)||0;
   const targets=new Map();
   for(const row of rows){
     const url=row?.avatar_url,key=avatarKeyFromSignedUrl(url);
@@ -67,6 +69,7 @@ export async function warmAvatarImages(owner,rows,{cacheStorage=fallbackStorage(
         if(!response.ok)continue;
         const blob=await response.blob();
         if(!blob.size||blob.size>MAX_IMAGE_BYTES||!/^image\/(jpeg|png|webp)$/.test(blob.type))continue;
+        if(generation!==(ownerGenerations.get(owner)||0))return;
         const keys=await cache.keys();
         if(keys.length>=40&&!await cache.match(req))await cache.delete(keys[0]);
         await cache.put(req,new Response(blob,{headers:{
@@ -78,7 +81,9 @@ export async function warmAvatarImages(owner,rows,{cacheStorage=fallbackStorage(
   await Promise.all([worker(),worker(),worker()]);
 }
 export async function clearAvatarImages(owner,{cacheStorage=fallbackStorage()}={}){
-  if(!owner||!cacheStorage)return;
+  if(!owner)return;
+  ownerGenerations.set(owner,(ownerGenerations.get(owner)||0)+1);
+  if(!cacheStorage)return;
   try{await cacheStorage.delete(cacheName(owner));}catch{}
 }
 
