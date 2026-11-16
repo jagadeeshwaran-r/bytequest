@@ -3,7 +3,7 @@
 #practiceView .lab{
   --pane-left:42%;
   --editor-split:60%;
-  height:clamp(610px,calc(100dvh - 160px),1000px);
+  height:clamp(690px,calc(100dvh - 160px),1000px);
   min-height:0;
   border:1px solid var(--border)!important;
   border-radius:12px!important;
@@ -143,6 +143,7 @@
   border-top:2px solid color-mix(in srgb,var(--accent) 70%,transparent);
   font:500 11px var(--font-mono);
 }
+#practiceView .editor-top #codeFilename{display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:125px}
 #practiceView .editor-top .editor-tools{
   display:flex;align-items:center;gap:7px;padding:0;
   min-width:0;margin-left:auto;
@@ -163,7 +164,7 @@
   flex:0 0 auto!important;
   height:var(--editor-split,60%)!important;
   min-height:200px!important;
-  max-height:calc(100% - 230px);
+  max-height:calc(100% - 225px);
   padding:17px 0 14px!important;
   background:var(--surface);
   border:0;
@@ -284,6 +285,7 @@ body.bq-dragging-editor{user-select:none!important;cursor:row-resize!important}
   #practiceView .pane-tabs button{font-size:10px}
   #practiceView .editor-top{padding-right:8px}
   #practiceView .editor-top .file-tab{padding-inline:9px;font-size:10px}
+  #practiceView .editor-top #codeFilename{max-width:90px}
   #practiceView .editor-top #toggleEditorFocus{padding:6px;font-size:9px}
   #practiceView .editor-top .editor-tools{gap:5px}
   #practiceView .editor-top #languageSelect{min-width:76px;max-width:92px;font-size:10px}
