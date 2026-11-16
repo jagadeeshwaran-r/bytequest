@@ -37,7 +37,7 @@ async function boot(){
    self=cachedSelf;shell.setAccount(cloud.user,self.profile);
    void route();
    void refreshInbox(false).catch(()=>{}); // Notifications are always fetched live.
-   message('Profile ready.');
+   message('');
    return; // Fresh (2-minute) account cache: no redundant self query.
  }
  try{
