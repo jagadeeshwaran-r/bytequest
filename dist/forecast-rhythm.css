@@ -32,6 +32,7 @@
  opacity:.8;
 }
 .community-page #profileAnalytics #frequencyChart .graph-forecast-line{
+ stroke-dasharray:5 6;
  opacity:.78;
  stroke-linejoin:round;
  /* Smoothly reveal only the estimated curve; never smooth actual counts. */
