@@ -36,7 +36,7 @@ async function accountChanged(){
  // Show cached rankings immediately; load verified profile details independently.
  // Neither the account response nor notifications are cached.
  const rankings=load();
- try{const own=await cloud.request('self');if(ticket===accountGeneration)shell.setAccount(cloud.user,own.profile);}
+ try{const own=await cloud.request('self');if(ticket===accountGeneration&&cloud.user?.id===nextOwner){cache.saveSelf(nextOwner,own);shell.setAccount(cloud.user,own.profile);}}
  catch(e){if(ticket===accountGeneration)console.warn('ByteQuest profile details are temporarily unavailable:',e.message);}
  await rankings;
 }
