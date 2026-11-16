@@ -16,3 +16,27 @@
 .auth-entry-privacy{margin:18px 0 0;font-size:11px;color:var(--soft-text,#68776c)}
 .auth-entry-privacy a{color:var(--accent,#2da571);text-decoration:underline;text-underline-offset:3px}
 @media(max-width:520px){.auth-entry-card{padding:38px 25px 29px;border-radius:18px}.auth-entry-card h1{font-size:26px}.auth-entry-brand{font-size:29px}}
+
+/* An existing Firebase session is restored on each full navigation. Never flash
+   the signed-out Google login UI while auth state is still unresolved. */
+html[data-bytequest-auth="checking"] .auth-entry-card{
+  width:min(100%,310px);padding:34px 26px;background:transparent;
+  border-color:transparent;box-shadow:none
+}
+html[data-bytequest-auth="checking"] .auth-entry-eyebrow,
+html[data-bytequest-auth="checking"] .auth-entry-card h1,
+html[data-bytequest-auth="checking"] .auth-entry-desc,
+html[data-bytequest-auth="checking"] .auth-entry-button,
+html[data-bytequest-auth="checking"] .auth-entry-privacy{display:none!important}
+html[data-bytequest-auth="checking"] .auth-entry-brand{font-size:29px}
+html[data-bytequest-auth="checking"] .auth-entry-status{margin:22px 0 0;font-size:12px}
+html[data-bytequest-auth="checking"] .auth-entry-status::before{
+ content:"";display:block;width:20px;height:20px;border-radius:50%;
+ border:2px solid color-mix(in srgb,var(--accent,#2da571) 25%,transparent);
+ border-top-color:var(--accent,#2da571);margin:0 auto 16px;
+ animation:bq-auth-spin .9s linear infinite
+}
+@keyframes bq-auth-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){
+ html[data-bytequest-auth="checking"] .auth-entry-status::before{animation:none;border-top-color:var(--accent,#2da571)}
+}
