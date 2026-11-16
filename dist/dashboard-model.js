@@ -61,3 +61,43 @@ export function topicProgress(catalog=[],skills=[],events=[],opts={}){
   return {name,solved,total,period:gain,percent:total?Math.round(100*solved/total):0};
  }).sort((a,b)=>b.percent-a.percent||b.solved-a.solved||a.name.localeCompare(b.name));
 }
+
+
+/**
+ * Seven-day *illustrative* expected solve pace, never a claim of actual
+ * future completions. Source is only the learner's existing first-accepted
+ * solve events; no model API or remote data is required.
+ *
+ * Require >=3 accepted solves in the last 14 UTC days. This intentionally
+ * avoids fabricating a prediction from no/very little history.
+ */
+export function forecastSolvePace(events=[],{today=new Date().toISOString().slice(0,10),topic='',horizon=7}={}){
+ if(typeof today!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(today)||
+    !Number.isFinite(Date.parse(today+'T00:00:00Z'))||
+    new Date(today+'T00:00:00Z').toISOString().slice(0,10)!==today){
+  throw new Error('Choose a valid UTC forecast date.');
+ }
+ const at=Date.parse(today+'T00:00:00Z'),counts=Array(14).fill(0),selected=String(topic||'');
+ for(const event of events||[]){
+  if(!event||typeof event.day!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(event.day)||
+     selected&&event.topic!==selected)continue;
+  const time=Date.parse(event.day+'T00:00:00Z');
+  if(!Number.isFinite(time)||new Date(time).toISOString().slice(0,10)!==event.day)continue;
+  const daysAgo=Math.round((at-time)/86400000);
+  if(daysAgo>=0&&daysAgo<14)counts[13-daysAgo]++;
+ }
+ const total=counts.reduce((sum,count)=>sum+count,0);
+ if(total<3)return {days:[],values:[],sample:total};
+ const recent=counts.slice(7).reduce((a,b)=>a+b,0)/7;
+ const older=counts.slice(0,7).reduce((a,b)=>a+b,0)/7;
+ const baseline=recent*.65+older*.35;
+ const drift=(recent-older)*.25;
+ const ceiling=Math.max(1,2*baseline,Math.max(...counts.slice(7))*.75);
+ const numberOfDays=Math.max(0,Math.min(7,Math.floor(Number(horizon)||0)));
+ const days=[],values=[];
+ for(let step=1;step<=numberOfDays;step++){
+  days.push(new Date(at+step*86400000).toISOString().slice(0,10));
+  values.push(Number(Math.min(ceiling,Math.max(0,baseline+drift*(1-Math.exp(-step/4)))).toFixed(2)));
+ }
+ return {days,values,sample:total};
+}
