@@ -16,6 +16,7 @@ import "./public-catalog-cache.mjs";
 import "./view-cache.mjs";
 import "./avatar-cache.mjs";
 import "./scroll-performance.mjs";
+import "./problem-status.mjs";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from "node:fs";
