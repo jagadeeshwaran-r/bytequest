@@ -11,6 +11,7 @@ import {Dashboard} from "./dashboard.js?v=next-1";
 import {languages,starterFor,NativeJudge} from "./languages.js?v=structural-2";
 import {problems as bundledProblems} from "./problems.js";
 import {Cloud} from "./cloud.js?v=cpp-1";
+import {mountSignInGate} from "./access-gate.js?v=authgate-1";
 import {blankProgress, validateProgress, mergeProgress, solveStreak} from "./progress.js?v=next-1";
 import {Studio} from "./studio.js?v=structural-2";
 const problems=[...bundledProblems];
@@ -32,7 +33,9 @@ function readLocal(key){try{const saved=JSON.parse(localStorage.getItem(key));re
 state=readLocal(storageKey);
 let publicProfile=null;
 let syncTimer,syncing=false,syncAgain=false,accountEpoch=0,accountOwner,accountReady=false;
-const cloud=new Cloud(user=>changeAccount(user));shell.connect(cloud);
+const cloud=new Cloud(user=>changeAccount(user));
+const accessGate=mountSignInGate({signIn:()=>cloud.signIn()});
+shell.connect(cloud);
 const studio=new Studio({cloud,notify:message=>notify(message),onCatalogChanged:()=>refreshCatalog()});
 const submissions=mountSubmissions(cloud,{notify});
 const dashboard=new Dashboard({cloud,getState:()=>state,getCatalog:()=>problems});
@@ -56,7 +59,7 @@ const javaJudge = new JavaJudge(message => {
 let javaWarmScheduled=false;
 const javaAvailability=document.createElement("span");javaAvailability.id="javaLoadStatus";javaAvailability.className="java-preload-status";javaAvailability.setAttribute("role","status");document.querySelector(".editor-status").append(javaAvailability);
 function refreshJavaStatus(){if(!document.getElementById("javaLoadStatus"))return;javaAvailability.hidden=language!=="java";javaAvailability.classList.toggle("ready",javaJudge.phase==="ready");javaAvailability.textContent=javaJudge.phase==="ready"?"Java ready":javaJudge.phase==="loading"?"Preparing Java…":javaJudge.phase==="error"?"Run to retry Java":"Java loads on Run";}
-function warmJavaSoon(){refreshJavaStatus();if(language!=="java"||javaWarmScheduled||javaJudge.phase!=="cold"||document.body.dataset.page==="studio"||navigator.connection?.saveData)return;javaWarmScheduled=true;const prepare=()=>{javaWarmScheduled=false;if(language==="java"&&document.visibilityState==="visible"&&javaJudge.phase==="cold")javaJudge.preload();};if(window.requestIdleCallback)requestIdleCallback(prepare,{timeout:1500});else setTimeout(prepare,500);}
+function warmJavaSoon(){refreshJavaStatus();if(!cloud.user||!accountReady||language!=="java"||javaWarmScheduled||javaJudge.phase!=="cold"||document.body.dataset.page==="studio"||navigator.connection?.saveData)return;javaWarmScheduled=true;const prepare=()=>{javaWarmScheduled=false;if(language==="java"&&document.visibilityState==="visible"&&javaJudge.phase==="cold")javaJudge.preload();};if(window.requestIdleCallback)requestIdleCallback(prepare,{timeout:1500});else setTimeout(prepare,500);}
 addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")warmJavaSoon();});
 const nativeJudge=new NativeJudge(message=>{$("runStatus").textContent=message;},cloud);
 const judge={run:(source,p,cases)=>language==="java"?javaJudge.run(source,p,cases):nativeJudge.run(source,p,cases,language),stop:()=>{javaJudge.stop();nativeJudge.stop();}};
@@ -298,6 +301,7 @@ document.querySelectorAll("dialog").forEach(d=>d.addEventListener("click",event=
 $("aboutBtn").onclick=()=>$("aboutDialog").showModal();
 let previousView=null;
 function route(){
+  if(!cloud.user||!accountReady)return; // Never route unsigned visitors into practice or Studio.
   const view=document.body.dataset.page==="studio"?"studio":(["dashboard","practice","map","progress","studio"].includes(location.hash.slice(1))?location.hash.slice(1):"map");
   if(view==="studio"&&document.body.dataset.page!=="studio"){location.href="./studio.html";return;}
   ["dashboard","practice","map","progress","studio"].forEach(name=>$(name+"View").hidden=view!==name);
@@ -358,15 +362,16 @@ function refreshAccountUi(){
   $("accountTitle").textContent=user?"Your learning, connected.":"A little more connected.";
   $("accountDescription").textContent=user?"Your drafts, notes, and progress sync to this Google account.":"Sign in with Google to keep your progress, drafts, and review schedule across devices.";
   $("googleSignInBtn").hidden=!!user;$("signOutBtn").hidden=!user;$("syncNowBtn").hidden=!user;$("importGuestBtn").hidden=!user;
-  $("guestContinue").hidden=!!user;$("accountIdentity").hidden=!user;
+  $("accountIdentity").hidden=!user;
   $("accountIdentity").className="account-identity";
   $("accountIdentity").innerHTML=user?"<strong>"+html(name)+"</strong>"+html(user.email||""):"";
-  if(!cloud.enabled)$("authMessage").textContent="Cloud accounts are being connected. You can keep practising on this device.";
+  if(!cloud.enabled)$("authMessage").textContent="Google sign-in is temporarily unavailable. Reload the page to retry.";
   else if(!user&&!cloud.loginReady&&!$("authMessage").textContent)$("authMessage").textContent="Loading secure sign-in…";
 }
 async function changeAccount(user){
   const owner=user?.id||null;if(owner===accountOwner&&accountReady)return;
   const epoch=++accountEpoch;publicProfile=null;accountOwner=owner;accountReady=false;clearTimeout(syncTimer);syncing=false;syncAgain=false;
+  accessGate.show(owner?"checking":"locked",owner?"Loading your ByteQuest account…":"Sign in with Google to access the problem library.");
   document.querySelectorAll('.submit-confirm[open],#successDialog[open]').forEach(d=>d.close());
   if(busy)stopRun();studio.accountChanged();dashboard.accountChanged();storageKey=owner?"bytequest.user."+owner:guestStorageKey;
   state=readLocal(storageKey);current=problems.find(p=>p.id===state.current)||problems[0]||null;
@@ -385,8 +390,15 @@ async function changeAccount(user){
   }else setSyncStatus("","On this device");
   if(epoch!==accountEpoch)return;
   current=problems.find(p=>p.id===state.current)||problems[0]||null;
-  persist();accountReady=true;$("codeEditor").readOnly=false;refreshAccountUi();renderPractice();updateStats();route();
-  if(needsSync)syncTimer=setTimeout(()=>syncCloud(),500);
+  persist();accountReady=true;$("codeEditor").readOnly=false;refreshAccountUi();renderPractice();updateStats();
+  if(owner){
+    accessGate.show("unlocked");route();
+    await refreshCatalog();
+    if(epoch!==accountEpoch)return;
+    const requested=new URLSearchParams(location.search).get("problem");
+    if(requested&&problems.some(p=>p.id===requested))changeProblem(requested);
+  }else accessGate.show("locked");
+  if(needsSync&&owner)syncTimer=setTimeout(()=>syncCloud(),500);
 }
 async function syncCloud(){
   clearTimeout(syncTimer);if(!cloud.user||!accountReady)return;
@@ -406,7 +418,7 @@ async function syncCloud(){
   finally{if(epoch===accountEpoch){syncing=false;if(syncAgain){syncAgain=false;syncTimer=setTimeout(()=>syncCloud(),1000);}}}
 }
 async function refreshCatalog(){
-  if(!cloud.enabled)return;
+  if(!cloud.enabled||!cloud.user)return;
   try{
     const next=await cloud.publicCatalog();if(next===null)return;
     const selected=current?.id;problems.splice(0,problems.length,...next);topics=[...new Set(problems.map(p=>p.topic))];
@@ -427,8 +439,9 @@ addEventListener("online",()=>{if(cloud.user)syncCloud();else setSyncStatus("","
 addEventListener("offline",()=>setSyncStatus("failed",cloud.user?"Offline · saved here":"On this device"));
 async function bootCloud(){
   refreshAccountUi();
-  try{await cloud.init();$("authMessage").textContent="";}catch(error){$("authMessage").textContent=error.message;setSyncStatus("failed","Account connection paused");}
-  await refreshCatalog();await changeAccount(cloud.user);const requested=new URLSearchParams(location.search).get("problem");if(requested&&problems.some(p=>p.id===requested))changeProblem(requested);
+  try{await cloud.init();$("authMessage").textContent="";}
+  catch(error){$("authMessage").textContent=error.message;setSyncStatus("failed","Account connection paused");accessGate.show("error","Could not load Google sign-in. Check your connection and reload.");return;}
+  await changeAccount(cloud.user);
 }
 renderPractice();updateStats();route();bootCloud();
 if(!storageOK){$("saveStatus").textContent="Storage unavailable — use Save progress";notify("Local storage is unavailable. Export your progress before leaving.");}
