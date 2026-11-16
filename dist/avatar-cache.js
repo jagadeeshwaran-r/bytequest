@@ -89,12 +89,12 @@ export function releaseAvatarObjectUrls(){
   for(const url of createdUrls)try{URL.revokeObjectURL(url);}catch{}
   createdUrls.clear();
 }
-export async function hydrateLeaderboardAvatars(container,owner,{cacheStorage=fallbackStorage()}={}){
+export async function hydrateLeaderboardAvatars(container,owner,{cacheStorage=fallbackStorage(),now=()=>Date.now()}={}){
   if(!owner||!container||!cacheStorage)return;
   const nodes=[...container.querySelectorAll(".leader-avatar[data-avatar-key]")];
   await Promise.all(nodes.map(async node=>{
     const key=node.dataset.avatarKey;if(!KEY_PATTERN.test(key))return;
-    const blob=await readCachedAvatar(owner,key,{cacheStorage});
+    const blob=await readCachedAvatar(owner,key,{cacheStorage,now});
     if(!blob||!node.isConnected||!container.contains(node))return;
     let url;
     try{url=URL.createObjectURL(blob);}catch{return;}
