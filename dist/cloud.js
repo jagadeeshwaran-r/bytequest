@@ -10,9 +10,20 @@ export function validPublicConfig(config){
     return /^sb_publishable_[A-Za-z0-9_-]+$/.test(config.publishableKey);
   }catch{return false;}
 }
+// Only published, public problem definitions are cached. Auth, progress, chat,
+// notifications, unread counts, rankings and presence always use live requests.
+export const PUBLIC_CATALOG_TTL_MS=5*60*1000;
+const PUBLIC_CATALOG_OFFLINE_MAX_MS=24*60*60*1000;
+const PUBLIC_CATALOG_MAX_BYTES=4000000;
+const CATALOG_CACHE_VERSION=1;
+function catalogKey(config){return "bytequest.public-catalog.v1:"+new URL(config.url).hostname;}
+function catalogStorage(fallback){
+  if(fallback!==undefined)return fallback;
+  try{return globalThis.localStorage||null;}catch{return null;}
+}
 export class Cloud {
-  constructor(onChange=()=>{},{config=cloudConfig,firebase=firebaseConfig,fetchImpl=(...args)=>globalThis.fetch(...args),sessionFactory=(c,cb)=>new FirebaseSession(c,cb)}={}){
-    this.config=config;this.fetch=fetchImpl;this.user=null;this.admin=false;this.canCreate=false;this.onChange=onChange;this.enabled=validPublicConfig(config);this.lastToken=null;this.loginReady=false;this.bootstrap=null;
+  constructor(onChange=()=>{},{config=cloudConfig,firebase=firebaseConfig,fetchImpl=(...args)=>globalThis.fetch(...args),sessionFactory=(c,cb)=>new FirebaseSession(c,cb),storage=undefined,now=()=>Date.now()}={}){
+    this.config=config;this.fetch=fetchImpl;this.catalogStore=catalogStorage(storage);this.clock=now;this.catalogInFlight=null;this.user=null;this.admin=false;this.canCreate=false;this.onChange=onChange;this.enabled=validPublicConfig(config);this.lastToken=null;this.loginReady=false;this.bootstrap=null;
     this.session=sessionFactory(firebase,user=>{this.user=user;this.lastToken=null;this.admin=false;this.canCreate=false;this.bootstrap=null;this.onChange(user);});
   }
   async init(){await this.session.init();this.user=this.session.user;this.loginReady=this.session.ready;}
@@ -28,13 +39,50 @@ export class Cloud {
     try{for(const key of ['bytequest.user.'+owner,'bytequest.studio.'+owner])localStorage.removeItem(key);const card=JSON.parse(sessionStorage.getItem('bytequest.account-card')||'null');if(card?.owner===owner)sessionStorage.removeItem('bytequest.account-card');}catch{}
     try{sessionStorage.removeItem('bytequest.live.'+owner);sessionStorage.removeItem('bytequest.announcements.'+owner);}catch{}await this.session.signOut();this.deletionPending=false;return result;
   }
-  async publicCatalog(){
+  // Store only the public catalog, never an authenticated response or hidden cases.
+  // All cache reads revalidate problem contracts, so malformed/stale browser storage
+  // cannot inject arbitrary catalog records into the app.
+  readCatalogCache(){
+    if(!this.enabled||!this.catalogStore)return null;
+    try{
+      const raw=this.catalogStore.getItem(catalogKey(this.config));
+      if(!raw||raw.length>PUBLIC_CATALOG_MAX_BYTES)return null;
+      const entry=JSON.parse(raw),age=this.clock()-entry.savedAt;
+      if(entry.version!==CATALOG_CACHE_VERSION||!Array.isArray(entry.rows)||
+        !Number.isFinite(age)||age<0||age>=PUBLIC_CATALOG_OFFLINE_MAX_MS)return null;
+      const problems=entry.rows.map(row=>({...validateProblem(row.content),revision:row.revision}));
+      return {age,problems};
+    }catch{return null;}
+  }
+  invalidatePublicCatalog(){
+    try{this.catalogStore?.removeItem(catalogKey(this.config));}catch{}
+  }
+  async publicCatalog({force=false}={}){
     if(!this.enabled)return null;
+    const cached=this.readCatalogCache();
+    if(!force&&cached&&cached.age<PUBLIC_CATALOG_TTL_MS)return cached.problems;
+    if(this.catalogInFlight)return this.catalogInFlight;
     const query="?select=id,content,position,revision&published=eq.true&order=position.asc,id.asc&limit=1000";
-    const response=await this.fetch(this.config.url+"/rest/v1/bytequest_problems"+query,{headers:{apikey:this.config.publishableKey},signal:AbortSignal.timeout(12000)});
-    if(!response.ok)throw new Error("Could not load the problem library.");
-    const rows=await response.json();if(!Array.isArray(rows))throw new Error("Invalid problem library response.");
-    return rows.map(row=>({...validateProblem(row.content),revision:row.revision}));
+    const request=(async()=>{
+      try{
+        const response=await this.fetch(this.config.url+"/rest/v1/bytequest_problems"+query,{
+          headers:{apikey:this.config.publishableKey},signal:AbortSignal.timeout(12000)
+        });
+        if(!response.ok)throw new Error("Could not load the problem library.");
+        const rows=await response.json();if(!Array.isArray(rows))throw new Error("Invalid problem library response.");
+        const problems=rows.map(row=>({...validateProblem(row.content),revision:row.revision}));
+        try{
+          const serialized=JSON.stringify({version:CATALOG_CACHE_VERSION,savedAt:this.clock(),rows});
+          if(serialized.length<=PUBLIC_CATALOG_MAX_BYTES)this.catalogStore?.setItem(catalogKey(this.config),serialized);
+        }catch{} // Storage disabled or quota full: continue with the live result.
+        return problems;
+      }catch(error){
+        if(!force&&cached)return cached.problems; // Offline: use last valid public library for up to one day.
+        throw error;
+      }
+    })();
+    this.catalogInFlight=request;
+    try{return await request;}finally{if(this.catalogInFlight===request)this.catalogInFlight=null;}
   }
   async request(action,body={},ownerId=this.user?.id){
     if(this.deletionPending&&action!=="account-delete")throw new Error("Account removal is in progress.");
@@ -96,6 +144,8 @@ export class Cloud {
   }
   async adminCatalog(){const result=await this.request("studio-list");return result.problems;}
   async saveProblem(problem,{published=false,revision=0,position=0,hiddenTests=[],correction=""}={}){
-    const result=await this.request("studio-save",{problem:validateProblem(problem),published,revision,position,hiddenTests,correction});return result.problem;
+    const result=await this.request("studio-save",{problem:validateProblem(problem),published,revision,position,hiddenTests,correction});
+    this.invalidatePublicCatalog(); // Newly published, revised or unpublished content must be refetched.
+    return result.problem;
   }
 }
