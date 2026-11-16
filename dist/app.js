@@ -420,7 +420,8 @@ async function syncCloud(){
 async function refreshCatalog(){
   if(!cloud.enabled||!cloud.user)return;
   try{
-    const next=await cloud.publicCatalog();if(next===null)return;
+    const owner=cloud.user.id;
+    const next=await cloud.publicCatalog();if(cloud.user?.id!==owner||next===null)return;
     const selected=current?.id;problems.splice(0,problems.length,...next);topics=[...new Set(problems.map(p=>p.topic))];
     $("problemSelect").replaceChildren(...problems.map(p=>new Option(p.title,p.id)));
     for(const [id,values,label] of [["patternFilter",[...new Set(problems.map(p=>p.pattern||p.topic))],"All problem patterns"],["techniqueFilter",[...new Set(problems.flatMap(p=>p.techniques||[]))],"All techniques"]]){const selected=$(id).value;$(id).replaceChildren(new Option(label,""),...values.sort().map(v=>new Option(v,v)));if(values.includes(selected))$(id).value=selected;}
