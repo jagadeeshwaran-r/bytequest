@@ -12,7 +12,7 @@ import {Cloud} from './cloud.js?v=catalog-1';
 import {createViewCache} from './view-cache.js?v=ranking-1';
 import {activityStats,escapeHtml as h} from './community-model.js';
 const shell=mountShell();let pendingPhoto=null;let analytics=null,catalog=[],viewedTarget=null,viewedPresence=null,presenceReading=false;
-const $=id=>document.getElementById(id);let epoch=0,self=null,latest=0,lastOwner=null;
+const $=id=>document.getElementById(id);let epoch=0,bootEpoch=0,self=null,latest=0,lastOwner=null;
 const viewCache=createViewCache();
 const cloud=new Cloud(()=>boot());shell.connect(cloud);
 const creatorAccess=mountCreatorAccess(cloud,{refresh:loadRoles,notify:message,isActive:()=>self?.admin&&!$('rolesPanel').hidden});
@@ -20,9 +20,39 @@ $('organizationNames').replaceChildren(...companies.map(c=>new Option(c.name,c.n
 function message(text,error=false){$('communityMessage').textContent=text;$('communityMessage').classList.toggle('error',error);}
 async function act(action,body={}){return cloud.request(action,body);}
 function people(users){return users.length?users.map(p=>'<article class="person-card"><a class="person-avatar-link" href="'+publicProfileHref(p)+'" aria-label="View '+h(p.display_name)+' profile">'+profileAvatar(p)+'</a><div><a href="#user/'+encodeURIComponent(p.username)+'">'+h(p.display_name)+'</a><small>@'+h(p.username)+'</small></div></article>').join(''):'<p class="muted">No users found.</p>';}
-async function boot(){const ticket=++epoch;const nextOwner=cloud.user?.id||null;if(lastOwner&&lastOwner!==nextOwner)viewCache.clearOwner(lastOwner);lastOwner=nextOwner;self=null;creatorAccess.reset();pendingPhoto=null;$('profilePhotoFile').value='';shell.setAccount(cloud.user);$('signedOut').hidden=!!cloud.user;$('signedIn').hidden=!cloud.user;$('communityAccount').textContent=cloud.user?'Sign out':'Sign in with Google';
- if(!cloud.user){message('Your next good idea starts with one small step.');return;}
- try{const own=await act('self');if(ticket!==epoch)return;self=own;shell.setAccount(cloud.user,self.profile);await route();await refreshInbox(false);message('Your account is connected.');}catch(e){if(ticket===epoch)message(e.message,true);}}
+async function boot(){
+ const ticket=++bootEpoch; ++epoch; // Cancel any previous profile route on account changes.
+ const owner=cloud.user?.id||null;
+ if(lastOwner&&lastOwner!==owner)viewCache.clearOwner(lastOwner);
+ lastOwner=owner;self=null;creatorAccess.reset();pendingPhoto=null;
+ $('profilePhotoFile').value='';shell.setAccount(cloud.user);
+ $('signedOut').hidden=!!owner;$('signedIn').hidden=!owner;
+ $('communityAccount').textContent=owner?'Sign out':'Sign in with Google';
+ if(!owner){message('Your next good idea starts with one small step.');return;}
+ const cachedSelf=viewCache.self(owner);
+ // The verified Firebase account can safely reuse its own cached header/profile
+ // without waiting for another Supabase 'self' round trip.
+ if(cachedSelf){
+   self=cachedSelf;shell.setAccount(cloud.user,self.profile);
+   void route();
+   void refreshInbox(false).catch(()=>{}); // Notifications are always fetched live.
+ }
+ try{
+   const own=await act('self');
+   if(ticket!==bootEpoch||cloud.user?.id!==owner)return;
+   self=own;viewCache.saveSelf(owner,own);shell.setAccount(cloud.user,own.profile);
+   const renamed=!!cachedSelf&&cachedSelf.profile?.username!==own.profile?.username;
+   if(renamed){
+     viewCache.invalidateProfile(owner,cachedSelf.profile?.username);
+     viewCache.invalidateProfile(owner,own.profile?.username);
+   }
+   if(!cachedSelf||renamed)await route();
+   if(!cachedSelf)await refreshInbox(false);
+   if(ticket===bootEpoch)message('Your account is connected.');
+ }catch(e){
+   if(ticket===bootEpoch)message(cachedSelf?'Showing saved profile while account data reconnects.':e.message,true);
+ }
+}
 async function route(){if(!self||!cloud.user)return;const ticket=++epoch,hash=location.hash.slice(1)||'me';for(const id of ['discover','profile','edit','inbox','roles'])$(id+'Panel').hidden=true;$('connections').replaceChildren();$('connectionsDialog').close();creatorAccess.reset();
  try{
   if(hash==='discover'){shell.focusSearch();location.hash='me';return;}
@@ -31,11 +61,22 @@ async function route(){if(!self||!cloud.user)return;const ticket=++epoch,hash=lo
   if(hash==='roles'){if(!self.admin)throw new Error('Only library administrators can manage creator access.');$('rolesPanel').hidden=false;await loadRoles();return;}
   const target=hash.startsWith('user/')?decodeURIComponent(hash.slice(5)):self.profile?.username;
   if(!target){location.hash='edit';return;}
-  const owner=cloud.user.id,cached=viewCache.profile(owner,target);
+  const owner=cloud.user.id,cached=viewCache.profile(owner,target,{allowStale:true});
   if(cached){
+    // Show a previously fetched profile immediately, even if its short fresh TTL
+    // expired. Replace it quietly after a fresh request; presence is NEVER cached.
     if(ticket!==epoch||cloud.user?.id!==owner)return;
     renderProfile(cached,{presencePending:true});$('profilePanel').hidden=false;
-    refreshPresence(true); // Always fetch online / last-seen independently of the cached profile.
+    void refreshPresence(true);
+    if(!viewCache.profile(owner,target)){
+      void act('profile',{target}).then(result=>{
+        if(cloud.user?.id!==owner)return;
+        viewCache.saveProfile(owner,target,result);
+        if(ticket!==epoch||viewedTarget!==result.profile.public_id)return;
+        renderProfile(result,{presencePending:true});
+        void refreshPresence(true);
+      }).catch(()=>{}); // Keep the cached profile if the database is unavailable.
+    }
   }else{
     const result=await act('profile',{target});if(ticket!==epoch||cloud.user?.id!==owner)return;
     viewCache.saveProfile(owner,target,result);
@@ -65,7 +106,13 @@ $('readAll').onclick=async()=>{try{await act('notifications-read',{id:latest});a
 async function login(){try{message('Opening Google sign-in…');await cloud.signIn();}catch(e){message(e.message,true);}}
 $('communitySignIn').onclick=login;$('communityAccount').onclick=async()=>{try{if(cloud.user)await cloud.signOut();else await login();}catch(e){message(e.message,true);}};
 addEventListener('hashchange',route);addEventListener('focus',()=>{if(cloud.user&&self)refreshInbox(location.hash==='#inbox').catch(()=>{});});
-cloud.init().then(async()=>{try{catalog=await cloud.publicCatalog()||[];}catch{}await boot();}).catch(e=>{message(e.message,true);$('signedOut').hidden=false;});
+// Public problem metadata can load in parallel with Firebase; never delay
+// profile rendering on a catalog request (even during an offline fallback).
+catalog=cloud.readCatalogCache()?.problems||[];
+void cloud.publicCatalog().then(rows=>{
+  if(rows){catalog=rows;analytics?.render();}
+}).catch(()=>{});
+cloud.init().then(boot).catch(e=>{message(e.message,true);$('signedOut').hidden=false;});
 
 // Status polls do not recreate the profile, charts or header avatar.
 async function refreshPresence(force=false){if((presenceReading&&!force)||!cloud.user||!viewedTarget||(!force&&(document.visibilityState!=='visible'||!document.hasFocus()))||$('profilePanel').hidden)return;presenceReading=true;const target=viewedTarget,ticket=epoch;try{const r=await act('profile-presence',{target});if(ticket===epoch&&target===viewedTarget){viewedPresence=receivedPresence(r.presence);paintPresence($('profilePresenceStatus'),viewedPresence);}}catch{}finally{presenceReading=false;}}
