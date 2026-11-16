@@ -1,6 +1,7 @@
 import "./profile-inbox.mjs";
 import "./profile-compact.mjs";
 import "./analytics-accuracy.mjs";
+import "./topic-directory-cleanup.mjs";
 import "./solving-forecast.mjs";
 import "./problem-library-bootstrap.mjs";
 import "./editor-operators.mjs";
