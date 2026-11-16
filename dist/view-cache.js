@@ -1,3 +1,4 @@
+import {avatarKeyFromSignedUrl,warmAvatarImages,clearAvatarImages} from "./avatar-cache.js?v=avatar-1";
 // Account-scoped, short-lived page view cache. Chat, notifications, online
 // presence, Firebase identity, and private progress never pass through this module.
 export const LEADERBOARD_TTL_MS=5*60*1000;
@@ -12,7 +13,7 @@ const SIGNED_AVATAR_SAFE_AGE_MS=8*60*1000;
 function avatarStillValid(row,age){
   if(!row||age<SIGNED_AVATAR_SAFE_AGE_MS||typeof row.avatar_url!=="string"
     ||!row.avatar_url.includes("/storage/v1/object/sign/bytequest-avatars/"))return row;
-  return {...row,avatar_url:""};
+  return {...row,avatar_url:"",avatar_cache_key:avatarKeyFromSignedUrl(row.avatar_url)};
 }
 function safeCachedImages(kind,value,age){
   if(age<SIGNED_AVATAR_SAFE_AGE_MS)return value;
@@ -70,7 +71,9 @@ export function createViewCache({storage=browserSession(),now=()=>Date.now()}={}
     try{const id=key(owner,kind,identity);if(id)storage?.removeItem(id);}catch{}
   }
   function clearOwner(owner){
-    if(!owner||!storage)return;
+    if(!owner)return;
+    void clearAvatarImages(owner);
+    if(!storage)return;
     try{
       const prefix=PREFIX+encodeURIComponent(owner)+":",items=[];
       for(let i=0;i<storage.length;i++){
@@ -90,7 +93,10 @@ export function createViewCache({storage=browserSession(),now=()=>Date.now()}={}
       // progress, notifications, messages, or live presence.
       write(owner,"self","current",{admin:response.admin===true,profile:response.profile??null},validAccount);
     },
-    saveBoard(owner,query,value){write(owner,"board",boardId(query),value,validBoard);},
+    saveBoard(owner,query,value){
+      write(owner,"board",boardId(query),value,validBoard);
+      if(validBoard(value))void warmAvatarImages(owner,[...value.users,value.me]);
+    },
     invalidateBoard(owner,query){remove(owner,"board",boardId(query));},
     profile(owner,target,{allowStale=false}={}){return read(owner,"profile",String(target||"").toLowerCase(),PROFILE_TTL_MS,validProfile,allowStale);},
     saveProfile(owner,target,value){
@@ -98,6 +104,7 @@ export function createViewCache({storage=browserSession(),now=()=>Date.now()}={}
       // Do not persist presence: live online and last-seen are fetched independently.
       const {presence,...stable}=value;
       write(owner,"profile",String(target||"").toLowerCase(),stable,validProfile);
+      void warmAvatarImages(owner,[value.profile]);
     },
     invalidateProfile(owner,target){remove(owner,"profile",String(target||"").toLowerCase());},
     clearOwner
