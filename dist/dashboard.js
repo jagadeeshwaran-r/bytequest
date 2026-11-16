@@ -1,13 +1,13 @@
-import {bucketSolves,solveEvents,smoothPath} from './dashboard-model.js?v=upgrade-2';
+import {bucketSolves,solveEvents,chartValues,chartDomain,straightPath,visiblePeriodCount,topicProgress} from './dashboard-model.js?v=accurate-1';
 import {escapeHtml as h} from './community-model.js';
 const photo=p=>p?.avatar_url&&/^https:\/\//.test(p.avatar_url)?p.avatar_url:'';
 const initial=p=>(p?.display_name||p?.username||'You').trim().charAt(0).toUpperCase();
 const avatar=p=>'<span class="chart-avatar">'+(photo(p)?'<img src="'+h(photo(p))+'" alt="" referrerpolicy="no-referrer">':h(initial(p)))+'</span>';
 export class Dashboard{
- constructor({cloud,getState,getCatalog,getEvents=null,summary=null,name='You',profile=null,viewerProfile=null,allowCompare=true}){
-  Object.assign(this,{cloud,getState,getCatalog,getEvents,summary,name,profile,viewerProfile,allowCompare,epoch:0,accountGeneration:0,loadedFor:null,friends:[],selected:new Set(),cache:new Map()});this.$=id=>document.getElementById(id);
+ constructor({cloud,getState,getCatalog,getEvents=null,summary=null,name='You',profile=null,viewerProfile=null,topicInsights=[],allowCompare=true}){
+  Object.assign(this,{cloud,getState,getCatalog,getEvents,summary,name,profile,viewerProfile,topicInsights,allowCompare,topicsExpanded:false,epoch:0,accountGeneration:0,loadedFor:null,friends:[],selected:new Set(),cache:new Map()});this.$=id=>document.getElementById(id);
   this.$('graphMonth').value=new Date().toISOString().slice(0,7);this.$('graphYear').value=new Date().getUTCFullYear();
-  for(const id of ['graphMode','graphMonth','graphYear','graphTopic'])this.$(id).onchange=()=>this.render();
+  for(const id of ['graphMode','graphMeasure','graphMonth','graphYear','graphTopic'])this.$(id).onchange=()=>this.render();
   const host=this.$('frequencyChart').closest('section'),controls=host.querySelector('.comparison-controls');
   controls.innerHTML='<details class="friend-picker"><summary>Compare with friends <span class="compare-count"></span></summary><div class="friend-picker-panel"><div class="friend-picker-actions"><button type="button" data-all>All friends</button><button type="button" data-clear>Clear</button></div><input class="friend-filter" type="search" placeholder="Filter friends…" aria-label="Filter comparison friends"><div class="friend-checks"></div></div></details>';
   controls.hidden=!this.allowCompare;this.picker=controls.querySelector('.friend-picker');controls.querySelector('[data-all]').onclick=()=>{this.selected=new Set(this.friends.map(p=>p.public_id));this.paintPicker();this.render();};controls.querySelector('[data-clear]').onclick=()=>{this.selected.clear();this.paintPicker();this.render();};controls.querySelector('input').oninput=()=>this.paintPicker();
@@ -46,7 +46,8 @@ export class Dashboard{
 async render(){
   const ticket=++this.epoch,$=this.$,catalog=this.getCatalog(),selected=$('graphTopic').value,topics=[...new Set([...catalog.map(p=>p.topic),...(this.getEvents?.()||[]).map(e=>e.topic)])].filter(Boolean).sort();$('graphTopic').replaceChildren(new Option('All topics',''),...topics.map(t=>new Option(t,t)));if(topics.includes(selected))$('graphTopic').value=selected;
   const opts={mode:$('graphMode').value,month:$('graphMonth').value,year:Number($('graphYear').value),topic:$('graphTopic').value};$('graphMonth').hidden=opts.mode!=='daily';$('graphYear').hidden=opts.mode==='daily';let own;
-  try{own=bucketSolves(this.getEvents?this.getEvents():solveEvents(this.getState(),catalog),opts);}catch(e){$('dashboardMessage').textContent=e.message;return;}
+  const events=this.getEvents?this.getEvents():solveEvents(this.getState(),catalog);
+  try{own=bucketSolves(events,opts);this.paintTopics(topicProgress(catalog,this.topicInsights,events,opts));}catch(e){$('dashboardMessage').textContent=e.message;return;}
   const series=[{name:this.name,profile:this.profile,data:own,color:'#16a477'}];this.draw(series);
   $('topicBreakdown').innerHTML=own.topics.length?own.topics.map(([t,n])=>'<div class="topic-mini"><span>'+h(t)+'</span><div><i style="width:'+n/Math.max(...own.topics.map(x=>x[1]))*100+'%"></i></div><b>'+n+'</b></div>').join(''):'<p class="muted">Solve a problem to grow your topic chart.</p>';
   for(const [id,v] of [['dashboardSolved',this.summary?.solved??0],['dashboardActive',this.summary?.active??0],['dashboardPeriod',own.total]])if($(id))$(id).textContent=v;
@@ -57,29 +58,78 @@ async render(){
    const missing=ids.filter(id=>!this.cache.has(id)||Date.now()-this.cache.get(id).at>30000);
    if(missing.length){const result=await this.cloud.request('friend-analytics',{targets:missing});if(ticket!==this.epoch)return;for(const id of missing)this.cache.set(id,{at:Date.now(),user:(result.users||[]).find(p=>p.public_id===id)||null});}
    if(ticket!==this.epoch)return;
-   for(const [i,id] of ids.entries()){const p=this.cache.get(id)?.user;if(!p)continue;series.push({name:'@'+p.username,profile:p,data:bucketSolves(p.solves||[],opts),color:'hsl('+((i*137.508+215)%360).toFixed(1)+' 67% 53%)'});}
+   for(const [i,id] of ids.entries()){const p=this.cache.get(id)?.user;if(!p)continue;series.push({name:'@'+p.username,profile:p,data:bucketSolves(p.solves||[],opts),color:'hsl('+((i*137.508+215)%360).toFixed(1)+' 52% 58%)'});}
    this.draw(series);$('dashboardMessage').textContent='Comparing '+(series.length-1)+' friend'+(series.length===2?'':'s')+'. Hover, tap or use arrow keys on the chart to identify every line.'+(series.length!==ids.length+1?' Some profiles are no longer available.':'');
   }catch(e){if(ticket===this.epoch)$('dashboardMessage').textContent=e.message;}
  }
+ paintTopics(rows){
+  const $=this.$,host=$('topicBreakdown');
+  if(!rows.length){
+   host.innerHTML='<p class="topic-unavailable">Topic totals are unavailable until the published problem catalog loads.</p>';
+   return;
+  }
+  const shown=this.topicsExpanded?rows:rows.slice(0,5);
+  host.innerHTML='<p class="topic-progress-caption">Solved / available in the current catalog · Growth in the selected period</p>'+
+   shown.map(t=>'<div class="topic-progress-row"><div class="topic-progress-heading"><span>'+h(t.name)+'</span><strong>'+t.solved+' / '+t.total+'</strong></div>'+
+    '<div class="topic-progress-bar" role="progressbar" aria-label="'+h(t.name)+' completion" aria-valuemin="0" aria-valuemax="'+t.total+'" aria-valuenow="'+t.solved+'"><i style="width:'+t.percent+'%"></i></div>'+
+    '<div class="topic-progress-meta"><span>'+t.percent+'% complete</span><span>'+(t.period?'<b>+'+t.period+'</b> this period':'No new solves this period')+'</span></div></div>').join('')+
+   (rows.length>5?'<button id="toggleTopicGrowth" class="topic-progress-toggle" type="button" aria-expanded="'+this.topicsExpanded+'">'+(this.topicsExpanded?'Show fewer topics':'Show all '+rows.length+' topics')+'</button>':'');
+  const toggle=host.querySelector('#toggleTopicGrowth');
+  if(toggle)toggle.onclick=()=>{this.topicsExpanded=!this.topicsExpanded;this.paintTopics(rows);};
+ }
  draw(series){
-  const $=this.$,chart=$('frequencyChart'),keys=series[0].data.keys,w=900,left=38,top=20,plotH=175,max=Math.max(1,...series.flatMap(s=>s.data.values)),x=i=>left+i*(w-left-18)/Math.max(1,keys.length-1),y=v=>top+plotH-v/max*plotH;
-  this.tooltip.hidden=true;let svg='';
-  for(let i=0;i<=4;i++){const v=max*i/4;svg+='<line x1="38" x2="882" y1="'+y(v)+'" y2="'+y(v)+'" class="graph-grid"/><text x="28" y="'+(y(v)+4)+'" text-anchor="end">'+Number(v.toFixed(1))+'</text>';}
-  for(const [j,s] of series.entries()){
-   svg+='<path class="graph-curve" pathLength="1" fill="none" stroke="'+s.color+'" stroke-width="2.7" d="'+smoothPath(s.data.values.map((v,i)=>[x(i),y(v)]))+'"/>';
-   s.data.values.forEach((v,i)=>{if(v)svg+='<circle cx="'+x(i)+'" cy="'+y(v)+'" r="3" fill="'+s.color+'"><title>'+h(s.name+' · '+keys[i]+': '+v+' solves')+'</title></circle>';});
-   if(j<8&&s.data.total){const peak=Math.max(...s.data.values),peaks=s.data.values.map((v,i)=>v===peak?i:-1).filter(i=>i>=0),i=peaks[(j*3)%peaks.length],cx=x(i),cy=Math.max(13,y(peak)-15),clip='spikeClip'+j;svg+='<g class="spike-marker"><title>'+h(s.name+' · '+keys[i]+': '+peak+' solves')+'</title><circle cx="'+cx+'" cy="'+cy+'" r="12" fill="'+s.color+'"/>';
-    if(photo(s.profile))svg+='<defs><clipPath id="'+clip+'"><circle cx="'+cx+'" cy="'+cy+'" r="10"/></clipPath></defs><image href="'+h(photo(s.profile))+'" x="'+(cx-10)+'" y="'+(cy-10)+'" width="20" height="20" preserveAspectRatio="xMidYMid slice" clip-path="url(#'+clip+')"/>';
-    else svg+='<text x="'+cx+'" y="'+(cy+4)+'" text-anchor="middle" class="spike-initial">'+h(initial(s.profile))+'</text>';svg+='</g>';
-   }
+  const $=this.$,chart=$('frequencyChart'),keys=series[0].data.keys,w=900,left=38,top=20,plotH=175;
+  const measure=$('graphMeasure').value;
+  const visible=visiblePeriodCount(keys,$('graphMode').value);
+  const lines=series.map(s=>({...s,values:chartValues(s.data.values,measure)}));
+  const domain=chartDomain(Math.max(0,...lines.flatMap(s=>s.values.slice(0,visible))));
+  const x=i=>left+i*(w-left-18)/Math.max(1,keys.length-1);
+  const y=v=>top+plotH-v/domain.max*plotH;
+  this.tooltip.hidden=true;
+  let svg='';
+  for(let i=0;i<=domain.ticks;i++){
+   const v=i*domain.step;
+   svg+='<line x1="38" x2="882" y1="'+y(v)+'" y2="'+y(v)+'" class="graph-grid"/><text x="28" y="'+(y(v)+4)+'" text-anchor="end">'+v+'</text>';
+  }
+  for(const s of lines){
+   const points=s.values.slice(0,visible).map((v,i)=>[x(i),y(v)]);
+   if(points.length)svg+='<path class="graph-curve graph-precise-line" fill="none" stroke="'+s.color+'" stroke-width="2.3" stroke-linejoin="round" d="'+straightPath(points)+'"/>';
+   s.values.slice(0,visible).forEach((v,i)=>{
+    if(v>0)svg+='<circle cx="'+x(i)+'" cy="'+y(v)+'" r="3.3" fill="'+s.color+'"><title>'+h(s.name+' · '+keys[i]+': '+v+(measure==='cumulative'?' cumulative':'')+' solves')+'</title></circle>';
+   });
   }
   keys.forEach((key,i)=>{if(i===0||i===keys.length-1||i%Math.ceil(keys.length/7)===0)svg+='<text x="'+x(i)+'" y="221" text-anchor="middle">'+h(key.length===10?key.slice(-2):key.length===7?key.slice(-2):key)+'</text>';});
-  svg+='<line id="chartCrosshair" class="chart-crosshair" x1="38" x2="38" y1="16" y2="200" visibility="hidden"/>';chart.innerHTML=svg;chart.setAttribute('tabindex','0');chart.setAttribute('aria-label','Solving activity for '+series.length+' learners. Use left and right arrow keys to inspect periods.');
-  $('graphLegend').innerHTML=series.map(s=>'<span class="graph-person" style="--series-color:'+s.color+'">'+avatar(s.profile)+'<i></i>'+h(s.name)+'</span>').join('');
-  if($('chartTable'))$('chartTable').innerHTML='<table><thead><tr><th>Period</th>'+series.map(s=>'<th>'+h(s.name)+'</th>').join('')+'</tr></thead><tbody>'+keys.map((key,i)=>'<tr><th>'+key+'</th>'+series.map(s=>'<td>'+s.data.values[i]+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
-  let active=keys.length-1;const inspect=i=>{active=Math.max(0,Math.min(keys.length-1,i));const cross=chart.querySelector('#chartCrosshair');cross.setAttribute('visibility','visible');cross.setAttribute('x1',x(active));cross.setAttribute('x2',x(active));this.tooltip.hidden=false;this.tooltip.innerHTML='<div class="chart-tooltip-heading"><strong>'+h(keys[active])+'</strong><button type="button" aria-label="Close chart details">×</button></div>'+[...series].sort((a,b)=>b.data.values[active]-a.data.values[active]).map(s=>'<div class="chart-tooltip-row" style="--series-color:'+s.color+'">'+avatar(s.profile)+'<i></i><span>'+h(s.name)+'</span><b>'+s.data.values[active]+'</b></div>').join('');this.tooltip.querySelector('button').onclick=()=>{this.tooltip.hidden=true;cross.setAttribute('visibility','hidden');chart.focus();};};
-  chart.onpointermove=e=>{if(e.pointerType==='touch'&&e.buttons===0)return;const rect=chart.getBoundingClientRect();inspect(Math.round(((e.clientX-rect.left)/rect.width*900-left)/(w-left-18)*(keys.length-1)));};
-  chart.onclick=e=>{const rect=chart.getBoundingClientRect();inspect(Math.round(((e.clientX-rect.left)/rect.width*900-left)/(w-left-18)*(keys.length-1)));};
-  chart.onkeydown=e=>{if(['ArrowRight','ArrowLeft','Home','End','Escape'].includes(e.key)){e.preventDefault();if(e.key==='Escape'){this.tooltip.hidden=true;chart.querySelector('#chartCrosshair').setAttribute('visibility','hidden');return;}inspect(e.key==='Home'?0:e.key==='End'?keys.length-1:active+(e.key==='ArrowRight'?1:-1));}};
+  if(!visible)svg+='<text x="460" y="105" text-anchor="middle" class="graph-no-data">This period is in the future</text>';
+  svg+='<line id="chartCrosshair" class="chart-crosshair" x1="38" x2="38" y1="16" y2="200" visibility="hidden"/>';
+  chart.innerHTML=svg;chart.setAttribute('tabindex','0');
+  chart.setAttribute('aria-label','Solving activity for '+lines.length+' learners. '+(measure==='cumulative'?'Cumulative solves within the selected range.':'Accepted solves in each period.')+' Use left and right arrow keys to inspect past dates.');
+  $('graphLegend').innerHTML=lines.map(s=>'<span class="graph-person" style="--series-color:'+s.color+'">'+avatar(s.profile)+'<i></i>'+h(s.name)+'</span>').join('');
+  if($('chartTable'))$('chartTable').innerHTML='<table><thead><tr><th>Period</th>'+lines.map(s=>'<th>'+h(s.name)+'</th>').join('')+'</tr></thead><tbody>'+keys.slice(0,visible).map((key,i)=>'<tr><th>'+key+'</th>'+lines.map(s=>'<td>'+s.values[i]+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
+  const cross=chart.querySelector('#chartCrosshair');
+  const hide=()=>{this.tooltip.hidden=true;cross.setAttribute('visibility','hidden');};
+  let active=Math.max(0,visible-1);
+  const inspect=i=>{
+   if(i<0||i>=visible){hide();return;}
+   active=i;
+   cross.setAttribute('visibility','visible');
+   cross.setAttribute('x1',x(active));cross.setAttribute('x2',x(active));
+   this.tooltip.hidden=false;
+   this.tooltip.innerHTML='<div class="chart-tooltip-heading"><strong>'+h(keys[active])+' · '+(measure==='cumulative'?'Cumulative':'Period')+'</strong><button type="button" aria-label="Close chart details">×</button></div>'+
+    [...lines].sort((a,b)=>b.values[active]-a.values[active]).map(s=>'<div class="chart-tooltip-row" style="--series-color:'+s.color+'">'+avatar(s.profile)+'<i></i><span>'+h(s.name)+'</span><b>'+s.values[active]+'</b></div>').join('');
+   this.tooltip.querySelector('button').onclick=()=>{hide();chart.focus();};
+  };
+  const position=e=>{
+   const rect=chart.getBoundingClientRect();
+   return Math.round(((e.clientX-rect.left)/rect.width*w-left)/(w-left-18)*(keys.length-1));
+  };
+  chart.onpointermove=e=>{if(e.pointerType==='touch'&&e.buttons===0)return;inspect(position(e));};
+  chart.onclick=e=>inspect(position(e));
+  chart.onkeydown=e=>{
+   if(!['ArrowRight','ArrowLeft','Home','End','Escape'].includes(e.key))return;
+   e.preventDefault();
+   if(e.key==='Escape'){hide();return;}
+   if(!visible){hide();return;}
+   inspect(e.key==='Home'?0:e.key==='End'?visible-1:Math.max(0,Math.min(visible-1,active+(e.key==='ArrowRight'?1:-1))));
+  };
  }
 }
