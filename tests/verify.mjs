@@ -43,7 +43,7 @@ for(const page of ["index.html","studio.html"]){
 }
 const appSource=readFileSync("dist/app.js","utf8");
 assert.ok(!appSource.includes('mountSignInGate'),"Problem page must not block navigation on account login");
-assert.ok(appSource.includes('googleSignInBtn').valueOf(),"Google sign-in handler must remain available");
+assert.ok(appSource.includes('googleSignInBtn'),"Google sign-in handler must remain available");
 console.log("✓ Original optional Google sign-in restored without a loading or login overlay.");
 
 
