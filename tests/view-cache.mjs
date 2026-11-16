@@ -151,10 +151,15 @@ assert.ok(appSource.includes('scheduleCommunityWarmup(owner,publicProfile)'));
 const communitySource=readFileSync('dist/community.js','utf8');
 assert.ok(!communitySource.includes('catalog=await cloud.publicCatalog()'),'Catalog must never block profile boot.');
 assert.ok(communitySource.includes('const cachedSelf=viewCache.self(owner)'),'Profile should bootstrap from verified account cache.');
+assert.ok(communitySource.includes('return; // Fresh (2-minute) account cache'),'Cached profile should not refetch self while fresh.');
+assert.ok(communitySource.includes('viewerProfile:self?.profile||null'),'Profile chart receives the already-verified viewer.');
 assert.ok(communitySource.includes('void route();'),'Cached profile route should start without a backend self await.');
 assert.ok(communitySource.includes('void refreshPresence(true)'),'Presence must stay independently live.');
 const dashboardSource=readFileSync('dist/dashboard.js','utf8');
 const dashboardOpen=dashboardSource.slice(dashboardSource.indexOf('async open()'),dashboardSource.indexOf('async render()'));
 assert.ok(dashboardOpen.indexOf('this.render();')<dashboardOpen.indexOf("this.cloud.request('self')"),'Chart must paint before extra account and friends calls.');
+assert.ok(dashboardOpen.includes('let viewer=this.viewerProfile;'),'Analytics must reuse existing verified account data.');
+assert.ok(leader.includes('const savedAccount=cache.self(nextOwner)'),'Leaderboard should reuse the recent account snapshot.');
+assert.ok(appSource.includes('communityCache.clearOwner(previousOwner)'),'Account switches must clear snapshots.');
 
 console.log('PASS: rankings/profile cache isolation and TTLs, manual rank refresh, live presence/chat/notifications, and +N company hover overflow.');
