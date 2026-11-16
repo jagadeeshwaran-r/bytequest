@@ -1,0 +1,51 @@
+/* Scroll paint optimizations.
+ * Keep the ByteQuest visual theme while avoiding continuous viewport repaints.
+ * Do not affect authentication, data caches, rankings, chat or notifications.
+ */
+
+/* This decorative grid/gradient used to be a full-screen fixed layer with a
+ * perpetual opacity animation. Make it a static top-of-page ornament instead,
+ * so it scrolls with the document rather than being recomposited each frame.
+ */
+body::before{
+  position:absolute!important;
+  inset:0 0 auto 0!important;
+  height:min(780px,100vh)!important;
+  animation:none!important;
+}
+
+/* A sticky, 20–28px backdrop blur forces the browser to continuously sample
+ * scrolling page content underneath the navbar. Use an opaque surface instead.
+ * The existing shape, border, text, theme and subtle shadow remain unchanged.
+ */
+.minimal-header{
+  background:var(--surface)!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+
+/* Keep chart/summary content in the DOM but skip painting distant static
+ * profile sections until they approach the viewport.
+ * Avoid tables, sticky headers, editors, menus and interactive graphs, whose
+ * layout/measurement behavior must remain unchanged.
+ */
+@supports(content-visibility:auto){
+  .profile-expertise,
+  .month-calendar-scroll{
+    content-visibility:auto;
+    contain-intrinsic-size:auto 155px;
+  }
+  .profile-expertise{contain-intrinsic-size:auto 235px}
+}
+
+/* Decorative gradients do not need to repaint on cursor movement over
+ * full-width scroll surfaces. Logo hover tooltips and +N company tags remain.
+ */
+#questGrid.bq-spotlight,
+.leader-table-wrap.bq-spotlight{
+  background-image:none!important;
+}
+
+@media(prefers-reduced-motion:reduce){
+  .minimal-header{transition:none!important}
+}
