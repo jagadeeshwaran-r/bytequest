@@ -1,0 +1,54 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {accessPhase,mountSignInGate} from '../dist/access-gate.js';
+
+assert.equal(accessPhase(), 'checking','Never reveal practice during Firebase initialization');
+assert.equal(accessPhase({authResolved:true,user:null,accountReady:false}),'locked','Anonymous visitors must sign in');
+assert.equal(accessPhase({authResolved:true,user:{id:'verified'},accountReady:false}),'checking','Keep loading until an account is ready');
+assert.equal(accessPhase({authResolved:true,user:{id:'verified'},accountReady:true}),'unlocked','Signed-in learners enter the library');
+
+const gateRoot={hidden:false},button={disabled:false,textContent:'',onclick:null},status={textContent:''};
+const nodes={authGate:gateRoot,authGateButton:button,authGateStatus:status};
+const doc={documentElement:{dataset:{}},getElementById:id=>nodes[id]};
+let attempts=0,reloads=0;
+const gate=mountSignInGate({doc,signIn:async()=>{attempts++;},reload:()=>{reloads++;}});
+assert.equal(gate.phase,'checking');
+assert.equal(button.disabled,true,'No sign-in before Firebase is initialized');
+gate.show('locked');
+assert.equal(doc.documentElement.dataset.bytequestAuth,'locked');
+assert.equal(gateRoot.hidden,false);
+assert.equal(button.disabled,false);
+await button.onclick();
+assert.equal(attempts,1);
+assert.equal(gate.phase,'checking','Wait for Firebase auth callback, not popup resolution');
+gate.show('unlocked');
+assert.equal(gateRoot.hidden,true);
+await button.onclick();assert.equal(attempts,1,'Already authenticated users should not reopen the popup');
+gate.show('locked');
+assert.equal(gateRoot.hidden,false,'Sign-out must hide the problem library');
+gate.show('error','Sign-in SDK unavailable');
+assert.equal(button.textContent,'Reload and retry');
+await button.onclick();assert.equal(reloads,1);
+const broken=mountSignInGate({doc,signIn:async()=>{throw new Error('Popup blocked');}});
+broken.show('locked');
+await button.onclick();
+assert.equal(broken.phase,'locked');
+assert.match(status.textContent,/Popup blocked/);
+assert.equal(button.disabled,false,'A failed popup must permit another sign-in attempt');
+
+for(const page of ['index.html','studio.html']){
+ const html=readFileSync('dist/'+page,'utf8');
+ assert.ok(html.includes('document.documentElement.dataset.bytequestAuth="checking"'),page+' must start locked before rendering');
+ assert.ok(html.includes('body > :not(#authGate){display:none!important}'),page+' must hide all page content before login');
+ assert.ok(html.includes('id="authGate"'),page+' must provide a visible login screen');
+ assert.ok(html.includes('id="authGateButton"'),page+' must provide Google sign-in');
+ assert.ok(html.includes('./access-gate.css?v=authgate-1'),page+' must load login styles');
+ assert.ok(!html.includes('id="guestContinue"'),page+' must not offer guest access');
+ assert.ok(html.includes('./app.js?v=authgate-1'),page+' must load the updated auth-aware app');
+}
+const app=readFileSync('dist/app.js','utf8');
+assert.ok(app.includes('if(!cloud.user||!accountReady)return; // Never route unsigned visitors'), 'Routes must reject anonymous learners');
+assert.ok(app.includes('if(!cloud.enabled||!cloud.user)return;'), 'Do not fetch public catalog before login');
+assert.ok(app.includes('accessGate.show("locked")'), 'Signing out must re-lock the workspace');
+assert.ok(app.includes('accessGate.show("unlocked")'), 'Verified Firebase account must unlock the workspace');
+console.log('PASS: login-only problem library, popup failures, signed-in recovery, sign-out and deep link gate.');
