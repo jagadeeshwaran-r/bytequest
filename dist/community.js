@@ -8,7 +8,7 @@ import {Dashboard} from './dashboard.js?v=next-1';
 import {analyticsMarkup} from './profile-analytics.js?v=profile-2';
 import {mountShell} from './shell.js?v=workbench-1';
 import {prepareAvatar} from './avatar-upload.js';
-import {Cloud} from './cloud.js?v=cpp-1';
+import {Cloud} from './cloud.js?v=catalog-1';
 import {activityStats,escapeHtml as h} from './community-model.js';
 const shell=mountShell();let pendingPhoto=null;let analytics=null,catalog=[],viewedTarget=null,viewedPresence=null,presenceReading=false;
 const $=id=>document.getElementById(id);let epoch=0,self=null,latest=0;
