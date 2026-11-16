@@ -1,0 +1,23 @@
+name: Measure ByteQuest cache latency
+
+on:
+  pull_request:
+    paths:
+      - "tests/bench-cache.mjs"
+      - ".github/workflows/cache-latency.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Measure public catalog and cached view performance
+        run: node tests/bench-cache.mjs
