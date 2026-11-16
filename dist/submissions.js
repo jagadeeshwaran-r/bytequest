@@ -3,7 +3,7 @@ import {languageNames} from './profile-fields.js?v=profile-2';
 import {escapeHtml as h} from './community-model.js';
 export const runtimeLabel=value=>value===null||value===undefined?'Not measured':Number(value)<.001?'< 0.001 ms':Number(value).toFixed(3)+' ms';
 export const memoryLabel=value=>value===null||value===undefined?'Not measured':(Number(value)/1048576).toFixed(2)+' MB';
-const benchmarkNote='Practice benchmarks: median of three warmed test-suite passes. Runtime includes the test harness and output; memory is whole-process peak RSS, including the language runtime. Small differences can be noise. Measurements do not determine Big-O complexity.';
+const benchmarkNote='Practice benchmarks: Java submissions time one complete test-suite pass for faster verdicts; Python, C and C++ use a median of three warmed passes. Runtime includes the test harness and output; memory is whole-process peak RSS, including the language runtime. Compare results from the same benchmark version because measurements can differ. These timings do not determine Big-O complexity.';
 export function mountSubmissions(cloud,{notify=()=>{}}={}){
  let generation=0,root=null,problem=null,language='all',sort='runtime',page=0,history=false,owner=null;
  const dialog=document.createElement('dialog');dialog.className='submission-dialog';dialog.setAttribute('aria-labelledby','submissionTitle');document.body.append(dialog);

@@ -34,6 +34,13 @@ for (const page of ["index.html", "studio.html"]) {
 }
 console.log("✓ Studio return type selector supports ListNode and int[][] on both pages.");
 
+// A consistent header brand across the practice, Studio and community pages.
+for (const page of ["index.html", "studio.html", "leaderboard.html", "community.html"]) {
+  const html = readFileSync("dist/" + page, "utf8");
+  assert.ok(html.includes('<span class="wordmark-byte">Byte</span><span class="wordmark-quest">Quest</span>'), page + " must show the joined ByteQuest wordmark");
+  assert.ok(html.includes('reference-style.css?v=brand-20261116'), page + " must refresh branded styles");
+}
+console.log("✓ ByteQuest wordmark and branding styles across all four pages.");
 mkdirSync("build/tests", {recursive:true});
 function command(args) {
   const p=spawnSync("java",args,{encoding:"utf8",timeout:25000});
@@ -106,7 +113,7 @@ try {
   writeFileSync("build/benchmark/Wandbox.java",benchJava);
   command(["com.sun.tools.javac.Main","-d","build/benchmark","build/benchmark/Wandbox.java"]);
   const benchmarkOutput=command(["-cp","build/benchmark","Wandbox"]);
-  assert.equal((benchmarkOutput.match(/__BYTEQUEST_CASE_\d+__/g)||[]).length,cycleCases.length*4);
+  assert.equal((benchmarkOutput.match(/__BYTEQUEST_CASE_\d+__/g)||[]).length,cycleCases.length);
   assert.ok(benchmarkOutput.includes("__BYTEQUEST_BENCH_fixture__"));
   const wrongCycle=execute("class Solution { public boolean hasCycle(ListNode head) { return false; } }",buildTests(cycleProblem,cycleCases));
   assert.equal(wrongCycle.status,"ok",JSON.stringify(wrongCycle));
@@ -140,7 +147,7 @@ try {
   writeFileSync("build/tree-benchmark/Wandbox.java",benchmarkTree);
   command(["com.sun.tools.javac.Main","-d","build/tree-benchmark","build/tree-benchmark/Wandbox.java"]);
   const treeOutput=command(["-cp","build/tree-benchmark","Wandbox"]);
-  assert.equal((treeOutput.match(/__BYTEQUEST_CASE_\d+__/g)||[]).length,depthCases.length*4);
+  assert.equal((treeOutput.match(/__BYTEQUEST_CASE_\d+__/g)||[]).length,depthCases.length);
   assert.ok(treeOutput.includes("__BYTEQUEST_BENCH_treefixture__"));
   console.log("✓ TreeNode studio validation, sparse/empty level-order trees, browser judge, and server benchmark.");
 
@@ -223,7 +230,7 @@ try {
     const output=command(["-cp",folder,"Wandbox"]);
     const graded=nativeResults(output,testProblem,x.cases);
     assert.ok(graded.every(c=>c.passed),x.id+" server results: "+JSON.stringify(graded));
-    assert.equal((output.match(/__BYTEQUEST_CASE_\d+__/g)||[]).length,x.cases.length*4);
+    assert.equal((output.match(/__BYTEQUEST_CASE_\d+__/g)||[]).length,x.cases.length);
   }
   const cycleIndex=extendedFixtures[5],cycleIdentityProblem={...problems[0],...cycleIndex,starter:cycleIndex.source,reference:cycleIndex.source,tests:cycleIndex.cases};
   const fakeEntry=execute("class Solution { public ListNode detectCycle(ListNode head){return new ListNode(head==null?0:head.val);} }",buildTests(cycleIdentityProblem,cycleIndex.cases));
