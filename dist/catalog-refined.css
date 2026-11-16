@@ -1,0 +1,195 @@
+/* Minimal ByteQuest catalog. Scoped to the problem-library route. */
+#mapView .section-heading{
+  display:flex!important;align-items:flex-end!important;justify-content:space-between;
+  gap:18px;margin:0 0 19px!important;padding:7px 0 0!important;
+}
+#mapView .section-heading .eyebrow{
+  margin:0 0 8px;font-size:9px!important;line-height:1.5;
+  letter-spacing:.09em;
+}
+#mapView .section-heading h2{
+  margin:0 0 6px!important;
+  font:650 clamp(26px,2.7vw,33px)/1.18 var(--font-sans)!important;
+  color:var(--text);letter-spacing:-.045em!important;
+}
+#mapView .section-heading p{
+  margin:0!important;font:400 12px/1.65 var(--font-sans)!important;
+  max-width:600px;color:var(--muted)!important;
+}
+#mapView .section-heading .soft-pill{
+  display:inline-flex;align-items:center;flex-shrink:0;
+  min-height:30px;padding:6px 11px;
+  font:500 10px/1.4 var(--font-mono);
+  color:var(--muted);background:var(--surface-2)!important;
+  border:1px solid var(--border);border-radius:999px;
+  box-shadow:none;
+}
+#mapView .filters{
+  display:flex;align-items:center;flex-wrap:nowrap;
+  gap:10px;margin:0 0 0!important;padding:0 0 13px;
+  border-bottom:1px solid var(--border);
+}
+#mapView .catalog-search-wrap{
+  display:flex;align-items:center;gap:7px;
+  flex:1 1 0;min-width:180px;max-width:none;
+}
+#mapView .catalog-search-wrap .search-box{
+  display:flex;align-items:center;flex:1 1 0;
+  width:auto;min-width:0;max-width:none;
+  height:43px;min-height:43px;padding:8px 13px;
+  border-radius:9px;border:1px solid var(--border);
+  background:var(--surface)!important;box-shadow:none;
+}
+#mapView .catalog-search-wrap .search-box:focus-within{
+  border-color:var(--accent);
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 12%,transparent);
+}
+#mapView .catalog-search-wrap .search-box svg{
+  display:block;width:17px;height:17px;min-width:17px;
+  color:var(--muted);
+}
+#mapView .catalog-search-wrap input{
+  width:100%;min-width:0;
+  font:400 12px/1.5 var(--font-sans);color:var(--text);
+}
+#mapView .catalog-search-wrap input::placeholder{color:var(--muted);opacity:.85}
+#mapView #clearProblemSearch{
+  flex:0 0 auto;padding:8px 10px;
+  background:var(--surface-2);border:1px solid var(--border);
+  border-radius:8px;color:var(--muted);cursor:pointer;
+  font:500 11px var(--font-sans);
+}
+#mapView #clearProblemSearch[hidden]{display:none!important}
+#mapView #clearProblemSearch:hover{color:var(--accent);border-color:var(--accent)}
+#mapView .filters select:not([hidden]){
+  flex:0 0 auto;min-width:137px;max-width:170px;
+  height:43px!important;padding:8px 11px!important;
+  font:500 11px var(--font-sans);
+  background:var(--surface)!important;color:var(--text);
+  border:1px solid var(--border);border-radius:9px!important;
+}
+#mapView .catalog-meta{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  min-height:36px;padding:8px 2px 10px;
+  font:500 10px/1.5 var(--font-sans);color:var(--muted);
+}
+#mapView .catalog-meta-hint{font-weight:400}
+#mapView .problem-table{
+  border:1px solid var(--border)!important;
+  border-collapse:separate;border-spacing:0;
+  border-radius:11px;overflow:visible;background:var(--surface);
+}
+#mapView .problem-table :is(th,td){
+  box-sizing:border-box;vertical-align:middle;
+  padding:13px 15px;line-height:1.45;text-align:left;
+}
+#mapView .problem-table thead th{
+  background:var(--surface-2)!important;
+  color:var(--muted);
+  font:500 9px/1.5 var(--font-sans);
+  letter-spacing:.07em;text-transform:uppercase;
+  border-bottom:1px solid var(--border);
+}
+#mapView .problem-table th:first-child{border-radius:11px 0 0 0;width:72px}
+#mapView .problem-table th:nth-child(3){width:188px}
+#mapView .problem-table th:nth-child(4){width:133px}
+#mapView .problem-table th:nth-child(5){width:119px;border-radius:0 11px 0 0}
+#mapView .problem-table tbody td{
+  height:58px;
+  border-top:1px solid var(--border);
+  font-variant-numeric:tabular-nums;
+}
+#mapView .problem-table tbody tr:first-child td{border-top:0}
+#mapView .problem-table tbody tr:hover td{
+  background:color-mix(in srgb,var(--accent) 4%,var(--surface))!important;
+}
+#mapView .problem-table .problem-title{
+  font:550 12px/1.5 var(--font-sans);
+  color:var(--text);text-align:left;
+}
+#mapView .problem-table .problem-title:hover{color:var(--accent)}
+#mapView .problem-table .problem-title:focus-visible,
+#mapView :is(.filters select,#clearProblemSearch):focus-visible{
+  outline:2px solid var(--accent);outline-offset:2px;
+}
+#mapView .problem-table .difficulty{
+  min-height:24px;padding:4px 7px!important;
+  font:550 10px var(--font-sans);
+}
+#mapView .problem-table td:nth-child(4) small.problem-points{
+  color:var(--muted);font:400 9px var(--font-mono);
+}
+#mapView .problem-table .problem-status{
+  font-size:11px;gap:7px;
+}
+#mapView .problem-table .company-logo,
+#mapView .problem-table .company-overflow{vertical-align:middle}
+#mapView .company-note{font-size:10px;line-height:1.6}
+/* Java reference: explanatory editorial remains visible, code unlocks on solve. */
+#practiceView :is(.reference-lock,.reference-unlocked){
+  display:flex;align-items:center;gap:12px;
+  padding:16px;margin:16px 0 9px;
+  border:1px solid var(--border);border-radius:10px;
+  background:var(--surface-2);color:var(--text);
+}
+#practiceView .reference-gate-icon{
+  width:35px;height:35px;flex:0 0 35px;
+  display:grid;place-items:center;border-radius:9px;
+  color:var(--muted);background:var(--surface);
+  border:1px solid var(--border);
+}
+#practiceView .reference-gate-icon svg{
+  width:17px;height:17px;
+  fill:none;stroke:currentColor;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+#practiceView .reference-unlocked .reference-gate-icon{
+  color:var(--accent);background:var(--blue-soft);
+}
+#practiceView .reference-gate-copy{flex:1;min-width:0}
+#practiceView .reference-gate-copy strong{
+  display:block;margin:0 0 4px;
+  font:600 12px/1.5 var(--font-sans);
+}
+#practiceView .reference-gate-copy p{
+  margin:0;color:var(--muted);
+  font:400 10px/1.65 var(--font-sans);
+}
+#practiceView .reference-lock-status{
+  padding:5px 8px;flex:0 0 auto;
+  border:1px solid var(--border);border-radius:6px;
+  color:var(--muted);font:500 10px var(--font-sans);
+}
+#practiceView .reference-unlocked #referenceBtn{
+  margin:0;white-space:nowrap;flex-shrink:0;
+  border:1px solid var(--border);border-radius:7px;
+  color:var(--accent);background:var(--surface);
+  padding:8px 10px;font:600 10px var(--font-sans);
+}
+#practiceView .reference-unlocked #referenceBtn:hover{border-color:var(--accent)}
+@media(max-width:900px){
+  #mapView .section-heading{gap:10px}
+  #mapView .filters{flex-wrap:wrap}
+  #mapView .catalog-search-wrap{flex-basis:100%}
+  #mapView .filters select:not([hidden]){flex:1 1 120px;max-width:none}
+  #mapView .problem-table{min-width:655px!important}
+  #mapView .problem-table th:first-child{width:49px}
+  #mapView .problem-table th:nth-child(3){width:157px}
+  #mapView .problem-table th:nth-child(4){width:112px}
+  #mapView .problem-table th:nth-child(5){width:90px}
+  #mapView .problem-table :is(td,th){padding:12px 11px}
+}
+@media(max-width:620px){
+  #mapView .section-heading{align-items:flex-start!important;flex-direction:column;gap:10px}
+  #mapView .section-heading h2{font-size:27px!important}
+  #mapView .section-heading .soft-pill{min-height:28px}
+  #mapView .catalog-meta-hint{display:none}
+  #mapView .filters select:not([hidden]){min-width:120px}
+  #practiceView :is(.reference-lock,.reference-unlocked){align-items:flex-start;flex-wrap:wrap;padding:13px}
+  #practiceView .reference-unlocked #referenceBtn{margin-left:47px}
+  #practiceView .reference-lock-status{margin-left:47px}
+}
+@media(prefers-reduced-motion:reduce){
+  #mapView .problem-table tbody tr td,
+  #mapView .problem-table .problem-title{transition:none!important}
+}
