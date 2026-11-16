@@ -1,3 +1,4 @@
+import './java-submit-fast.mjs';
 import "./profile-inbox.mjs";
 import "./editor-operators.mjs";
 import "./workbench.mjs";
