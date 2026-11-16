@@ -14,11 +14,13 @@ export function mountSignInGate({doc=document,signIn,reload=()=>location.reload(
   function show(next,message){
     phase=next;
     doc.documentElement.dataset.bytequestAuth=next;
-    root.hidden=next==="unlocked";
+    // Keep the page completely blank while Firebase restores an existing session.
+    // Only show the sign-in UI after Firebase confirms that the visitor is signed out.
+    root.hidden=next==="unlocked"||next==="checking";
     button.disabled=next==="checking"||next==="signing-in"||next==="unlocked";
     button.textContent=next==="error"?"Reload and retry":"Continue with Google";
     status.textContent=message||(
-      next==="checking"?"Opening ByteQuest…":
+      next==="checking"?"":
       next==="signing-in"?"Opening Google sign-in…":
       next==="error"?"Sign-in is unavailable. Reload to try again.":
       next==="locked"?"Sign in to access the problem library.":""

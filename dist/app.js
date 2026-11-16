@@ -11,7 +11,7 @@ import {Dashboard} from "./dashboard.js?v=next-1";
 import {languages,starterFor,NativeJudge} from "./languages.js?v=structural-2";
 import {problems as bundledProblems} from "./problems.js";
 import {Cloud} from "./cloud.js?v=cpp-1";
-import {mountSignInGate} from "./access-gate.js?v=authgate-2";
+import {mountSignInGate} from "./access-gate.js?v=authgate-3";
 import {blankProgress, validateProgress, mergeProgress, solveStreak} from "./progress.js?v=next-1";
 import {Studio} from "./studio.js?v=structural-2";
 const problems=[...bundledProblems];
