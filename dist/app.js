@@ -10,7 +10,7 @@ import {companyIcons} from './companies.js?v=company-3';
 import {problemStatusMarkup} from './problem-status.js?v=solved-1';
 import {canRevealEditorialSolution,editorialSolutionGateMarkup} from './editorial-access.js?v=editorial-1';
 import {mountWorkspace} from './workspace.js';
-import {mountShell} from "./shell.js?v=studio-auth-1";
+import {mountShell} from "./shell.js?v=creator-admin-1";
 import {Dashboard} from "./dashboard.js?v=topic-directory-1";
 import {languages,starterFor,NativeJudge} from "./languages.js?v=structural-2";
 import {problems as bundledProblems} from "./problems.js";
