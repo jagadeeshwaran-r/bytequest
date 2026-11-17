@@ -13,13 +13,14 @@ export function nextStreakDayCountdown(now=Date.now()){
 export function bindStreakCountdown(root,{now=()=>Date.now(),every=globalThis.setInterval,stop=globalThis.clearInterval}={}){
   const node=root?.querySelector?.('[data-streak-countdown]');
   if(!node)return ()=>{};
+  let timer=null;
   const update=()=>{
-    if(node.isConnected===false){stop(timer);return;}
+    if(node.isConnected===false){if(timer!==null)stop(timer);return;}
     node.textContent=nextStreakDayCountdown(now());
   };
   // The absolute UTC timestamp is re-read every tick so background-tab
   // throttling and laptop sleep cannot accumulate timer drift.
   update();
-  const timer=every(update,1000);
+  timer=every(update,1000);
   return ()=>stop(timer);
 }
