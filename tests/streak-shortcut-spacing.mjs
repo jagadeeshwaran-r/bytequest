@@ -29,7 +29,7 @@ off();
 assert.deepEqual(cleared,[43]);
 node.isConnected=false;
 tick();
-assert.deepEqual(cleared,[43,43],'Detached elements do not keep ticking');
+assert.deepEqual(cleared,[43],'Detached timer is not cleared twice');
 assert.equal(typeof bindStreakCountdown({querySelector:()=>null}), 'function');
 
 const event={key:'r',ctrlKey:true,metaKey:false,altKey:false,shiftKey:false,repeat:false,defaultPrevented:false,isComposing:false,
@@ -61,9 +61,9 @@ const app=readFileSync('dist/app.js','utf8');
 const problems=readFileSync('dist/index.html','utf8');
 const style=readFileSync('dist/profile-breathing.css','utf8');
 assert.match(community,/stopStreakCountdown\(\);stopStreakCountdown=\(\)=>\{\}/,'Old profile timer must be stopped on rerender');
-assert.match(community,/bindStreakCountdown\(\$\('profileContent'\)\)/,'Tick on the rendered profile');
+assert.match(community,/bindStreakCountdown\(\$\('profileContent'\),\{onDayChange:/,'Tick on the rendered profile and update calendar at midnight');
 assert.ok(html.includes('profile-breathing.css?v=spacing-1'),'Load final profile spacing stylesheet');
-assert.ok(html.includes('community.js?v=streak-reset-1'),'Refresh cached profile code');
+assert.ok(html.includes('community.js?v=today-ribbon-1'),'Refresh cached profile code');
 assert.match(style,/profile-calendar-section/);
 assert.match(style,/recent-solves/);
 assert.match(style,/grid-template-rows:18px 62px minmax\(32px,auto\) auto/);
