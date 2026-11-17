@@ -83,7 +83,7 @@ const page=readFileSync('dist/community.html','utf8');
 const css=readFileSync('dist/profile-today-ribbon.css','utf8');
 const calendarSource=readFileSync('dist/profile-calendar.js','utf8');
 assert.match(community,/onDayChange:\(\)=>refreshProfileCalendar/,'UTC calendar date-range refresh remains');
-assert.ok(page.includes('profile-today-ribbon.css?v=today-ribbon-1'));
+assert.ok(page.includes('profile-today-ribbon.css?v=avatar-clean-1'));
 assert.ok(page.includes('community.js?v=lifetime-awards-1'));
 assert.ok(css.includes('.profile-hero>.profile-avatar-frame'));
 assert.ok(css.includes('.profile-avatar-frame>.rank-ribbon'));
