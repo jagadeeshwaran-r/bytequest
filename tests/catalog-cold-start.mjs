@@ -24,9 +24,10 @@ assert.equal(calls,1,"Explicit revalidation must bypass the cached 16-row catalo
 assert.equal((await cloud.publicCatalog()).length,31);
 const app=readFileSync("dist/app.js","utf8");
 const html=readFileSync("dist/index.html","utf8");
-assert.ok(app.indexOf("const catalogLoading=refreshCatalog();")<app.indexOf("await cloud.init();"),
+const boot=app.slice(app.indexOf("async function bootCloud(){"));
+assert.ok(boot.indexOf("const catalogLoading=refreshCatalog();")>=0&&boot.indexOf("const catalogLoading=refreshCatalog();")<boot.indexOf("await cloud.init();"),
   "Public catalog loading must begin before Firebase restoration.");
-assert.ok(app.indexOf("const catalogLoading=refreshCatalog();")<app.indexOf("await changeAccount(cloud.user);"),
+assert.ok(boot.indexOf("const catalogLoading=refreshCatalog();")<boot.indexOf("await changeAccount(cloud.user);"),
   "Public catalog loading must not wait for authenticated account/profile requests.");
 assert.ok(app.includes("void catalogLoading.then(()=>revalidateCatalog());"),
   "A previously cached subset must be revalidated on boot.");
