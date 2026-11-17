@@ -42,7 +42,7 @@ export async function requestSandbox(payload,{fetchImpl=fetch,timeoutMs=45000,wa
    try{value=JSON.parse(raw);}catch{if(transientContainerError.test(raw))busy=true;else{diagnostic('invalid_json',attempt+1,response.status);return{ok:false,result:sandboxUnavailable({retried})};}}
    if(value&&typeof value==='object'&&!Array.isArray(value)){
     busy=transientContainerError.test(sandboxDiagnostics(value));
-    if(!busy){if(value.status===undefined||value.status===null){diagnostic('missing_status',attempt+1,response.status);return{ok:false,result:sandboxUnavailable({retried})};}return{ok:true,value,attempts:attempt+1};}
+    if(!busy){if(value.status===undefined||value.status===null){diagnostic('missing_status',attempt+1,response.status);return{ok:false,result:sandboxUnavailable({retried})};}diagnostic('success',attempt+1,response.status);return{ok:true,value,attempts:attempt+1};}
    }else if(!busy){diagnostic('invalid_response',attempt+1,response.status);return{ok:false,result:sandboxUnavailable({retried})};}
   }
   if(busy)diagnostic('capacity',attempt+1,response.status);
