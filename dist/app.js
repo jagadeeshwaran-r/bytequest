@@ -6,6 +6,7 @@ import {mountWorkspaceLayout} from './workspace-layout.js?v=workspace-1';
 import {submissionFeedback} from './submission-feedback.js?v=reliability-1';
 import {usesRemoteSubmit,browserSubmissionCases,browserSubmissionVerdict} from './browser-submit.js?v=local-java-1';
 import {createPracticeSubmission,addPracticeSubmission} from './practice-history.js?v=practice-history-1';
+import {shouldRunCodeShortcut} from './run-shortcut.js?v=ctrl-run-1';
 import {readSafeProgress,writeSafeProgress} from './reliable-storage.js?v=reliability-1';
 import {pointsFor,totalPoints} from './rewards.js?v=upgrade-2';
 import {companyIcons} from './companies.js?v=company-3';
@@ -126,6 +127,17 @@ $("codeEditor").addEventListener("input",saveDraft);
 $("codeEditor").addEventListener("scroll",syncScroll);
 $("codeEditor").addEventListener("keydown",event=>{
   if((event.ctrlKey||event.metaKey)&&event.key==="Enter"){event.preventDefault();run(false);}
+});
+// Ctrl+R runs the current code on the practice screen only. Preserve normal
+// browser refresh on the library/other pages and when an input or dialog is active.
+document.addEventListener("keydown",event=>{
+  if(!shouldRunCodeShortcut(event,{
+    practiceVisible:!$("practiceView").hidden,
+    dialogOpen:Boolean(document.querySelector('dialog[open]'))
+  }))return;
+  event.preventDefault();
+  if(busy){notify("A run is already in progress.");return;}
+  run(false);
 });
 function renderPractice() {
   if(javaOnlyProblem(current)&&language!=="java"){language="java";try{localStorage.setItem("bytequest.language","java");}catch{}}

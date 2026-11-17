@@ -71,7 +71,7 @@ assert.ok(dashboard.includes('aria-valuenow'),'Expose true solved problem count 
 assert.ok(dashboard.includes('topic-directory-toggle'),'Offer searchable topic navigation without overwhelming the page');
 assert.ok(profile.includes("topicInsights:r.insights?.skills||[]"));
 assert.ok(html.includes('analytics-accurate.css?v=accurate-1'));
-assert.ok(html.includes('community.js?v=creator-admin-1'));
+assert.ok(html.includes('community.js?v=streak-reset-1'));
 assert.ok(css.includes('.graph-precise-line'));
 assert.ok(html.includes('topic-directory.css?v=topic-directory-1'));
 assert.ok(css.includes('.graph-precise-line'));
