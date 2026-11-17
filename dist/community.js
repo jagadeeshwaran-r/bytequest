@@ -9,7 +9,7 @@ import {Dashboard} from './dashboard.js?v=topic-directory-1';
 import {analyticsMarkup} from './profile-analytics.js?v=topic-directory-1';
 import {mountShell} from './shell.js?v=creator-admin-1';
 import {prepareAvatar} from './avatar-upload.js';
-import {Cloud} from './cloud.js?v=profile-speed-1';
+import {Cloud} from './cloud.js?v=creator-admin-1';
 import {createViewCache} from './view-cache.js?v=avatar-1';
 import {activityStats,escapeHtml as h} from './community-model.js';
 const shell=mountShell();let pendingPhoto=null;let analytics=null,catalog=[],viewedTarget=null,viewedProfileResult=null,viewedPresence=null,presenceReading=false;
