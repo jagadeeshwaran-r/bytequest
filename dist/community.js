@@ -9,10 +9,10 @@ import {Dashboard} from './dashboard.js?v=topic-directory-1';
 import {analyticsMarkup} from './profile-analytics.js?v=topic-directory-1';
 import {mountShell} from './shell.js?v=workbench-1';
 import {prepareAvatar} from './avatar-upload.js';
-import {Cloud} from './cloud.js?v=catalog-1';
+import {Cloud} from './cloud.js?v=profile-speed-1';
 import {createViewCache} from './view-cache.js?v=avatar-1';
 import {activityStats,escapeHtml as h} from './community-model.js';
-const shell=mountShell();let pendingPhoto=null;let analytics=null,catalog=[],viewedTarget=null,viewedPresence=null,presenceReading=false;
+const shell=mountShell();let pendingPhoto=null;let analytics=null,catalog=[],viewedTarget=null,viewedProfileResult=null,viewedPresence=null,presenceReading=false;
 const $=id=>document.getElementById(id);let epoch=0,bootEpoch=0,self=null,latest=0,lastOwner=null;
 const viewCache=createViewCache();
 const cloud=new Cloud(()=>boot());shell.connect(cloud);
@@ -25,7 +25,7 @@ async function boot(){
  const ticket=++bootEpoch; ++epoch; // Cancel any previous profile route on account changes.
  const owner=cloud.user?.id||null;
  if(lastOwner&&lastOwner!==owner)viewCache.clearOwner(lastOwner);
- lastOwner=owner;self=null;creatorAccess.reset();pendingPhoto=null;
+ lastOwner=owner;self=null;viewedProfileResult=null;creatorAccess.reset();pendingPhoto=null;
  $('profilePhotoFile').value='';shell.setAccount(cloud.user);
  $('signedOut').hidden=!!owner;$('signedIn').hidden=!owner;
  $('communityAccount').textContent=owner?'Sign out':'Sign in with Google';
@@ -49,17 +49,21 @@ async function boot(){
      viewCache.invalidateProfile(owner,cachedSelf.profile?.username);
      viewCache.invalidateProfile(owner,own.profile?.username);
    }
-   if(!cachedSelf||renamed)await route();
-   if(!cachedSelf)await refreshInbox(false);
+   // Profile navigation and notifications are independent. Overlap their
+   // network waits without caching unread counts or delaying profile paint.
+   const profileTask=(!cachedSelf||renamed)?route():null;
+   const inboxTask=!cachedSelf?refreshInbox(false):null;
+   if(profileTask)await profileTask;
+   if(inboxTask)await inboxTask;
    if(ticket===bootEpoch)message('');
  }catch(e){
    if(ticket===bootEpoch)message(cachedSelf?'Showing saved profile while account data reconnects.':e.message,true);
  }
 }
-async function route(){if(!self||!cloud.user)return;const ticket=++epoch,hash=location.hash.slice(1)||'me';for(const id of ['discover','profile','edit','inbox','roles'])$(id+'Panel').hidden=true;$('connections').replaceChildren();$('connectionsDialog').close();creatorAccess.reset();
+async function route(){if(!self||!cloud.user)return;const ticket=++epoch,hash=location.hash.slice(1)||'me';if(hash!=='edit'&&$('profileEditDialog').open)$('profileEditDialog').close();for(const id of ['discover','profile','edit','inbox','roles'])$(id+'Panel').hidden=true;$('connections').replaceChildren();$('connectionsDialog').close();creatorAccess.reset();
  try{
   if(hash==='discover'){shell.focusSearch();location.hash='me';return;}
-  if(hash==='edit'||hash==='me'&&!self.profile){$('editPanel').hidden=false;fillProfile();return;}
+  if(hash==='edit'||hash==='me'&&!self.profile){if($('profileContent').childElementCount)$('profilePanel').hidden=false;$('editPanel').hidden=false;fillProfile();if(!$('profileEditDialog').open)$('profileEditDialog').showModal();return;}
   if(hash==='inbox'){shell.openInbox();location.hash='me';return;}
   if(hash==='roles'){if(!self.admin)throw new Error('Only library administrators can manage creator access.');$('rolesPanel').hidden=false;await loadRoles();return;}
   const target=hash.startsWith('user/')?decodeURIComponent(hash.slice(5)):self.profile?.username;
@@ -86,8 +90,8 @@ async function route(){if(!self||!cloud.user)return;const ticket=++epoch,hash=lo
     renderProfile(result);$('profilePanel').hidden=false;
   }
  }catch(e){if(ticket===epoch)message(e.message,true);}}
-function fillProfile(){const p=self.profile||{};for(const key of ['organization_type','organization_name','organization_url','linkedin_url'])document.getElementById('detail_'+key).value=p[key]||'';$('profileUsername').value=p.username||'';$('profileName').value=p.display_name||cloud.user?.user_metadata?.full_name||'';$('profileBio').value=p.bio||'';$('profileAvatar').value=p.uploadedAvatar?'':p.avatar_url||'';$('photoPreview').hidden=!p.avatar_url;$('photoPreview').src=p.avatar_url||'';const preferences=profilePreferences(self.profile);$('profileDiscoverable').checked=preferences.discoverable;$('profilePresence').checked=preferences.show_presence;}
-function renderProfile(r,{presencePending=false}={}){viewedTarget=r.profile.public_id;if(analytics){analytics.epoch++;analytics.accountGeneration++;}const p=r.profile;$('profileContent').innerHTML=profileMarkup(r,{catalogCount:catalog.length,catalog,admin:self.admin,canFollow:Boolean(self.profile?.discoverable)});
+function fillProfile(){const p=self.profile||{};for(const key of ['organization_type','organization_name','organization_url','linkedin_url'])document.getElementById('detail_'+key).value=p[key]||'';$('profileUsername').value=p.username||'';$('profileName').value=p.display_name||cloud.user?.user_metadata?.full_name||'';$('profileBio').value=p.bio||'';$('profileAvatar').value=p.uploadedAvatar?'':p.avatar_url||'';$('photoPreview').hidden=!p.avatar_url;$('photoPreview').src=p.avatar_url||'';const preferences=profilePreferences(self.profile);$('profileDiscoverable').checked=preferences.discoverable;$('profilePresence').checked=preferences.show_presence;pendingPhoto=null;$('profilePhotoFile').value='';$('profileEditStatus').hidden=true;$('profileEditStatus').textContent='';$('profileEditStatus').dataset.error='false';updateProfilePreview();}
+function renderProfile(r,{presencePending=false}={}){viewedProfileResult=r;viewedTarget=r.profile.public_id;if(analytics){analytics.epoch++;analytics.accountGeneration++;}const p=r.profile;$('profileContent').innerHTML=profileMarkup(r,{catalogCount:catalog.length,catalog,admin:self.admin,canFollow:Boolean(self.profile?.discoverable)});
  viewedPresence=presencePending?null:receivedPresence(r.presence);
  const presenceNode=$('profilePresenceStatus');
  if(presencePending){presenceNode.dataset.status='checking';presenceNode.className='presence';presenceNode.textContent='Checking status…';}
@@ -101,9 +105,79 @@ function renderProfile(r,{presencePending=false}={}){viewedTarget=r.profile.publ
 $('closeConnections').onclick=()=>$('connectionsDialog').close();$('connectionsList').addEventListener('click',e=>{if(e.target.closest('a'))$('connectionsDialog').close();});
 async function refreshInbox(render){const r=await act('notifications');latest=r.items[0]?.id||0;const unread=r.items.filter(n=>n.id>r.lastRead).length;$('unreadBadge').textContent=unread||'';if(render)$('notifications').innerHTML=r.items.length?r.items.map(n=>'<article class="notification '+(n.id>r.lastRead?'unread':'')+'"><small>'+h(n.kind==='new'?'NEW QUEST 🐞':'CORRECTION ↻')+' · '+h(new Date(n.created_at).toLocaleDateString())+'</small><h3>'+h(n.title)+'</h3><p>'+h(n.message)+'</p><a href="./index.html?problem='+encodeURIComponent(n.problem_id)+'#practice">Let’s squash this bug ↗</a></article>').join(''):'<p class="muted">All quiet in the garden. New problems and corrections will arrive here.</p>';}
 async function loadRoles(){const r=await act('roles');$('creatorList').innerHTML=r.creators.length?r.creators.map(p=>'<article class="person-card"><div><b>'+h(p.display_name)+'</b><small>@'+h(p.username)+'</small></div><button class="button secondary" data-revoke="'+h(p.public_id)+'">Revoke</button></article>').join(''):'<p class="muted">No delegated creators yet.</p>';$('creatorList').querySelectorAll('[data-revoke]').forEach(b=>b.onclick=async()=>{if(!confirm('Revoke this account’s creator access?'))return;try{await act('role-set',{target:b.dataset.revoke,creator:false});await loadRoles();message('Creator access revoked.');}catch(e){message(e.message,true);}});}
-$('profilePhotoFile').onchange=async e=>{try{pendingPhoto=await prepareAvatar(e.target.files[0]);$('photoPreview').src='data:image/jpeg;base64,'+pendingPhoto;$('photoPreview').hidden=false;message('Photo ready. Save your profile to upload it.');}catch(err){pendingPhoto=null;e.target.value='';message(err.message,true);}};
+const profileEditDialog=$('profileEditDialog');
+function editFeedback(text='',error=false){const status=$('profileEditStatus');status.textContent=text;status.dataset.error=String(error);status.hidden=!text;}
+function updateProfilePreview(){
+ const name=$('profileName').value.trim()||'Your display name';
+ const username=$('profileUsername').value.trim().toLowerCase();
+ $('profileEditDisplay').textContent=name;
+ $('profileEditHandle').textContent=username?'@'+username:'@username';
+ $('profileEditInitial').textContent=name.charAt(0).toUpperCase()||'?';
+ $('profileBioCounter').textContent=$('profileBio').value.length+' / 280';
+ const url=pendingPhoto?'data:image/jpeg;base64,'+pendingPhoto:
+  $('profileAvatar').value.trim()||self?.profile?.avatar_url||'';
+ const preview=$('profileEditPreview');
+ const valid=url.startsWith('data:image/jpeg;base64,')||/^https:\/\//i.test(url);
+ preview.hidden=!valid;
+ $('profileEditInitial').hidden=valid;
+ if(valid&&preview.src!==url)preview.src=url;
+ if(!valid)preview.removeAttribute('src');
+}
+$('profileEditPreview').onerror=()=>{$('profileEditPreview').hidden=true;$('profileEditInitial').hidden=false;};
+for(const id of ['profileName','profileUsername','profileBio','profileAvatar']){
+ $(id).addEventListener('input',updateProfilePreview);
+}
+function dismissProfileEdit(){
+ if($('saveProfileButton').disabled)return;
+ if(profileEditDialog.open)profileEditDialog.close();
+ if(location.hash==='#edit')location.hash='me';
+}
+$('closeProfileEdit').onclick=dismissProfileEdit;
+$('cancelProfileEdit').onclick=dismissProfileEdit;
+profileEditDialog.addEventListener('cancel',event=>{
+ if($('saveProfileButton').disabled)event.preventDefault();
+});
+profileEditDialog.addEventListener('close',()=>{
+ if(location.hash==='#edit')location.hash='me';
+});
+$('profilePhotoFile').onchange=async e=>{if(!e.target.files?.length)return;try{pendingPhoto=await prepareAvatar(e.target.files[0]);$('photoPreview').src='data:image/jpeg;base64,'+pendingPhoto;$('photoPreview').hidden=false;editFeedback('Photo ready. Save changes to upload it.');updateProfilePreview();}catch(err){pendingPhoto=null;e.target.value='';editFeedback(err.message,true);}};
 $('findForm').onsubmit=async e=>{e.preventDefault();const ticket=epoch;try{const r=await act('search',{query:$('peopleQuery').value.trim()});if(ticket===epoch)$('peopleResults').innerHTML=people(r.users);}catch(err){message(err.message,true);}};
-$('profileForm').onsubmit=async e=>{e.preventDefault();try{self=await act('profile-save',{username:$('profileUsername').value.trim().toLowerCase(),display_name:$('profileName').value.trim(),bio:$('profileBio').value,avatar_url:$('profileAvatar').value.trim(),discoverable:$('profileDiscoverable').checked,show_presence:$('profilePresence').checked,...profileDetails(Object.fromEntries(['organization_type','organization_name','organization_url','linkedin_url'].map(k=>[k,document.getElementById('detail_'+k).value])))});if(pendingPhoto){message('Uploading your photo…');self=await act('avatar-upload',{image:pendingPhoto});pendingPhoto=null;$('profilePhotoFile').value='';}viewCache.clearOwner(cloud.user?.id);viewCache.saveSelf(cloud.user?.id,self);shell.setAccount(cloud.user,self.profile);message('Your profile is saved.');if(location.hash==='#me')await route();else location.hash='me';}catch(err){message(err.message,true);}};
+$('profileForm').onsubmit=async e=>{
+ e.preventDefault();
+ const save=$('saveProfileButton'),cancel=$('cancelProfileEdit');
+ if(save.disabled)return;
+ const owner=cloud.user?.id;
+ save.disabled=true;cancel.disabled=true;save.textContent='Saving…';
+ editFeedback('Saving profile…');
+ try{
+  const fields={username:$('profileUsername').value.trim().toLowerCase(),display_name:$('profileName').value.trim(),bio:$('profileBio').value,avatar_url:$('profileAvatar').value.trim(),discoverable:$('profileDiscoverable').checked,show_presence:$('profilePresence').checked,...profileDetails(Object.fromEntries(['organization_type','organization_name','organization_url','linkedin_url'].map(k=>[k,document.getElementById('detail_'+k).value])))};
+  const saved=await act('profile-save',fields);
+  if(cloud.user?.id!==owner)return;
+  self=saved;
+  if(pendingPhoto){
+   editFeedback('Uploading profile photo…');
+   const image=pendingPhoto;
+   self=await act('avatar-upload',{image});
+   if(cloud.user?.id!==owner)return;
+   pendingPhoto=null;$('profilePhotoFile').value='';
+  }
+  const previouslyViewed=viewedProfileResult;
+  // Profile edits cannot change historical solves, rankings or followers.
+  // Reuse the already verified profile snapshot to avoid a second network
+  // round trip immediately after saving. Live presence remains a separate RPC.
+  const freshView=previouslyViewed?.isOwn&&previouslyViewed.profile?.public_id===self.profile?.public_id
+    ?{...previouslyViewed,profile:{...self.profile}}:null;
+  viewCache.clearOwner(owner);viewCache.saveSelf(owner,self);
+  if(freshView)viewCache.saveProfile(owner,self.profile.username,freshView);
+  shell.setAccount(cloud.user,self.profile);
+  editFeedback('');
+  profileEditDialog.close();
+  message('Your profile is saved.');
+  if(location.hash==='#me')await route();
+  else location.hash='me';
+ }catch(err){if(cloud.user?.id===owner){editFeedback(err.message,true);message(err.message,true);}}
+ finally{save.disabled=false;cancel.disabled=false;save.textContent='Save changes';}
+};
 
 $('readAll').onclick=async()=>{try{await act('notifications-read',{id:latest});await refreshInbox(true);}catch(e){message(e.message,true);}};
 async function login(){try{message('Opening Google sign-in…');await cloud.signIn();}catch(e){message(e.message,true);}}

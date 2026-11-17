@@ -1,6 +1,7 @@
 import {cloudConfig} from "./config.js";
 import {firebaseConfig} from "./firebase-config.js";
 import {FirebaseSession} from "./firebase-session.js?v=upgrade-2";
+import {createRequestCoordinator} from "./request-coordinator.js?v=profile-speed-1";
 import {validateProblem} from "./catalog.js?v=presence-1";
 import {blankProgress,validateProgress} from "./progress.js?v=next-1";
 export function validPublicConfig(config){
@@ -24,7 +25,8 @@ function catalogStorage(fallback){
 export class Cloud {
   constructor(onChange=()=>{},{config=cloudConfig,firebase=firebaseConfig,fetchImpl=(...args)=>globalThis.fetch(...args),sessionFactory=(c,cb)=>new FirebaseSession(c,cb),storage=undefined,now=()=>Date.now()}={}){
     this.config=config;this.fetch=fetchImpl;this.catalogStore=catalogStorage(storage);this.clock=now;this.catalogInFlight=null;this.user=null;this.admin=false;this.canCreate=false;this.onChange=onChange;this.enabled=validPublicConfig(config);this.lastToken=null;this.loginReady=false;this.bootstrap=null;
-    this.session=sessionFactory(firebase,user=>{this.user=user;this.lastToken=null;this.admin=false;this.canCreate=false;this.bootstrap=null;this.onChange(user);});
+    this.requests=createRequestCoordinator();
+    this.session=sessionFactory(firebase,user=>{this.requests.clear();this.user=user;this.lastToken=null;this.admin=false;this.canCreate=false;this.bootstrap=null;this.onChange(user);});
   }
   async init(){await this.session.init();this.user=this.session.user;this.loginReady=this.session.ready;}
   async signIn(){await this.session.signIn();}
@@ -84,7 +86,13 @@ export class Cloud {
     this.catalogInFlight=request;
     try{return await request;}finally{if(this.catalogInFlight===request)this.catalogInFlight=null;}
   }
+  requestMetrics(){return this.requests.metrics();}
   async request(action,body={},ownerId=this.user?.id){
+    if(this.deletionPending&&action!=="account-delete")throw new Error("Account removal is in progress.");
+    if(!this.enabled||!ownerId||this.user?.id!==ownerId)throw new Error("Sign in to sync your progress.");
+    return this.requests.run(action,body,ownerId,()=>this.networkRequest(action,body,ownerId));
+  }
+  async networkRequest(action,body={},ownerId=this.user?.id){
     if(this.deletionPending&&action!=="account-delete")throw new Error("Account removal is in progress.");
     if(!this.enabled||!ownerId||this.user?.id!==ownerId)throw new Error("Sign in to sync your progress.");
     for(let attempt=0;attempt<2;attempt++){
