@@ -3,7 +3,7 @@
 // previously crashed before Firebase could restore an existing session.
 import {Cloud} from './cloud.js?v=creator-admin-1';
 import {Studio} from './studio.js?v=studio-auth-1';
-import {mountShell} from './shell.js?v=studio-auth-1';
+import {mountShell} from './shell.js?v=creator-admin-1';
 
 window.__bytequestStudioStarted=true;
 const $=id=>document.getElementById(id);
