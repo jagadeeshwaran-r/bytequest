@@ -8,6 +8,7 @@ import "./solving-forecast.mjs";
 import "./problem-library-bootstrap.mjs";
 import "./editor-operators.mjs";
 import "./workbench.mjs";
+import "./browser-submit.mjs";
 import "./compiler-recovery.mjs";
 import "./security-hardening.mjs";
 import "./next-features.mjs";

@@ -1,5 +1,6 @@
 import {comparisonEdit} from './code-operators.js?v=operators-1';
 import {bracketEdit} from './bracket-edit.js?v=workbench-1';
+import {blocksEditorClipboardEvent,blocksEditorShortcut,blocksEditorBeforeInput} from './editor-clipboard.js?v=copy-only-1';
 const words={
  java:'abstract boolean break byte case catch char class continue default do double else enum extends final finally float for if implements import instanceof int interface long new null private protected public return short static String super switch synchronized this throw throws true try void volatile while false System.out.println Arrays.sort Arrays.fill Arrays.copyOf Math.max Math.min Math.abs HashMap HashSet ArrayList List Map Set StringBuilder Integer.parseInt Collections.sort',
  python:'and as assert async await break class continue def del elif else except False finally for from global if import in is lambda None nonlocal not or pass raise return True try while with yield len range enumerate sorted reversed zip sum min max abs int str list dict set tuple print append collections.Counter collections.defaultdict',
@@ -36,13 +37,13 @@ export function mountEditorTools(editor,{getLanguage,getProblem,notify=()=>{}}){
  function apply(s,record=true,focus=true){applying=true;editor.value=s.value;editor.setSelectionRange(s.start,s.end);if(record)history.record(s);editor.dispatchEvent(new Event('input',{bubbles:true}));applying=false;close();if(focus)editor.focus();}
  function replace(text,start=editor.selectionStart,end=editor.selectionEnd){history.selection(editor.selectionStart,editor.selectionEnd);apply({value:editor.value.slice(0,start)+text+editor.value.slice(end),start:start+text.length,end:start+text.length});}
  function accept(i=selected){const c=choices[i];if(c)replace(c.label,c.start,c.end);}
- const block=e=>{e.preventDefault();close();notify('Clipboard actions are disabled in the coding editor. Type your solution; undo is available.');};
- for(const event of ['copy','cut','paste','drop'])editor.addEventListener(event,block);
- editor.addEventListener('beforeinput',e=>{if(/^(insertFromPaste|insertFromDrop|insertFromYank|deleteByCut)/.test(e.inputType)){block(e);return;}history.selection(editor.selectionStart,editor.selectionEnd);if(applying||editor.readOnly||e.isComposing||!e.cancelable)return;const key=e.inputType==='deleteContentBackward'?'Backspace':e.inputType==='insertText'&&e.data?.length===1?e.data:null;if(!key)return;const edit=bracketEdit(editor.value,editor.selectionStart,editor.selectionEnd,key,getLanguage());if(edit){e.preventDefault();apply(edit);}});
+ const block=e=>{e.preventDefault();close();notify('Paste and cut are disabled in the coding editor. Copy is allowed.');};
+ for(const event of ['copy','cut','paste','drop'])if(blocksEditorClipboardEvent(event))editor.addEventListener(event,block);
+ editor.addEventListener('beforeinput',e=>{if(blocksEditorBeforeInput(e.inputType)){block(e);return;}history.selection(editor.selectionStart,editor.selectionEnd);if(applying||editor.readOnly||e.isComposing||!e.cancelable)return;const key=e.inputType==='deleteContentBackward'?'Backspace':e.inputType==='insertText'&&e.data?.length===1?e.data:null;if(!key)return;const edit=bracketEdit(editor.value,editor.selectionStart,editor.selectionEnd,key,getLanguage());if(edit){e.preventDefault();apply(edit);}});
  editor.addEventListener('input',()=>{if(applying)return;history.record(snapshot());suggest();});
  editor.addEventListener('keydown',e=>{
   const mod=e.ctrlKey||e.metaKey,key=e.key.toLowerCase();
-  if(mod&&(['c','x','v'].includes(key))){block(e);return;}
+  if(blocksEditorShortcut(key,mod)){block(e);return;}
   if(mod&&(key==='z'||key==='y')){e.preventDefault();if(editor.readOnly)return;history.selection(editor.selectionStart,editor.selectionEnd);apply(key==='y'||e.shiftKey?history.redo():history.undo(),false);return;}
   if(mod&&e.code==='Space'){e.preventDefault();suggest();return;}
   if(e.key==='Escape'){close();return;}

@@ -1,9 +1,10 @@
 import {profileAvatar,publicProfileHref} from './profile-view.js?v=workbench-1';
-import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=share-default-1';
+import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=browser-submit-1';
 import {launchCelebration} from './celebration.js?v=next-1';
-import {mountEditorTools} from './editor-tools.js?v=workbench-1';
+import {mountEditorTools} from './editor-tools.js?v=copy-enabled-1';
 import {mountWorkspaceLayout} from './workspace-layout.js?v=workspace-1';
-import {submissionFeedback} from './submission-feedback.js?v=security-1';
+import {submissionFeedback} from './submission-feedback.js?v=browser-submit-1';
+import {usesRemoteSubmit,browserSubmissionCases,browserSubmissionVerdict} from './browser-submit.js?v=local-java-1';
 import {pointsFor,totalPoints} from './rewards.js?v=upgrade-2';
 import {companyIcons} from './companies.js?v=company-3';
 import {problemStatusMarkup} from './problem-status.js?v=solved-1';
@@ -112,7 +113,7 @@ function renderPractice() {
   for(const option of $("languageSelect").options)option.disabled=javaOnlyProblem(current)&&option.value!=="java";
   warmJavaSoon();
   pauseTrace();
-  $("languageSelect").value=language;$("languageSelect").disabled=busy;$("codeFilename").textContent=languages[language].file;$("editorProblemNumber").textContent="#"+String(problems.indexOf(current)+1).padStart(2,"0");$("runStatus").textContent=languages[language].name+(language==="java"?" · browser compiler":" · online via Wandbox");
+  $("submitBtn").title=language==="java"?"Submit through your browser: public and custom cases only; records practice progress, not a server-verified submission.":"Submit to the online judge for a verified result.";$("languageSelect").value=language;$("languageSelect").disabled=busy;$("codeFilename").textContent=languages[language].file;$("editorProblemNumber").textContent="#"+String(problems.indexOf(current)+1).padStart(2,"0");$("runStatus").textContent=languages[language].name+(language==="java"?" · browser compiler":" · online via Wandbox");
   $("practiceView").classList.toggle("empty-catalog",!current);$("catalogEmpty").hidden=!!current;
   if(!current)return;
   $("questTitle").textContent=current.title; $("questTopic").textContent=current.topic;
@@ -143,7 +144,7 @@ function renderLearning(){
   } else {
     content+='<span class="pattern-tag">A LITTLE MOVING PICTURE</span><h3>Watch the idea click.</h3><p class="body-copy">A guided trace of the reference approach. Your code runs separately in the editor.</p><div id="traceBoard" class="trace-board"></div><p id="traceCaption" class="trace-caption"></p><div class="trace-controls"><button id="traceBack" aria-label="Previous animation step">←</button><button id="tracePlay" class="play-trace">▶ Play</button><button id="traceNext" aria-label="Next animation step">→</button><button id="traceReset" aria-label="Restart animation">↻</button><span id="traceCounter" class="trace-counter"></span></div><div class="code-note">Pause at any step. Say out loud: <i>“What do I know so far, and what changes next?”</i></div>';
   }
-  if(tab==="learn")content+='<section class="language-guidance"><h4>'+html(languages[language].name)+' coding tips</h4><p>'+html(({java:'Use the provided method signature. HashMap and HashSet give expected O(1) lookup; use long when int can overflow.',python:'Keep the generated function and parameters. Return the result instead of printing or reading stdin. Use dict or set for lookup, enumerate for indexed iteration, and four spaces per indentation level.',c:'Keep the generated function signature. Check array lengths before indexing and free memory you allocate. Use long long for large sums.',cpp:'Keep the generated function signature. Return the result; do not add main or read stdin. Use std::vector, std::unordered_map and std::sort; prefer long long for large sums.'})[language])+'</p><small>Suggestions: Ctrl + Space · Accept: Tab · New line: auto-indent · Undo: Ctrl / ⌘ Z · Clipboard disabled in the editor</small></section>';
+  if(tab==="learn")content+='<section class="language-guidance"><h4>'+html(languages[language].name)+' coding tips</h4><p>'+html(({java:'Use the provided method signature. HashMap and HashSet give expected O(1) lookup; use long when int can overflow.',python:'Keep the generated function and parameters. Return the result instead of printing or reading stdin. Use dict or set for lookup, enumerate for indexed iteration, and four spaces per indentation level.',c:'Keep the generated function signature. Check array lengths before indexing and free memory you allocate. Use long long for large sums.',cpp:'Keep the generated function signature. Return the result; do not add main or read stdin. Use std::vector, std::unordered_map and std::sort; prefer long long for large sums.'})[language])+'</p><small>Suggestions: Ctrl + Space · Accept: Tab · New line: auto-indent · Undo: Ctrl / ⌘ Z · Copy allowed · Paste disabled in the editor</small></section>';
   $("learningContent").innerHTML=content;
   if(tab==="problem")loadCredits(current,creditEpoch);
   if($("timerButton")){$("timerButton").onclick=toggleTimer;updateTimer();}
@@ -220,9 +221,9 @@ function stopRun(message="Run stopped. Your draft is saved."){
 }
 async function run(submit){
   if(busy||!current)return;
-  if(submit&&cloud.user){await submitOnline();return;}
+  if(usesRemoteSubmit(language,Boolean(cloud.user),submit)){await submitOnline();return;}
   const epoch=++runEpoch,p=current,source=codeTools.prepare();
-  const cases=submit?[...p.tests,...customCases]:allCases();
+  const cases=submit?browserSubmissionCases(p,customCases):allCases();
   setBusy(true);results=null;renderTests();$("resultOutput").textContent="Starting your code…";
   watchdog=setTimeout(()=>stopRun(language==="java"?"Java startup timed out. Check your connection and allow cjrtnc.leaningtech.com, then try again.":"Online compilation is taking longer than expected. Your code is saved; please try again shortly."),language==="java"?120000:language==='cpp'?90000:60000);
   try{
@@ -239,11 +240,20 @@ async function run(submit){
     });
     if(result.stdout){const stdout=document.createElement("div");stdout.className="stdout";stdout.textContent="Console\n"+result.stdout;output.append(stdout);}
     logAttempt(p,passed,cases.length);
-    if(submit&&!accepted){const feedback=submissionFeedback({...result,accepted:false,status:"wrong_answer",passed,total:cases.length});output.innerHTML=feedback.html;notify(feedback.announcement);}
-    if(accepted&&submit&&p.hiddenCount){
-      if(language!=="java"){output.append(document.createTextNode(" Private submissions currently support Java only. No acceptance recorded."));return;}
-      if(!cloud.user){notify("Public checks passed. Sign in for private-test submissions.");output.append(document.createTextNode(" Private tests are not checked; this quest is not yet accepted."));}
-      else{try{const verdict=await cloud.request("hidden-submit",{problemId:p.id,source,revision:p.revision});output.append(document.createTextNode(" "+verdict.message));if(verdict.accepted)completeQuest(p);}catch(error){output.append(document.createTextNode(" "+error.message));}}
+    if(submit&&language==="java"){
+      // Java Submit follows Run in the browser: no unavailable hosted compiler,
+      // and no private-suite or server-benchmark claims for this practice solve.
+      const verdict=browserSubmissionVerdict(p,passed,cases.length,customCases.length);
+      const feedback=submissionFeedback(verdict);
+      output.insertAdjacentHTML("afterbegin",feedback.html);
+      notify(feedback.announcement);
+      if(verdict.accepted)completeQuest(p,true);
+    }else if(submit&&!accepted){
+      const feedback=submissionFeedback({...result,accepted:false,status:"wrong_answer",passed,total:cases.length});
+      output.innerHTML=feedback.html;notify(feedback.announcement);
+    }else if(accepted&&submit&&p.hiddenCount){
+      output.append(document.createTextNode(" Hidden cases require a server-verified Java submission. No non-Java acceptance was recorded."));
+      notify("Private test acceptance currently supports Java only.");
     }else if(accepted&&submit)completeQuest(p);
     else if(accepted)notify("Samples passed! Submit quest to check every built-in edge case.");
   }catch(error){if(epoch===runEpoch){const message=language!=="java"&&error?.name==='TimeoutError'?"Compiler request timed out. Your code is saved. Please try again shortly.":String(error.message||error);$("resultOutput").textContent=message;notify(message);}}
@@ -270,14 +280,14 @@ function logAttempt(p,passed,total){
   state.activity.push({id:p.id,at:Date.now(),type:"attempt",passed,total});
   state.activity=state.activity.slice(-200);persist();updateStats();
 }
-function completeQuest(p){
+function completeQuest(p,practice=false){
   const solvedDay=new Date().toISOString().slice(0,10);state.acceptedDays??=[];if(!state.acceptedDays.includes(solvedDay))state.acceptedDays.push(solvedDay);
   const first=!state.solved[p.id],isReview=!first&&due(p.id);
   if(first){state.solved[p.id]=Date.now();state.reviews[p.id]={anchor:Date.now(),step:0};}
   else if(isReview){state.reviews[p.id].step++;}
   if(first||isReview)state.activity.push({id:p.id,at:Date.now(),type:first?"solved":"review",passed:p.tests.length,total:p.tests.length});
   $("successTitle").textContent=first?"Aha! Quest complete.":isReview?"That pattern is sticking.":"Another good repetition.";
-  $("successCopy").textContent=(first?"+"+pointsFor(p.difficulty)+" points! ":isReview?"Review complete! ":"")+p.title+" passed the problem test suite. "+(first?"Your first review is in 2 days.":isReview?"Review progress saved.":"Try explaining why your approach works.");
+  $("successCopy").textContent=(first?"+"+pointsFor(p.difficulty)+" points! ":isReview?"Review complete! ":"")+p.title+(practice?" passed the browser practice cases. No server submission was recorded.":" passed the problem test suite.")+" "+(first?"Your first review is in 2 days.":isReview?"Review progress saved.":"Try explaining why your approach works.");
   $("successNote").value=state.notes[p.id]||"";
   document.querySelectorAll("[data-confidence]").forEach(b=>b.classList.toggle("selected",Number(b.dataset.confidence)===state.confidence[p.id]));
   persist();updateStats();if(tab==="learn"&&current.id===p.id)renderLearning();$("successDialog").showModal();celebrate();
