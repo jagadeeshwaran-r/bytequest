@@ -1,4 +1,5 @@
 import './problem-statement-rich.mjs';
+import './catalog-cold-start.mjs';
 import './compiler-security.mjs';
 import "./profile-inbox.mjs";
 import "./profile-compact.mjs";
