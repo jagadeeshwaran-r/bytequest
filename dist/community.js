@@ -12,7 +12,7 @@ import {prepareAvatar} from './avatar-upload.js';
 import {Cloud} from './cloud.js?v=catalog-1';
 import {createViewCache} from './view-cache.js?v=avatar-1';
 import {activityStats,escapeHtml as h} from './community-model.js';
-const shell=mountShell();let pendingPhoto=null;let analytics=null,catalog=[],viewedTarget=null,viewedPresence=null,presenceReading=false;
+const shell=mountShell();let pendingPhoto=null;let analytics=null,catalog=[],viewedTarget=null,viewedProfileResult=null,viewedPresence=null,presenceReading=false;
 const $=id=>document.getElementById(id);let epoch=0,bootEpoch=0,self=null,latest=0,lastOwner=null;
 const viewCache=createViewCache();
 const cloud=new Cloud(()=>boot());shell.connect(cloud);
@@ -25,7 +25,7 @@ async function boot(){
  const ticket=++bootEpoch; ++epoch; // Cancel any previous profile route on account changes.
  const owner=cloud.user?.id||null;
  if(lastOwner&&lastOwner!==owner)viewCache.clearOwner(lastOwner);
- lastOwner=owner;self=null;creatorAccess.reset();pendingPhoto=null;
+ lastOwner=owner;self=null;viewedProfileResult=null;creatorAccess.reset();pendingPhoto=null;
  $('profilePhotoFile').value='';shell.setAccount(cloud.user);
  $('signedOut').hidden=!!owner;$('signedIn').hidden=!owner;
  $('communityAccount').textContent=owner?'Sign out':'Sign in with Google';
@@ -87,7 +87,7 @@ async function route(){if(!self||!cloud.user)return;const ticket=++epoch,hash=lo
   }
  }catch(e){if(ticket===epoch)message(e.message,true);}}
 function fillProfile(){const p=self.profile||{};for(const key of ['organization_type','organization_name','organization_url','linkedin_url'])document.getElementById('detail_'+key).value=p[key]||'';$('profileUsername').value=p.username||'';$('profileName').value=p.display_name||cloud.user?.user_metadata?.full_name||'';$('profileBio').value=p.bio||'';$('profileAvatar').value=p.uploadedAvatar?'':p.avatar_url||'';$('photoPreview').hidden=!p.avatar_url;$('photoPreview').src=p.avatar_url||'';const preferences=profilePreferences(self.profile);$('profileDiscoverable').checked=preferences.discoverable;$('profilePresence').checked=preferences.show_presence;pendingPhoto=null;$('profilePhotoFile').value='';$('profileEditStatus').hidden=true;$('profileEditStatus').textContent='';$('profileEditStatus').dataset.error='false';updateProfilePreview();}
-function renderProfile(r,{presencePending=false}={}){viewedTarget=r.profile.public_id;if(analytics){analytics.epoch++;analytics.accountGeneration++;}const p=r.profile;$('profileContent').innerHTML=profileMarkup(r,{catalogCount:catalog.length,catalog,admin:self.admin,canFollow:Boolean(self.profile?.discoverable)});
+function renderProfile(r,{presencePending=false}={}){viewedProfileResult=r;viewedTarget=r.profile.public_id;if(analytics){analytics.epoch++;analytics.accountGeneration++;}const p=r.profile;$('profileContent').innerHTML=profileMarkup(r,{catalogCount:catalog.length,catalog,admin:self.admin,canFollow:Boolean(self.profile?.discoverable)});
  viewedPresence=presencePending?null:receivedPresence(r.presence);
  const presenceNode=$('profilePresenceStatus');
  if(presencePending){presenceNode.dataset.status='checking';presenceNode.className='presence';presenceNode.textContent='Checking status…';}
@@ -157,7 +157,14 @@ $('profileForm').onsubmit=async e=>{
    if(cloud.user?.id!==owner)return;
    pendingPhoto=null;$('profilePhotoFile').value='';
   }
+  const previouslyViewed=viewedProfileResult;
+  // Profile edits cannot change historical solves, rankings or followers.
+  // Reuse the already verified profile snapshot to avoid a second network
+  // round trip immediately after saving. Live presence remains a separate RPC.
+  const freshView=previouslyViewed?.isOwn&&previouslyViewed.profile?.public_id===self.profile?.public_id
+    ?{...previouslyViewed,profile:{...self.profile}}:null;
   viewCache.clearOwner(owner);viewCache.saveSelf(owner,self);
+  if(freshView)viewCache.saveProfile(owner,self.profile.username,freshView);
   shell.setAccount(cloud.user,self.profile);
   editFeedback('');
   profileEditDialog.close();
