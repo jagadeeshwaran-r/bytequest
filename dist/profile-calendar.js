@@ -49,30 +49,49 @@ export function yearCalendar(days,serverDay=new Date().toISOString().slice(0,10)
  }
  return {year,start:year+'-01-01',end:year===currentYear?day:year+'-12-31',activeCount:months.reduce((total,month)=>total+month.solves,0),months};
 }
-export function calendarMonthsMarkup(calendar){
+// The marker is based on today's UTC date, never a local-time midnight.
+// Accepted-day fill still comes from the server's verified profile history.
+export function calendarMonthsMarkup(calendar,todayUtc=iso(new Date())){
  return calendar.months.map(month=>
   '<section class="calendar-month" aria-label="'+month.title+'">'+
   '<span class="calendar-month-label">'+month.label+'</span>'+
-  '<div class="calendar-month-grid">'+month.cells.map(cell=>
-   cell?'<span class="calendar-day'+(cell.active?' solved':'')+(cell.future?' future':'')+
-    '" title="'+cell.date+(cell.active?': accepted solve':cell.future?': upcoming':': no solve')+'"></span>':
-   '<span class="calendar-padding" aria-hidden="true"></span>'
-  ).join('')+'</div></section>'
+  '<div class="calendar-month-grid">'+month.cells.map(cell=>{
+   if(!cell)return '<span class="calendar-padding" aria-hidden="true"></span>';
+   const today=cell.date===todayUtc;
+   const todayClass=today?(cell.active?' today-solved':' today-pending'):'';
+   const label=cell.date+(cell.active?': accepted solve':cell.future?': upcoming':': no solve')+
+     (today?(cell.active?', today (UTC)':', today (UTC), not solved yet'):'');
+   return '<span class="calendar-day'+(cell.active?' solved':'')+(cell.future?' future':'')+todayClass+
+    '" data-calendar-date="'+cell.date+'"'+(today?' aria-label="'+label+'" role="img" aria-current="date"':'')+
+    ' title="'+label+'"></span>';
+  }).join('')+'</div></section>'
  ).join('');
 }
-export function bindProfileCalendar(root,days,serverDay){
+// Repaint only when switching years or crossing UTC midnight. The server's
+// accepted days are never fabricated by the visual indicator.
+export function refreshProfileCalendar(root,days,serverDay,now=Date.now()){
  const picker=root?.querySelector?.('#profileCalendarYear'),
   grid=root?.querySelector?.('#profileCalendarMonths'),
   range=root?.querySelector?.('#profileCalendarRange'),
   activity=root?.querySelector?.('#profileCalendarActivity');
  if(!picker||!grid||!range||!activity)return false;
- const update=()=>{
-  const calendar=yearCalendar(days,serverDay,Number(picker.value));
-  grid.innerHTML=calendarMonthsMarkup(calendar);
-  grid.setAttribute('aria-label','Accepted solve days in '+calendar.year);
-  range.textContent=calendar.start+' → '+calendar.end;
-  activity.textContent=calendar.activeCount+' '+(calendar.activeCount===1?'solve day':'solve days');
- };
- picker.addEventListener('change',update);
+ const actualUtc=iso(new Date(now));
+ const effectiveDay=validDay(serverDay)&&serverDay>actualUtc?serverDay:actualUtc;
+ const year=Number(picker.value);
+ if(Number(actualUtc.slice(0,4))>year&&!Array.from(picker.options||[]).some(option=>Number(option.value)===Number(actualUtc.slice(0,4)))){
+  picker.add?.(new Option(actualUtc.slice(0,4),actualUtc.slice(0,4)),0);
+  picker.value=actualUtc.slice(0,4);
+ }
+ const calendar=yearCalendar(days,effectiveDay,Number(picker.value));
+ grid.innerHTML=calendarMonthsMarkup(calendar,actualUtc);
+ grid.setAttribute('aria-label','Accepted solve days in '+calendar.year);
+ range.textContent=calendar.start+' → '+calendar.end;
+ activity.textContent=calendar.activeCount+' '+(calendar.activeCount===1?'solve day':'solve days');
+ return true;
+}
+export function bindProfileCalendar(root,days,serverDay){
+ const picker=root?.querySelector?.('#profileCalendarYear');
+ if(!picker||!root.querySelector?.('#profileCalendarMonths')||!root.querySelector?.('#profileCalendarRange')||!root.querySelector?.('#profileCalendarActivity'))return false;
+ picker.addEventListener('change',()=>refreshProfileCalendar(root,days,serverDay));
  return true;
 }
