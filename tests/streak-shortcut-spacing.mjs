@@ -73,5 +73,5 @@ assert.match(app,/shouldRunCodeShortcut\(event/);
 assert.match(app,/event\.preventDefault\(\);\s*if\(busy\)/,'Do not refresh while a run is already in progress');
 assert.ok(problems.includes('aria-keyshortcuts="Control+R"'));
 assert.ok(problems.includes('run-shortcut.css?v=ctrl-run-1'));
-assert.ok(problems.includes('app.js?v=ctrl-run-1'));
+assert.ok(problems.includes('app.js?v=company-hover-1'));
 console.log('PASS: UTC streak-day rollover, timer cleanup, scoped Ctrl+R and profile spacing.');
