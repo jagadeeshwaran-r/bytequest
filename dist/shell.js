@@ -10,7 +10,7 @@ export function mountShell(){
  const toasts=createFriendToasts();
  // Administrator controls are hidden until authorization is confirmed by the server.
  function setAdmin(authorized){
-  const show=Boolean(cloud?.user&&authorized);
+  const show=Boolean(cloud?.user&&authorized===true);
   document.querySelectorAll('[data-admin-link]').forEach(link=>{link.hidden=!show;});
  }
  for(const id of ['accountBtn','exportBtn','communityAccount']){const item=document.getElementById(id);if(item)slot?.appendChild(item);}
