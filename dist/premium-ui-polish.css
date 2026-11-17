@@ -84,7 +84,7 @@
 /* Single hover treatment: no separate browser title popups and no overlapping
    tooltip labels over the expanded +N company panel. */
 #mapView .company-overflow-panel{
- top:calc(100% + 5px);
+ top:100%;
  padding:8px;
  gap:6px;
  background:var(--surface);
