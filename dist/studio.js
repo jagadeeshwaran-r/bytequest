@@ -35,16 +35,36 @@ export class Studio{
   }
   message(message){$("studioStatus").textContent=message;}
   async open(){
+    const user=this.cloud.user,allowed=Boolean(user&&this.cloud.canCreate);
+    const title=$("studioGateTitle"),detail=$("studioGateMessage");
+    const button=$("studioSignIn"),note=$("studioGateNote");
+    $("studioGate").hidden=allowed;
+    $("studioWorkspace").hidden=!allowed;
+    $("newProblemBtn").hidden=!allowed;
+    if(!allowed){
+      if(!user){
+        const error=this.cloud.loginError;
+        title.textContent=error?"Couldn't restore your session":this.cloud.loginReady?"Connect your ByteQuest account":"Restoring your session…";
+        detail.textContent=error|| (this.cloud.loginReady?"Use your existing Google sign-in to create and publish problems.":"Checking the Google account already connected to ByteQuest.");
+        button.hidden=!this.cloud.loginReady&&!error;
+        button.textContent=error?"Retry connection":"Continue with Google";
+        note.textContent="Your drafts and published problems stay with your ByteQuest account.";
+      }else{
+        const checking=this.cloud.accessChecking,problem=this.cloud.accessError;
+        title.textContent=checking?"Checking publishing access…":problem?"Couldn't verify publishing access":"Publishing access required";
+        detail.textContent=checking?"Your existing Google session is connected. Checking your creator permissions…":problem||"You're signed in, but publishing requires creator access. An administrator can enable it for your account.";
+        button.hidden=!problem;
+        button.textContent="Retry access check";
+        note.textContent="You are already signed in. No second Google sign-in is needed.";
+      }
+      return;
+    }
     this.companyPicker??=mountCompanyPicker();
-    const allowed=!!this.cloud.user&&this.cloud.canCreate;
-    $("studioGate").hidden=allowed;$("studioWorkspace").hidden=!allowed;$("newProblemBtn").hidden=!allowed;
-    $("studioSignIn").hidden=!!this.cloud.user;
-    if(!allowed){$("studioGate").querySelector("p").textContent=this.cloud.user?"Your account can practise and sync progress. Sign in to publish your own problems.":"Sign in with Google to create and publish problems.";return;}
-    // Keep Studio responsive: the Java browser JVM boots when Validate is clicked, not while loading the library.
-    if(this.loadedFor===this.cloud.user.id)return;
-    const userId=this.cloud.user.id;this.message("Loading your problem library…");
+    if(this.loadedFor===user.id)return;
+    const userId=user.id;this.message("Loading your problem library…");
     try{
-      const rows=await this.cloud.adminCatalog();if(this.cloud.user?.id!==userId||!this.cloud.canCreate)return;
+      const rows=await this.cloud.adminCatalog();
+      if(this.cloud.user?.id!==userId||!this.cloud.canCreate)return;
       this.rows=rows;this.loadedFor=userId;this.fillSelect();this.row=null;this.fill(sample);
       try{
         const local=JSON.parse(localStorage.getItem("bytequest.studio."+userId));
