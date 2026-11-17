@@ -80,6 +80,10 @@ Guest Java practice and local backups work without an account. Cloud features re
 
 Create a discoverable profile to appear in rankings. New profiles default to discoverability and status sharing; saved privacy choices can be changed in **My profile → Edit profile**.
 
+## Progress save reliability
+
+The Problems page preserves unreadable local progress rather than overwriting it with an empty backup. If the primary browser record is damaged or incompatible, new work is written under a separate owner-scoped `.recovery` key while the original stays untouched; an unreadable recovery copy also blocks overwriting. A storage failure is shown explicitly and cannot trigger a saved-solve celebration. When signing out, ByteQuest first tries to sync the latest work; if offline or another sync is pending, it warns about unsynced changes and requires explicit confirmation before signing out anyway. **Export a backup** regularly. These guards do not make a failed browser storage device durable or resurrect already lost code.
+
 ## Accepted submissions and benchmarks
 
 For **Java**, **Submit solution** uses the same browser compiler as **Run**, saves each attempted solution and outcome in **My submissions**, checks published public and added custom cases, and marks the quest solved for practice when they pass. Hidden tests are not checked and no verified submission or shared code is created; the browser practice solve can sync to your progress and self-reported leaderboards. For Python, C and C++, **Submit solution** uses the authenticated server judge, with optional approach and complexity notes. **Share my accepted solution** is selected by default for those verified submissions. An accepted answer unlocks the **Submissions** tab for that exact problem revision; guest completions and imported progress cannot unlock another learner’s source. Corrected problems require a new acceptance. Your own private accepted history remains available.
