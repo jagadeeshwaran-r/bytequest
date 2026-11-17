@@ -1,0 +1,112 @@
+/* ByteQuest profile / editorial numbers layout.
+   Intentional negative space, no statistical cards or outer profile panel. */
+.community-page #profileContent .profile-main-card.profile-unboxed{
+  padding:clamp(10px,2.4vw,24px) 0 0!important;
+  margin:0!important;
+  width:100%;min-width:0;
+  border:0!important;border-radius:0!important;
+  background:transparent!important;background-image:none!important;
+  box-shadow:none!important;
+}
+.community-page #profileContent .profile-overview{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.07fr);
+  align-items:center;gap:clamp(20px,4vw,64px);
+  padding:16px 0 34px;border-bottom:1px solid var(--border);
+  min-width:0;
+}
+.community-page #profileContent .profile-person{min-width:0;display:flex;flex-direction:column;align-items:stretch}
+.community-page #profileContent .profile-hero{display:flex;align-items:center;flex-wrap:wrap;gap:16px 18px;padding:0!important;min-width:0}
+.community-page #profileContent .profile-hero>.avatar.large{width:78px!important;height:78px!important;flex:0 0 78px}
+.community-page #profileContent .profile-identity{flex:1 1 190px;min-width:0}
+.community-page #profileContent .profile-hero .profile-actions{
+  flex:1 0 100%;align-self:flex-start!important;justify-content:flex-start;
+  max-width:none!important;margin-top:3px!important;
+}
+.community-page #profileContent .profile-bio{
+  max-width:48ch;margin:10px 0 0!important;padding:0!important;
+  font-size:12px!important;line-height:1.65!important;color:var(--muted);
+}
+/* Three lightweight number columns on the right. No backgrounds, outlines,
+   rectangles, progress bars, or pseudo-card decorations. */
+.community-page #profileContent .profile-overview .social-stats.profile-metrics{
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  align-items:center;gap:clamp(12px,2.5vw,32px)!important;
+  margin:0!important;padding:0 0 0 clamp(20px,3vw,43px)!important;
+  border-left:1px solid var(--border);min-width:0;
+  background:none!important;box-shadow:none!important;
+}
+.community-page #profileContent .profile-overview .profile-metrics .social-stat{
+  display:flex!important;flex-direction:column;align-items:flex-end!important;justify-content:center!important;
+  text-align:right;gap:8px!important;
+  border:0!important;border-radius:0!important;
+  padding:4px 0!important;margin:0!important;
+  min-height:0!important;min-width:0;
+  background:transparent!important;background-image:none!important;
+  box-shadow:none!important;color:var(--text);
+}
+.community-page #profileContent .profile-overview .profile-metrics .social-stat::before,
+.community-page #profileContent .profile-overview .profile-metrics .metric-icon,
+.community-page #profileContent .profile-overview .profile-metrics .metric-progress{display:none!important}
+.community-page #profileContent .profile-overview .profile-metrics .metric-label{
+  order:1;display:block!important;font:500 10px/1.5 var(--font-sans)!important;
+  color:var(--muted)!important;white-space:nowrap;letter-spacing:0!important;
+}
+.community-page #profileContent .profile-overview .profile-metrics .social-stat b{
+  order:2;display:block!important;white-space:nowrap;
+  margin:0!important;font:530 clamp(31px,3.2vw,48px)/1 var(--font-sans)!important;
+  letter-spacing:-.065em!important;font-variant-numeric:tabular-nums;
+  color:var(--text)!important;
+}
+.community-page #profileContent .profile-overview .profile-metrics .social-stat.metric-solved b{color:var(--accent)!important}
+.community-page #profileContent .profile-overview .profile-metrics b small{
+  font:400 clamp(12px,1.15vw,15px)/1 var(--font-sans)!important;
+  letter-spacing:-.025em!important;color:var(--muted)!important;
+}
+.community-page #profileContent .profile-overview .profile-metrics .metric-caption{
+  order:3;display:block!important;margin:0!important;
+  max-width:16ch;font:400 10px/1.5 var(--font-sans)!important;
+  color:var(--muted)!important;
+}
+/* Activity should lead the profile: calendar, solved list, secondary skills. */
+.community-page #profileContent .profile-calendar-section{
+  margin:0;padding:27px 0 29px;border-bottom:1px solid var(--border);
+  min-width:0;
+}
+.community-page #profileContent .profile-calendar-section .calendar-heading{margin-bottom:13px}
+.community-page #profileContent .profile-calendar-section .calendar-heading h3{
+  margin:0!important;font:600 15px/1.4 var(--font-sans)!important;letter-spacing:-.025em;
+}
+.community-page #profileContent .profile-calendar-section .calendar-heading>span{margin:0!important}
+.community-page #profileContent .profile-calendar-section .month-calendar-scroll{padding:5px 0 7px!important}
+.community-page #profileContent .profile-calendar-section .calendar-note{margin:10px 0 0!important}
+.community-page #profileContent .recent-solves{
+  margin:0!important;padding:28px 0!important;border-bottom:1px solid var(--border)!important;
+}
+.community-page #profileContent .profile-expertise{
+  padding:24px 0!important;margin:0!important;border:0!important;
+}
+@media(max-width:1050px){
+  .community-page #profileContent .profile-overview{grid-template-columns:1fr;gap:26px}
+  .community-page #profileContent .profile-overview .social-stats.profile-metrics{
+    border-left:0;border-top:1px solid var(--border);
+    padding:23px 0 0!important;gap:16px!important;
+  }
+  .community-page #profileContent .profile-overview .profile-metrics .social-stat{align-items:flex-start!important;text-align:left}
+}
+@media(max-width:620px){
+  .community-page #profileContent .profile-overview{padding:10px 0 24px;gap:22px}
+  .community-page #profileContent .profile-hero{gap:12px}
+  .community-page #profileContent .profile-hero>.avatar.large{width:63px!important;height:63px!important;flex-basis:63px}
+  .community-page #profileContent .profile-overview .social-stats.profile-metrics{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important}
+  .community-page #profileContent .profile-overview .profile-metrics .social-stat{padding:0!important;gap:7px!important}
+  .community-page #profileContent .profile-overview .profile-metrics .metric-label{font-size:9px!important;white-space:normal}
+  .community-page #profileContent .profile-overview .profile-metrics .social-stat b{font-size:clamp(27px,8vw,36px)!important}
+  .community-page #profileContent .profile-overview .profile-metrics b small{font-size:11px!important}
+  .community-page #profileContent .profile-overview .profile-metrics .metric-caption{font-size:9px!important}
+  .community-page #profileContent .profile-calendar-section{padding:24px 0}
+  .community-page #profileContent .recent-solves{padding:24px 0!important}
+}
+@media(max-width:340px){
+ .community-page #profileContent .profile-overview .profile-metrics .metric-caption{display:none!important}
+ .community-page #profileContent .profile-overview .profile-metrics .social-stat b{font-size:25px!important}
+}

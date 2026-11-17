@@ -3,6 +3,7 @@ import './catalog-cold-start.mjs';
 import './compiler-security.mjs';
 import "./profile-inbox.mjs";
 import "./profile-compact.mjs";
+import "./profile-unboxed.mjs";
 import "./profile-speed.mjs";
 import "./analytics-accuracy.mjs";
 import "./topic-directory-cleanup.mjs";
