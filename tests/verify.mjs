@@ -8,6 +8,7 @@ import "./problem-library-bootstrap.mjs";
 import "./editor-operators.mjs";
 import "./workbench.mjs";
 import "./compiler-recovery.mjs";
+import "./java-judge-routing.mjs";
 import "./security-hardening.mjs";
 import "./next-features.mjs";
 import "./upgrades.mjs";
