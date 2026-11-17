@@ -75,6 +75,8 @@ SQL files are successive schema snapshots and changes, rather than an automatic 
 
 Use new reviewed migrations for later changes. Keep all private-table RLS, function grants and ownership predicates in place.
 
+For optional GitHub profile links, apply `database/profile-github.sql` after `database/profile-inbox.sql`, and deploy the updated `bytequest-firebase` Edge Function before releasing the matching frontend. The GitHub URL is an optional public link, not GitHub OAuth or proof of account ownership.
+
 ## Progress and privacy
 
 Guest work stays in localStorage on its browser/origin. Signed-in accounts have a separate local cache and a private cloud progress row. Guest records are imported only when the learner chooses **Bring guest progress**.
