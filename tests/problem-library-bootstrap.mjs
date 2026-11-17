@@ -75,7 +75,7 @@ const app=readFileSync('dist/app.js','utf8');
 const dashboard=readFileSync('dist/dashboard.js','utf8');
 assert.ok(index.includes('id="questGrid"'),'Main problem grid must remain present');
 assert.ok(!index.includes('id="graphMeasure"'),'Legacy layout has no measure control');
-assert.ok(index.includes('app.js?v=profile-speed-1'),'Bust cached startup script');
+assert.ok(index.includes('app.js?v=browser-submit-1'),'Bust cached startup script');
 assert.ok(app.includes('dashboard.js?v=topic-directory-1'),'Load compatible dashboard module');
 assert.ok(app.includes('renderMap();'),'Problem catalog should still be rendered');
 assert.ok(dashboard.includes("this.$(id)"),'Chart checks optional controls');
