@@ -1,7 +1,8 @@
 import {mountCreatorAccess} from './creator-access.js?v=workbench-1';
 import {companies} from './companies.js?v=social-1';
-import {profileMarkup,profileAvatar,publicProfileHref} from './profile-view.js?v=profile-year-1&rewards=2';
+import {profileMarkup,profileAvatar,publicProfileHref} from './profile-view.js?v=profile-year-1&rewards=3';
 import {bindProfileCalendar} from './profile-calendar.js?v=profile-year-1';
+import {bindStreakCountdown} from './streak-countdown.js?v=streak-day-1';
 import {hydrateRecentProblemNumbers} from './profile-extras.js?v=profile-compact-1';
 import {profileDetails} from './profile-fields.js?v=profile-2';
 import {rankCup} from './rewards.js?v=upgrade-2';
@@ -14,6 +15,7 @@ import {Cloud} from './cloud.js?v=creator-admin-1';
 import {createViewCache} from './view-cache.js?v=avatar-1';
 import {activityStats,escapeHtml as h} from './community-model.js';
 const shell=mountShell();let pendingPhoto=null;let analytics=null,catalog=[],viewedTarget=null,viewedProfileResult=null,viewedPresence=null,presenceReading=false;
+let stopStreakCountdown=()=>{};
 const $=id=>document.getElementById(id);let epoch=0,bootEpoch=0,self=null,latest=0,lastOwner=null;
 const viewCache=createViewCache();
 const cloud=new Cloud(()=>boot());shell.connect(cloud);
@@ -100,13 +102,16 @@ async function route(){if(!self||!cloud.user)return;const ticket=++epoch,hash=lo
   }
  }catch(e){if(ticket===epoch)message(e.message,true);}}
 function fillProfile(){const p=self.profile||{};for(const key of ['organization_type','organization_name','organization_url','linkedin_url'])document.getElementById('detail_'+key).value=p[key]||'';$('profileUsername').value=p.username||'';$('profileName').value=p.display_name||cloud.user?.user_metadata?.full_name||'';$('profileBio').value=p.bio||'';$('profileAvatar').value=p.uploadedAvatar?'':p.avatar_url||'';$('photoPreview').hidden=!p.avatar_url;$('photoPreview').src=p.avatar_url||'';const preferences=profilePreferences(self.profile);$('profileDiscoverable').checked=preferences.discoverable;$('profilePresence').checked=preferences.show_presence;pendingPhoto=null;$('profilePhotoFile').value='';$('profileEditStatus').hidden=true;$('profileEditStatus').textContent='';$('profileEditStatus').dataset.error='false';updateProfilePreview();}
-function renderProfile(r,{presencePending=false}={}){viewedProfileResult=r;viewedTarget=r.profile.public_id;if(analytics){analytics.epoch++;analytics.accountGeneration++;}const p=r.profile;$('profileContent').innerHTML=profileMarkup(r,{catalogCount:catalog.length,catalog,admin:self.admin,canFollow:Boolean(self.profile?.discoverable)});
+function renderProfile(r,{presencePending=false}={}){
+ stopStreakCountdown();stopStreakCountdown=()=>{};
+ viewedProfileResult=r;viewedTarget=r.profile.public_id;if(analytics){analytics.epoch++;analytics.accountGeneration++;}const p=r.profile;$('profileContent').innerHTML=profileMarkup(r,{catalogCount:catalog.length,catalog,admin:self.admin,canFollow:Boolean(self.profile?.discoverable)});
  viewedPresence=presencePending?null:receivedPresence(r.presence);
  const presenceNode=$('profilePresenceStatus');
  if(presencePending){presenceNode.dataset.status='checking';presenceNode.className='presence';presenceNode.textContent='Checking status…';}
  else paintPresence(presenceNode,viewedPresence);
  $('profileContent').insertAdjacentHTML('beforeend',analyticsMarkup);analytics=new Dashboard({cloud,getState:()=>({solved:{},days:r.stats.days||[]}),getCatalog:()=>catalog,getEvents:()=>r.stats.solves||[],summary:{solved:r.stats.solved,active:(r.stats.days||[]).length},topicInsights:r.insights?.skills||[],allowCompare:r.isOwn,name:r.isOwn?'You':'@'+p.username,profile:p,viewerProfile:self?.profile||null});analytics.open();
  bindProfileCalendar($('profileContent'),r.stats.days,r.stats.serverDay);
+ stopStreakCountdown=bindStreakCountdown($('profileContent'));
  const recentToggle=$('profileContent').querySelector('[data-recent-toggle]');if(recentToggle)recentToggle.onclick=()=>{const expanded=recentToggle.getAttribute('aria-expanded')!=='true',rows=$('profileContent').querySelectorAll('[data-recent-row]');rows.forEach((row,i)=>row.hidden=!expanded&&i>=3);recentToggle.setAttribute('aria-expanded',String(expanded));recentToggle.textContent=expanded?'Show less':'Show all '+rows.length+' ↗';};
  $('messageFriend')?.addEventListener('click',()=>shell.openChat(p.public_id));
  $('followBtn')?.addEventListener('click',async e=>{e.target.disabled=true;try{const fresh=await act('follow',{target:p.public_id,following:!r.isFollowing});viewCache.clearOwner(cloud.user?.id);viewCache.saveSelf(cloud.user?.id,self);renderProfile(fresh);}catch(err){message(err.message,true);e.target.disabled=false;}});
