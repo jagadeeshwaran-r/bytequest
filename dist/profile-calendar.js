@@ -78,7 +78,9 @@ export function refreshProfileCalendar(root,days,serverDay,now=Date.now()){
  const actualUtc=iso(new Date(now));
  const effectiveDay=validDay(serverDay)&&serverDay>actualUtc?serverDay:actualUtc;
  const year=Number(picker.value);
- if(Number(actualUtc.slice(0,4))>year&&!Array.from(picker.options||[]).some(option=>Number(option.value)===Number(actualUtc.slice(0,4)))){
+ const knownYears=Array.from(picker.options||[]).map(option=>Number(option.value));
+ const newestKnownYear=Math.max(year,...knownYears);
+ if(knownYears.length&&Number(actualUtc.slice(0,4))>newestKnownYear){
   // The page may stay open across New Year's Eve. Add the new year without
   // discarding the user's past-year selection on ordinary refreshes.
   if(typeof picker.add==='function'){
