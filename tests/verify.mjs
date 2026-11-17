@@ -6,6 +6,7 @@ import "./profile-compact.mjs";
 import "./profile-unboxed.mjs";
 import "./profile-rewards.mjs";
 import "./profile-reference.mjs";
+import "./streak-shortcut-spacing.mjs";
 import "./profile-calendar-year.mjs";
 import "./profile-speed.mjs";
 import "./analytics-accuracy.mjs";
