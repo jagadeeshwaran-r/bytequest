@@ -1,6 +1,6 @@
 # ByteQuest backend and operations
 
-This guide describes the current Firebase identity and Supabase data architecture. The static interface is hosted on GitHub Pages. Java Run executes in the browser; Python/C/C++ runs and signed-in submissions in all four languages use the verified execution API.
+This guide describes the current Firebase identity and Supabase data architecture. The static interface is hosted on GitHub Pages. Java Run and practice Submit execute in the browser. Python/C/C++ runs and signed-in verified submissions use the execution API; legacy Java server submission handlers remain available in the backend but are not called by the browser Java practice button.
 
 ## Deployment configuration
 
@@ -186,6 +186,9 @@ After deployment, verify `/health`, confirm an unsigned private request returns 
 
 ## Solving days and accepted submissions
 
+The website's Java **Submit solution** runs the same CheerpJ Java 17 compiler as Run and awards local learning progress after the public test cases pass (including optional custom cases). These are **practice solves**, not server-verified accepted submissions. The browser does not retrieve hidden tests; Java practice solves cannot unlock server-gated shared source submissions. Synced progress contributes to ByteQuest's self-reported solve statistics and learning streaks; server-accepted submission history remains separate.
+
+
 `bytequest_profile_activity` derives accepted UTC days from server-accepted submissions and compatible solve/review records. Visits, attempts, invalid calendar dates and future dates do not extend a streak. A streak can remain current through yesterday until today’s solve. Profiles show solved/total published problems, rank and total points; redundant activity totals and chart-data tables are omitted.
 
 `submission-create` loads the current published revision and private suite from the database, ignores client owners/scores and claims the shared online-execution quota. `benchmark.js` builds one warm-up plus three measured public-suite passes for Python/C/C++, and one pass for Java. Only ordered, complete case records with valid nonce-tagged measurements can be recorded. Public compiler requests use the fixed Wandbox endpoint, contain only code/public inputs and request no permalink. Versions: OpenJDK 21, CPython 3.11.10 and GCC 13.2. Browser Java Run remains Java 17. Hidden-suite problems fail closed by default unless a trusted private Java judge is configured; that judge checks public and hidden cases together. An explicit server-side opt-in may send private cases to Wandbox as a third-party fallback.
@@ -204,7 +207,7 @@ The untrusted source and its in-process harness share one hosted execution envir
 
 ## Editor and submission feedback
 
-`bracket-edit.js` and `code-context.js` provide automatic `()`, `[]` and `{}` pairs, wrapping selected text, skipping an existing closing bracket and deleting an empty pair together. `< >` pairing is limited to Java/C++ type contexts so comparison operators remain literal. Strings, raw strings and comments are excluded. Each automatic edit participates in the existing undo/redo history; clipboard restrictions remain scoped to the coding editor.
+`bracket-edit.js` and `code-context.js` provide automatic `()`, `[]` and `{}` pairs, wrapping selected text, skipping an existing closing bracket and deleting an empty pair together. `< >` pairing is limited to Java/C++ type contexts so comparison operators remain literal. Strings, raw strings and comments are excluded. Each automatic edit participates in the existing undo/redo history; copying selected code is allowed; paste/drop and cut remain blocked inside the coding editor.
 
 `cpp-contract.js` is shared by browser and server harness builders. It checks the declared result type and instruments direct returns from integer/boolean problem functions with compile-time checks: implicit boolean-to-int and non-boolean-to-bool returns are rejected as ByteQuest contract errors. Explicit intentional integer casts remain valid. Normal C++ itself permits implicit boolean-to-int conversion; this is an additional problem rule, not a claim that the language syntax is invalid. Recursive calls, constexpr functions, comparator lambdas and local classes are covered by real compiler tests. Macro-generated return statements are outside this lightweight source analysis. No source or public cases are sent anywhere new.
 
