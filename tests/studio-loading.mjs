@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 // gives Studio an old cached app while Problems uses the newly deployed one.
 const problems=readFileSync('dist/index.html','utf8');
 const studio=readFileSync('dist/studio.html','utf8');
-const script=html=>html.match(/<script\\s+type="module"\\s+src="(\\.\\/app\\.js\\?v=[^"]+)"\\s*><\\/script>/)?.[1];
+const script=html=>html.split('<script type="module" src="')[1]?.split('"')[0];
 assert.ok(script(problems),'Problems page must load the app entrypoint');
 assert.equal(script(studio),script(problems),'Studio and Problems must use identical cache-busted app entrypoint URLs');
 assert.ok(studio.includes('<body data-page="studio">'),'The Studio route is selected by its page marker');
