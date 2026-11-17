@@ -582,11 +582,13 @@ $("signOutBtn").onclick=async()=>{
  try{
    const synced=await syncCloud();
    if(!synced){
-     const message="Sign-out paused: your latest progress has not finished syncing. Your local copy is kept. Choose Sync now and retry when connected.";
-     $("authMessage").textContent=message;notify(message);return;
+     const message="Your latest changes are not confirmed in the cloud. They remain on this device only. Sign out anyway?";
+     $("authMessage").textContent="Cloud sync did not finish. Local work will remain on this device if you sign out.";
+     if(!window.confirm(message))return;
    }
    await cloud.signOut();$("accountDialog").close();await changeAccount(null);
-   notify("Signed out. Your latest progress was confirmed in the cloud.");
+   notify(synced?"Signed out. Your latest progress was confirmed in the cloud.":
+     "Signed out. Unsynced work remains on this device; sign back in here to retry syncing.");
  }catch(error){$("authMessage").textContent=error.message;}
  finally{button.disabled=false;}
 };
