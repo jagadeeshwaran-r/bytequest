@@ -1,4 +1,4 @@
-import {mountShell} from './shell.js?v=workbench-1';
+import {mountShell} from './shell.js?v=studio-auth-1';
 import {Cloud} from './cloud.js?v=profile-speed-1';
 import {leaderboardRow,latestLeaderboard} from './leaderboard-model.js?v=avatar-1';
 import {createViewCache} from './view-cache.js?v=avatar-1';
