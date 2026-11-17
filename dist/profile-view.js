@@ -1,4 +1,4 @@
-import {profileMetrics,recentSolvesMarkup} from './profile-extras.js?v=profile-compact-1&rewards=2';
+import {profileMetrics,recentSolvesMarkup} from './profile-extras.js?v=profile-compact-1&rewards=3';
 import {escapeHtml as h} from './community-model.js';
 import {rankCup} from './rewards.js?v=upgrade-2';
 import {findCompany} from './companies.js?v=social-1';
