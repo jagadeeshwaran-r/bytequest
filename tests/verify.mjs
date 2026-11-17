@@ -1,3 +1,4 @@
+import './compiler-security.mjs';
 import "./profile-inbox.mjs";
 import "./profile-compact.mjs";
 import "./profile-speed.mjs";

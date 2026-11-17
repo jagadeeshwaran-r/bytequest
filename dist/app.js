@@ -22,7 +22,7 @@ const shell=mountShell();mountWorkspace();let language="java";try{const v=localS
 const draftId=(id=current.id)=>language==="java"?id:id+"--"+language;
 const currentStarter=()=>starterFor(current,language);
 let topics=[...new Set(problems.map(p=>p.topic))];
-import {JavaJudge, buildTests} from "./judge.js?v=structural-2";
+import {JavaJudge, buildTests} from "./judge.js?v=security-2";
 import {traceFor} from "./traces.js";
 const $ = id => document.getElementById(id);
 const html = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);

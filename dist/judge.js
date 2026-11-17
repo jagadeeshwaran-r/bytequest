@@ -120,8 +120,24 @@ export class JavaJudge {
     await this.boot();
     this.onStatus("Compiling your Java and running " + cases.length + " tests…");
     const id = ++this.sequence;
-    const result = new Promise((resolve, reject) => this.waiters.set(id, {resolve, reject}));
-    this.frame.contentWindow.postMessage({channel:"bytequest-java",type:"run",id,source,tests}, location.origin);
+    let watchdog;
+    const result = new Promise((resolve, reject) => this.waiters.set(id, {
+      resolve: value => { clearTimeout(watchdog); resolve(value); },
+      reject: error => { clearTimeout(watchdog); reject(error); }
+    }));
+    // Untrusted Java may loop forever. Recreate the iframe/JVM rather than
+    // leaving the editor waiting indefinitely or reusing the stuck runtime.
+    watchdog = setTimeout(() => {
+      if (!this.waiters.has(id)) return;
+      this.onStatus("Java execution timed out. Your code is saved; the next Run starts a fresh JVM.");
+      this.stop();
+    }, 90000);
+    try {
+      this.frame.contentWindow.postMessage({channel:"bytequest-java",type:"run",id,source,tests}, location.origin);
+    } catch (error) {
+      this.waiters.get(id)?.reject(error);
+      this.waiters.delete(id);
+    }
     return result;
   }
   stop() {
