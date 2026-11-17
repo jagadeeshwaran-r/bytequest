@@ -2,9 +2,24 @@ import {escapeHtml as h} from './community-model.js';
 import {relativeTime} from './presence-model.js?v=social-1';
 const symbols={solved:'<path d="m6 12 4 4 8-8"/><circle cx="12" cy="12" r="9"/>',points:'<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/>',streak:'<path d="M12 3c1 5-4 5-4 9 0 2 1 3 2 3-1-3 2-4 3-6 4 3 6 6 4 9a6 6 0 0 1-10-1C3 11 9 9 12 3Z"/>'};
 const icon=kind=>'<span class="metric-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+symbols[kind]+'</svg></span>';
+// Milestones represent the verified CURRENT consecutive-day streak. Never infer
+// lifetime badges from a partial solve history or a client-maintained counter.
+export const STREAK_MILESTONES=Object.freeze([30,100,200,365]);
+export function streakMilestonesMarkup(currentStreak){
+ const streak=Number.isFinite(Number(currentStreak))?Math.max(0,Math.floor(Number(currentStreak))):0;
+ return '<div class="streak-milestones" role="group" aria-label="Current streak milestones"><span class="streak-milestone-heading">Streak milestones</span>'+
+  STREAK_MILESTONES.map((days,index)=>{
+    const earned=streak>=days;
+    const status=earned?'earned':'locked';
+    return '<span class="streak-milestone '+(earned?'is-earned':'is-locked')+'" data-tier="'+(index+1)+'" role="img" aria-label="'+days+'-day streak badge '+status+'" title="'+(earned?days+' consecutive days completed':days+' consecutive days to unlock')+'">'+
+      '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.5 15 5l4-.1.4 4 2.1 3.1-2.1 3.1-.4 4-4-.1-3 2.5-3-2.5-4 .1-.4-4L2.5 12l2.1-3.1.4-4 4 .1L12 2.5Z" stroke="currentColor" stroke-width="1.35"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+      '<span>'+days+'d</span></span>';
+  }).join('')+'</div>';
+}
+const streakFlame='<svg class="streak-flame" viewBox="0 0 24 30" fill="none" aria-hidden="true"><path d="M11.2 1.4c1.3 5.9-4 8.3-4 13.1 0 1.7.7 3.2 1.9 4.2-1.1-4.9 3.1-7.6 5.1-9.7 4.7 4.3 6.6 9.4 4.4 13.1A9.4 9.4 0 0 1 2 20.8C.5 13.5 8.2 9.3 11.2 1.4Z" fill="#f49a36"/><path d="M12.1 12.8c1.8 4.1-1.4 6.3-1.4 8.3 0 .5.2 1 .5 1.3.7-2.2 2.3-3.1 3.3-4.2 2.3 3.3 1.4 7.1-2.6 7.4-4.1.2-6.1-4.5-3.1-7.3.7-2 2.2-3.9 3.3-5.5Z" fill="#ffe18b"/></svg>';
 export function profileMetrics(stats,points,total){
  const solved=Number(stats.solved)||0,streak=Number(stats.streak)||0,count=Number(stats.total??total)||0,progress=count?Math.max(0,Math.min(100,solved/count*100)):0;
- return '<div class="social-stats profile-metrics"><section class="social-stat metric-solved">'+icon('solved')+'<span class="metric-label">Problems solved</span><b id="profileSolvedCount">'+solved+'<small> / '+count+'</small></b><span class="metric-caption">Published challenges</span><span class="metric-progress" aria-hidden="true"><i style="width:'+progress+'%"></i></span></section><section class="social-stat metric-points">'+icon('points')+'<span class="metric-label">Total points</span><b>'+Number(points||0).toLocaleString()+'</b><span class="metric-caption">Your problem-solving score</span></section><section class="social-stat metric-streak">'+icon('streak')+'<span class="metric-label">Daily streak</span><b>'+streak+'<small> '+(streak===1?'day':'days')+'</small></b><span class="metric-caption">Consecutive solve days</span></section></div>';
+ return '<div class="social-stats profile-metrics"><section class="social-stat metric-solved">'+icon('solved')+'<span class="metric-label">Problems solved</span><b id="profileSolvedCount">'+solved+'<small> / '+count+'</small></b><span class="metric-caption">Published challenges</span><span class="metric-progress" aria-hidden="true"><i style="width:'+progress+'%"></i></span></section><section class="social-stat metric-points">'+icon('points')+'<span class="metric-label">Total points</span><b>'+Number(points||0).toLocaleString()+'</b><span class="metric-caption">Your problem-solving score</span></section><section class="social-stat metric-streak">'+icon('streak')+'<span class="metric-label">Daily streak</span><b class="streak-count'+(streak>0?' is-burning':'')+'">'+(streak>0?streakFlame:'')+'<span class="streak-digits">'+streak+'</span><small> '+(streak===1?'day':'days')+'</small></b><span class="metric-caption">Consecutive solve days</span></section>'+streakMilestonesMarkup(streak)+'</div>';
 }
 // Problem numbers follow the current published catalog order, exactly as
 // they do in the problem library. Missing metadata is never guessed.
