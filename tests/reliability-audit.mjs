@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {readSafeProgress,writeSafeProgress} from '../dist/reliable-storage.js';
 import {blankProgress,validateProgress} from '../dist/progress.js';
+import {submissionFeedback} from '../dist/submission-feedback.js';
 
 class MemoryStorage{
  constructor(){this.items=new Map();}
@@ -53,6 +54,11 @@ assert.ok(app.includes('readSafeProgress(localStorage,key,validateProgress,blank
 assert.ok(app.includes('writeSafeProgress(localStorage,storageTargets.has(key)?storageTargets.get(key):key,value)'));
 assert.ok(app.includes('return storageOK;'),'Persistence must report whether a save succeeded');
 assert.ok(app.includes('if(verdict.accepted&&saved)completeQuest(p,true)'),'No celebration when the submission record could not persist');
+assert.ok(app.includes('verdict.accepted=false;verdict.status="save_failed"'),'Lost practice history must not be presented as accepted');
+const unsavedFeedback=submissionFeedback({status:'save_failed',accepted:false,passed:2,total:2,message:'Tests passed but not saved.'});
+assert.equal(unsavedFeedback.title,'Tests passed · not saved');
+assert.equal(unsavedFeedback.tone,'warning');
+assert.match(unsavedFeedback.html,/class="submission-verdict warning"/);
 assert.ok(app.includes('const previous=structuredClone(state)'),'Take a rollback snapshot before granting solve credit');
 assert.ok(app.includes('state=previous;'),'Restore solve credit after a failed write');
 assert.ok(app.includes('if(!persist()){'),'Success must depend on durable progress');
