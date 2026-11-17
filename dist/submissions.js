@@ -10,7 +10,7 @@ const practiceTitles={
  compile_error:'Compilation failed',runtime_error:'Runtime error',
  time_limit_exceeded:'Time limit exceeded',unavailable:'Compiler unavailable'
 };
-export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=>[]}={}){
+export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=>[],getSolvedAt=()=>null}={}){
  let generation=0,root=null,problem=null,language='all',sort='runtime',page=0,history=true,owner=null;
  const dialog=document.createElement('dialog');
  dialog.className='submission-dialog';dialog.setAttribute('aria-labelledby','submissionTitle');
@@ -69,7 +69,12 @@ export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=
   if(!root?.isConnected||!problem)return;
   const browser=localRows().map(entry=>({...entry,local:true,created_at:new Date(entry.at).toISOString()}));
   const server=verified.map(entry=>({...entry,local:false}));
-  const rows=[...browser,...server].sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at)).slice(0,25);
+  // Older Java practice solves never captured a source snapshot. Show the
+  // existing solved timestamp honestly rather than fabricating an attempt.
+  const solvedAt=Number(getSolvedAt(problem.id));
+  const legacy=!browser.length&&!server.length&&Number.isFinite(solvedAt)&&solvedAt>946684800000?
+    [{local:false,legacy:true,id:'legacy-'+problem.id,language:'java',created_at:new Date(solvedAt).toISOString()}]:[];
+  const rows=[...browser,...server,...legacy].sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at)).slice(0,25);
   let content=heading();
   content+='<p class="submission-view-note">Browser practice is private and not verified; it does not unlock shared solutions. '+(cloud.user?'Saved with your account progress.':'Guest practice stays on this device until imported into an account.')+'</p>';
   if(loading)content+='<p class="muted">Checking server-verified submissions…</p>';
@@ -77,17 +82,18 @@ export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=
   content+='<div class="submission-table-wrap"><table class="submission-table"><thead><tr>'+
    '<th>Date</th><th>Result / privacy</th><th>Language</th><th>Runtime</th><th>Memory</th>'+
    '</tr></thead><tbody>'+rows.map(row=>{
-    const isLocal=row.local,at=new Date(row.created_at);
+    const isLocal=row.local,legacy=Boolean(row.legacy),at=new Date(row.created_at);
     const date=Number.isNaN(at.getTime())?'—':at.toLocaleDateString();
-    const label=isLocal?(practiceTitles[row.status]||'Practice attempt'):(row.shared?'Verified · shared':'Verified · private');
-    const status=isLocal?row.passed+' / '+row.total+' public/custom tests':'Accepted';
-    const metric=isLocal?(row.elapsedMs===null?'Not measured':'Browser '+Math.round(row.elapsedMs)+' ms'):runtimeLabel(row.runtime_ms);
+    const label=legacy?'Earlier solved progress':isLocal?(practiceTitles[row.status]||'Practice attempt'):(row.shared?'Verified · shared':'Verified · private');
+    const status=legacy?'Original submission code was not recorded':isLocal?row.passed+' / '+row.total+' public/custom tests':'Accepted';
+    const metric=legacy?'Not recorded':isLocal?(row.elapsedMs===null?'Not measured':'Browser '+Math.round(row.elapsedMs)+' ms'):runtimeLabel(row.runtime_ms);
     return '<tr><td>'+h(date)+'</td><td><div class="submission-user"><button type="button" class="submission-open" '+
-     (isLocal?'data-local="':'data-sub="')+h(row.id)+'"><span><strong>'+h(label)+'</strong><small>'+h(status)+'</small></span></button></div></td>'+
+     (legacy?'disabled':(isLocal?'data-local="':'data-sub="')+h(row.id)+'"')+'><span><strong>'+h(label)+'</strong><small>'+h(status)+'</small></span></button></div></td>'+
      '<td><span class="submission-language">'+h(languageNames[row.language]||row.language)+'</span></td>'+
-     '<td>'+h(metric)+'</td><td>'+h(isLocal?'Not measured':memoryLabel(row.memory_bytes))+'</td></tr>';
+     '<td>'+h(metric)+'</td><td>'+h(legacy||isLocal?'Not measured':memoryLabel(row.memory_bytes))+'</td></tr>';
    }).join('')+'</tbody></table></div>';
   if(!rows.length&&!loading)content+='<p class="muted">No submissions recorded for this problem yet. Submit Java with the browser compiler to save a private practice attempt here.</p>';
+  if(legacy.length)content+='<p class="muted">This older solve was recovered from your progress. Past submission code was never saved and cannot be reconstructed.</p>';
   content+='<p class="benchmark-note">Only server-verified accepted submissions are eligible for shared solutions or runtime rankings. Browser practice results are personal progress records.</p>';
   root.innerHTML=content;bindSwitch();
   root.querySelectorAll('[data-local]').forEach(button=>button.onclick=()=>openPractice(button.dataset.local));
