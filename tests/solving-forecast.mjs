@@ -78,9 +78,9 @@ assert.ok(dashboard.includes("if(control)control.onchange"),'Maintain legacy Pro
 assert.ok(!index.includes('id="graphForecast"'),'Legacy Problems page has no forecast controls');
 assert.ok(!dashboard.includes("own.topics.length?own.topics.map"),'Do not overwrite accurate topic completion');
 assert.ok(community.includes("dashboard.js?v=topic-directory-1"));
-assert.ok(html.includes('community.js?v=lifetime-awards-1'));
+assert.ok(html.includes('community.js?v=ui-polish-1'));
 assert.ok(html.includes('forecast-rhythm.css?v=forecast-1'));
-assert.ok(index.includes('app.js?v=ctrl-run-1'));
+assert.ok(index.includes('app.js?v=ui-polish-1'));
 assert.ok(app.includes('dashboard.js?v=topic-directory-1'));
 assert.ok(css.includes('stroke-dasharray'));
 assert.ok(css.includes('@keyframes forecast-appear'));
