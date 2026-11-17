@@ -7,6 +7,7 @@ import "./profile-unboxed.mjs";
 import "./profile-rewards.mjs";
 import "./profile-reference.mjs";
 import "./streak-shortcut-spacing.mjs";
+import "./profile-glass-company-ui.mjs";
 import "./profile-today-medals.mjs";
 import "./streak-awards.mjs";
 import "./profile-calendar-year.mjs";

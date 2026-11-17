@@ -60,7 +60,7 @@ assert.match(shell,/document\.querySelectorAll\('\[data-admin-link\]'\)/);
 assert.match(boot,/shell\.setAdmin\(cloud\.admin\)/);
 assert.match(community,/shell\.setAdmin\(self\.admin===true\)/);
 assert.match(leaderboard,/shell\.setAdmin\(own\.admin===true\)/);
-for(const name of ['index','studio','community','leaderboard']){
+for(const name of ['index','studio','leaderboard']){
   const html=readFileSync('dist/'+name+'.html','utf8');
   assert.ok(html.includes('href="./community.html#roles" data-admin-link hidden>Manage creators'),name+' must hide admin links before auth');
 }

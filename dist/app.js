@@ -9,7 +9,7 @@ import {createPracticeSubmission,addPracticeSubmission} from './practice-history
 import {shouldRunCodeShortcut} from './run-shortcut.js?v=ctrl-run-1';
 import {readSafeProgress,writeSafeProgress} from './reliable-storage.js?v=reliability-1';
 import {pointsFor,totalPoints} from './rewards.js?v=upgrade-2';
-import {companyIcons} from './companies.js?v=company-3';
+import {companyIcons} from './companies.js?v=company-tooltips-1';
 import {problemStatusMarkup} from './problem-status.js?v=solved-1';
 import {canRevealEditorialSolution,editorialSolutionGateMarkup} from './editorial-access.js?v=editorial-1';
 import {mountWorkspace} from './workspace.js';
