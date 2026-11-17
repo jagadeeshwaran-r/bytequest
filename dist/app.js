@@ -399,6 +399,7 @@ $("importFile").onchange=async event=>{
 function setSyncStatus(kind,label){$("syncBadge").className="sync-badge "+kind;$("syncLabel").textContent=label;}
 function refreshAccountUi(){
   shell.setAccount(cloud.user,publicProfile);
+  shell.setAdmin(cloud.admin);
   const user=cloud.user,meta=user?.user_metadata||{},name=String(meta.full_name||meta.name||"Java explorer");
   $("accountLabel").textContent=user?String(name).split(" ")[0]:"Sign in with Google";
   $("profileName").textContent=user?name:"Java explorer";$("profileAvatar").textContent=user?name.charAt(0).toUpperCase():"J";
@@ -422,8 +423,22 @@ async function changeAccount(user){
   renderPractice();$("codeEditor").readOnly=true;updateStats();refreshAccountUi();
   let needsSync=false;
   if(owner){
+    cloud.accessChecking=true;cloud.accessError=null;
     setSyncStatus("syncing","Loading your progress");
-    const loaded=await Promise.allSettled([cloud.loadProgress(owner),cloud.checkAdmin(owner),cloud.request("self")]);
+    // Confirm publishing access separately from progress/profile: Studio must not
+    // wait for slow unrelated account requests before recognizing a signed-in user.
+    const permissions=cloud.checkAdmin(owner).then(()=>{
+      if(epoch!==accountEpoch||cloud.user?.id!==owner)return;
+      cloud.accessChecking=false;cloud.accessError=null;refreshAccountUi();
+      if(document.body.dataset.page==="studio")route();
+    }).catch(error=>{
+      if(epoch===accountEpoch&&cloud.user?.id===owner){
+        cloud.accessChecking=false;cloud.accessError=error.message;cloud.admin=false;cloud.canCreate=false;
+        refreshAccountUi();if(document.body.dataset.page==="studio")route();
+      }
+      throw error;
+    });
+    const loaded=await Promise.allSettled([cloud.loadProgress(owner),permissions,cloud.request("self")]);
     if(epoch!==accountEpoch)return;
     if(loaded[0].status==="fulfilled"){
       const remote=loaded[0].value;state=mergeProgress(state,remote.state);needsSync=JSON.stringify(state)!==JSON.stringify(remote.state);
@@ -431,7 +446,7 @@ async function changeAccount(user){
     }else{setSyncStatus("failed","Saved on this device");$("authMessage").textContent="Could not load cloud progress. Your account’s local work is kept. Use Sync now to retry.";}
     if(loaded[1].status==="rejected")cloud.admin=false;
     if(loaded[2].status==="fulfilled"){publicProfile=loaded[2].value.profile;communityCache.saveSelf(owner,loaded[2].value);}
-  }else setSyncStatus("","On this device");
+  }else{cloud.accessChecking=false;cloud.accessError=null;setSyncStatus("","On this device");}
   if(epoch!==accountEpoch)return;
   current=problems.find(p=>p.id===state.current)||problems[0]||null;
   persist();accountReady=true;$("codeEditor").readOnly=false;refreshAccountUi();renderPractice();updateStats();route();
