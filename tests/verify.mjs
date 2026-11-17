@@ -9,6 +9,7 @@ import "./problem-library-bootstrap.mjs";
 import "./editor-operators.mjs";
 import "./workbench.mjs";
 import "./browser-submit.mjs";
+import "./practice-submission-history.mjs";
 import "./studio-loading.mjs";
 import "./studio-auth-reuse.mjs";
 import "./admin-role-menu.mjs";
