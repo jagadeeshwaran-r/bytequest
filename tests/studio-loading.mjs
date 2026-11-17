@@ -1,23 +1,30 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
-// The same app entrypoint bootstraps both pages. A stale query version
-// gives Studio an old cached app while Problems uses the newly deployed one.
 const problems=readFileSync('dist/index.html','utf8');
 const studio=readFileSync('dist/studio.html','utf8');
+const studioBoot=readFileSync('dist/studio-page.js','utf8');
 const script=html=>html.split('<script type="module" src="')[1]?.split('"')[0];
-assert.ok(script(problems),'Problems page must load the app entrypoint');
-assert.equal(script(studio),script(problems),'Studio and Problems must use identical cache-busted app entrypoint URLs');
-assert.ok(studio.includes('<body data-page="studio">'),'The Studio route is selected by its page marker');
-assert.ok(studio.includes('<section id="studioView" class="view">'),'Studio should show a usable title and sign-in gate even if JavaScript fails');
-assert.ok(!studio.includes('<section id="studioView" class="view" hidden>'),'Do not leave Studio blank before module startup');
-for(const id of ['studioGate','studioSignIn','studioWorkspace','studioStatus','problemForm','studioSelect','pHiddenTests','validateProblemBtn','saveProblemBtn']){
- assert.ok(studio.includes('id="'+id+'"'),id+' must remain available to the Studio controller');
+assert.ok(script(problems)?.startsWith('./app.js?v='),'Problems must load their workbench app');
+assert.equal(script(studio),'./studio-page.js?v=dedicated-1','Studio must load its own lightweight entrypoint');
+assert.notEqual(script(studio),script(problems),'Studio must not initialize the Problems workspace bundle');
+assert.ok(studio.includes('<body data-page="studio">'));
+assert.ok(studio.includes('<section id="studioView" class="view">'));
+assert.ok(!studio.includes('<section id="studioView" class="view" hidden>'));
+for(const id of ['studioGate','studioGateTitle','studioGateMessage','studioSignIn','studioWorkspace','studioStatus','problemForm','studioSelect','pHiddenTests','validateProblemBtn','saveProblemBtn','accountDialog','googleSignInBtn','signOutBtn','authMessage']){
+ assert.ok(studio.includes('id="'+id+'"'),id+' must remain available for the Studio bootstrap');
 }
-const app=readFileSync('dist/app.js','utf8');
-assert.ok(app.includes('document.body.dataset.page==="studio"'),'App must recognize the standalone Studio page');
-assert.ok(app.includes('if(view==="studio")studio.open()'),'Studio route must open its controller');
+assert.match(studioBoot,/const cloud=new Cloud\(/,'Dedicated Studio must use the existing Firebase Cloud client');
+assert.match(studioBoot,/const studio=new Studio\(/,'Dedicated Studio must mount the existing creator/editor logic');
+assert.match(studioBoot,/await cloud\.init\(\)/,'Restore the existing Firebase session');
+assert.match(studioBoot,/await cloud\.checkAdmin\(owner\)/,'Verify server-side creator access');
+assert.match(studioBoot,/cloud\.signIn\(\)/,'Reuse the normal Firebase popup');
+for(const forbidden of ['mountWorkspace(', 'mountEditorTools(', 'renderPractice(', 'refreshCatalog(', 'new Dashboard(', 'new JavaJudge(']){
+ assert.ok(!studioBoot.includes(forbidden),'Studio bootstrap must not initialize workbench code: '+forbidden);
+}
+assert.match(studio,/if\(window\.__bytequestStudioStarted\)return/,'Module load failure should not show an endless spinner');
+assert.match(studioBoot,/setTimeout\(\(\)=>\{/,'Slow Firebase restoration must offer a retry');
 const controller=readFileSync('dist/studio.js','utf8');
-assert.ok(!controller.includes('this.judge.preload();'),'Do not start downloading the browser JVM while opening the library');
-assert.ok(controller.includes('this.judge.run(problem.reference,problem,cases)'),'Validation must still compile Java on demand');
-console.log('PASS: Studio entrypoint cache parity, visible startup gate and required editor DOM.');
+assert.ok(!controller.includes('this.judge.preload();'),'Do not eagerly start Java VM during Studio loading');
+assert.ok(controller.includes('this.judge.run(problem.reference,problem,cases)'),'Validate compiles Java only when requested');
+console.log('PASS: independent Studio bootstrap, restored Firebase and bounded failure recovery.');

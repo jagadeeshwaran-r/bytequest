@@ -38,24 +38,26 @@ assert.equal(creator.buttonVisible,false);
 assert.equal(access({loginReady:true,user:null,canCreate:true}).allowed,false,
   'A cached permission without authenticated user never unlocks Studio');
 
-const app=readFileSync('dist/app.js','utf8');
+const boot=readFileSync('dist/studio-page.js','utf8');
 const studioController=readFileSync('dist/studio.js','utf8');
 const shell=readFileSync('dist/shell.js','utf8');
 const community=readFileSync('dist/community.js','utf8');
 const leaderboard=readFileSync('dist/leaderboard.js','utf8');
-assert.match(app,/await cloud\.init\(\);cloud\.loginError=null/);
-assert.match(app,/await changeAccount\(cloud\.user\);/);
-assert.match(app,/if\(document\.body\.dataset\.page!=="studio"\)/,'Studio must not wait for public-catalog fetching');
-assert.match(app,/const permissions=cloud\.checkAdmin\(owner\)\.then/,'Verify creator permission in parallel');
-assert.match(app,/else await signInWithGoogle\(button\)/,'Reuse the normal Firebase popup handler');
-assert.ok(!app.includes('$("studioSignIn").onclick=openAccount'),'Avoid second login dialog for Studio');
+assert.match(boot,/await cloud\.init\(\)/);
+assert.match(boot,/await cloud\.checkAdmin\(owner\)/);
+assert.match(boot,/void accountChanged\(\)/);
+assert.match(boot,/cloud\.signIn\(\)/,'The Studio Google button must reuse the existing Firebase popup');
+assert.match(boot,/if\(!cloud\.loginReady\)\{location\.reload\(\);return;\}/,'Retry failed SDK startup without another Google popup');
+assert.match(boot,/if\(cloud\.user\)\{void verifyAccess\(\);return;\}/,'Authenticated Studio users retry permissions, not sign-in');
+assert.match(boot,/void studio\.open\(\)/,'Show the Studio screen before network requests complete');
+assert.ok(!boot.includes('mountEditorTools'),'Studio boot must not require the Problem editor DOM');
 assert.match(studioController,/studioAccessState\(this\.cloud\)/);
 assert.match(studioController,/button\.hidden=!access\.buttonVisible/);
 
 assert.match(shell,/setAdmin\(authorized\)/);
 assert.match(shell,/cloud\?\.user&&authorized/);
 assert.match(shell,/document\.querySelectorAll\('\[data-admin-link\]'\)/);
-assert.match(app,/shell\.setAdmin\(cloud\.admin\)/);
+assert.match(boot,/shell\.setAdmin\(cloud\.admin\)/);
 assert.match(community,/shell\.setAdmin\(self\.admin===true\)/);
 assert.match(leaderboard,/shell\.setAdmin\(own\.admin===true\)/);
 for(const name of ['index','studio','community','leaderboard']){
@@ -68,7 +70,6 @@ assert.ok(studio.includes('<h3 id="studioGateTitle">Restoring your session…</h
 assert.ok(studio.includes('id="studioSignIn" class="button primary" type="button" hidden'));
 assert.ok(studio.includes('studio-access.css?v=studio-access-1'));
 assert.ok(index.includes('studio-access.css?v=studio-access-1'));
-assert.equal(index.split('<script type="module" src="')[1].split('"')[0],
-  studio.split('<script type="module" src="')[1].split('"')[0],
-  'Problems and Studio must boot the same updated application');
+assert.ok(studio.includes('studio-page.js?v=dedicated-1'),'Studio uses a dedicated module');
+assert.ok(!studio.includes('app.js?v='),'Studio never loads the Problems application');
 console.log('PASS: Studio Firebase session reuse, immediate permission gate, and admin-only creator navigation.');
