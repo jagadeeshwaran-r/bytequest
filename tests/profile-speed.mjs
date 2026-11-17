@@ -1,0 +1,84 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {createRequestCoordinator} from '../dist/request-coordinator.js';
+import {Cloud} from '../dist/cloud.js';
+
+let clock=0,remoteCalls=0;
+const coordinator=createRequestCoordinator({clock:()=>clock});
+const wait={};
+wait.promise=new Promise(resolve=>{wait.resolve=resolve;});
+const fetcher=()=>{remoteCalls++;return wait.promise;};
+const batch=Array.from({length:12},()=>coordinator.run('profile',{target:'user-a'},'owner-a',fetcher));
+await Promise.resolve();
+assert.equal(remoteCalls,1,'12 identical concurrent profile requests should make just one remote call');
+clock=175;wait.resolve({profile:{public_id:'1'}});
+const results=await Promise.all(batch);
+assert.equal(results.length,12);
+assert.equal(results[0].profile.public_id,'1');
+assert.equal(coordinator.metrics().avoided,11,'11 duplicate calls avoided (92% fewer requests in this synthetic burst)');
+assert.equal(coordinator.metrics().actions.profile.p50,175);
+assert.equal(coordinator.metrics().actions.profile.p95,175);
+await coordinator.run('profile',{target:'user-a'},'owner-a',async()=>{remoteCalls++;return {fresh:true};});
+assert.equal(remoteCalls,2,'Completed requests cannot cache data or block manual refresh');
+const second=coordinator.run('profile',{target:'user-a'},'owner-b',async()=>{remoteCalls++;return {other:true};});
+const third=coordinator.run('profile',{target:'user-b'},'owner-a',async()=>{remoteCalls++;return {other:true};});
+await Promise.all([second,third]);
+assert.equal(remoteCalls,4,'Different owners and targets never share responses');
+
+const actions=['chat-list','notifications','profile-presence','progress','profile-save','presence','live-events'];
+for(const action of actions){
+ let started=0;
+ const calls=Array.from({length:3},()=>coordinator.run(action,{},'owner-a',async()=>{started++;return true;}));
+ await Promise.all(calls);
+ assert.equal(started,3,action+' must always execute independently');
+}
+let rejectCalls=0;
+await assert.rejects(coordinator.run('search',{query:'java'},'owner-a',async()=>{rejectCalls++;throw new Error('temporary error');}),/temporary error/);
+await coordinator.run('search',{query:'java'},'owner-a',async()=>{rejectCalls++;return true;});
+assert.equal(rejectCalls,2,'Failed fetches cannot be cached');
+coordinator.clear();
+assert.equal(coordinator.metrics().avoided,0);
+assert.equal(coordinator.metrics().active,0);
+
+const owner='test-user';
+let cloudCalls=0,finish;
+const responsePromise=new Promise(resolve=>finish=resolve);
+const cloud=new Cloud(()=>{},{config:{url:'https://fixture.supabase.co/',publishableKey:'sb_publishable_fixture'},sessionFactory:()=>({tokenFor:async()=> 'test-token'}),fetchImpl:async(url,opts)=>{
+ cloudCalls++;assert.equal(JSON.parse(opts.body).action,'profile');
+ await responsePromise;
+ return {ok:true,status:200,json:async()=>({profile:{public_id:'test'}})};
+}});
+cloud.user={id:owner};
+const requests=Array.from({length:5},()=>cloud.request('profile',{target:'same-user'}));
+await new Promise(resolve=>setImmediate(resolve));
+assert.equal(cloudCalls,1,'Production Cloud client must use the coordinator');
+finish();
+const responses=await Promise.all(requests);
+assert.ok(responses.every(x=>x.profile.public_id==='test'));
+assert.equal(cloud.requestMetrics().avoided,4);
+
+const page=readFileSync('dist/community.html','utf8');
+const ui=readFileSync('dist/community.js','utf8');
+const styles=readFileSync('dist/profile-editor.css','utf8');
+const net=readFileSync('dist/cloud.js','utf8');
+assert.ok(page.includes('<dialog id="profileEditDialog"'),'Use accessible native modal');
+assert.ok(page.includes('id="profileEditPreview"'));
+assert.ok(page.includes('id="profileBioCounter"'));
+assert.ok(page.includes('id="profileEditStatus"'));
+assert.ok(page.includes('id="cancelProfileEdit"'));
+assert.ok(page.includes('id="profileEditTitle"')===false);
+assert.ok(page.includes('id="editProfileTitle"'));
+assert.ok(page.includes('profile-editor.css?v=profile-speed-1'));
+assert.ok(ui.includes('profileEditDialog.showModal()')||ui.includes("$('profileEditDialog').showModal()"));
+assert.ok(ui.includes('updateProfilePreview()'));
+assert.ok(ui.includes("save.textContent='Saving…'"));
+assert.ok(ui.includes('save.disabled=true'));
+assert.ok(ui.includes('editFeedback(err.message,true)'));
+assert.ok(ui.includes('freshView'),'Reuse verified profile response after saving');
+assert.ok(ui.includes('viewCache.saveProfile(owner,self.profile.username,freshView)'));
+assert.ok(net.includes('createRequestCoordinator'));
+assert.ok(net.includes('this.requests.clear()'),'Reset in-flight requests on account changes');
+assert.ok(styles.includes('::backdrop'));
+assert.ok(styles.includes('position:sticky'));
+assert.ok(styles.includes('@media(max-width:610px)'));
+console.log('PASS: profile editor popup and zero-stale-cache, account-isolated in-flight dedupe with p50/p95 counters.');
