@@ -539,18 +539,57 @@ async function syncCloud(){
   }catch(error){if(epoch===accountEpoch){setSyncStatus("failed","Saved here · retry sync");$("authMessage").textContent=error.message;}return false;}
   finally{if(epoch===accountEpoch){syncing=false;if(syncAgain){syncAgain=false;syncTimer=setTimeout(()=>syncCloud(),1000);}}}
 }
-async function refreshCatalog(){
-  if(!cloud.enabled)return;
+// Public catalog loading must never depend on Firebase sign-in or profile requests.
+// Start with the cached library for instant paint, then revalidate in the background.
+let lastCatalogRevalidation=0;
+async function refreshCatalog({force=false}={}){
+  const status=$("catalogSyncStatus"),button=$("refreshProblemCatalog");
+  if(!cloud.enabled){
+    status.textContent="Catalog connection is not configured";
+    status.dataset.state="error";
+    return false;
+  }
+  if(force){button.disabled=true;status.textContent="Updating problem library…";status.dataset.state="loading";}
   try{
-    const next=await cloud.publicCatalog();if(next===null)return;
-    const selected=current?.id;problems.splice(0,problems.length,...next);topics=[...new Set(problems.map(p=>p.topic))];
+    const next=await cloud.publicCatalog({force});
+    if(!Array.isArray(next)||!next.length)throw new Error("The public catalog was empty.");
+    const selected=current?.id;
+    problems.splice(0,problems.length,...next);
+    topics=[...new Set(problems.map(p=>p.topic))];
     $("problemSelect").replaceChildren(...problems.map(p=>new Option(p.title,p.id)));
-    for(const [id,values,label] of [["patternFilter",[...new Set(problems.map(p=>p.pattern||p.topic))],"All problem patterns"],["techniqueFilter",[...new Set(problems.flatMap(p=>p.techniques||[]))],"All techniques"]]){const selected=$(id).value;$(id).replaceChildren(new Option(label,""),...values.sort().map(v=>new Option(v,v)));if(values.includes(selected))$(id).value=selected;}
-    const oldTopic=$("topicFilter").value;$("topicFilter").replaceChildren(new Option("All patterns",""),...topics.map(t=>new Option(t,t)));if(topics.includes(oldTopic))$("topicFilter").value=oldTopic;
+    for(const [id,values,label] of [["patternFilter",[...new Set(problems.map(p=>p.pattern||p.topic))],"All problem patterns"],["techniqueFilter",[...new Set(problems.flatMap(p=>p.techniques||[]))],"All techniques"]]){
+      const selected=$(id).value;
+      $(id).replaceChildren(new Option(label,""),...values.sort().map(v=>new Option(v,v)));
+      if(values.includes(selected))$(id).value=selected;
+    }
+    const oldTopic=$("topicFilter").value;
+    $("topicFilter").replaceChildren(new Option("All patterns",""),...topics.map(t=>new Option(t,t)));
+    if(topics.includes(oldTopic))$("topicFilter").value=oldTopic;
     current=problems.find(p=>p.id===selected)||problems[0]||null;
     renderPractice();updateStats();route();
-  }catch(error){notify("The offline library is available while the connection recovers.");}
+    status.textContent=force?"Published catalog updated":"Problem catalog loaded";
+    status.dataset.state="ready";
+    return true;
+  }catch(error){
+    // Keep the last working catalog, even when the public endpoint is offline.
+    console.warn("ByteQuest: published catalog refresh failed",error);
+    status.textContent="Showing saved problems · Refresh to retry";
+    status.dataset.state="error";
+    return false;
+  }finally{
+    if(force)button.disabled=false;
+  }
 }
+function revalidateCatalog({manual=false}={}){
+  if(!cloud.enabled)return Promise.resolve(false);
+  const now=Date.now();
+  if(!manual&&now-lastCatalogRevalidation<60000)return Promise.resolve(false);
+  lastCatalogRevalidation=now;
+  return refreshCatalog({force:true});
+}
+$("refreshProblemCatalog").onclick=()=>{void revalidateCatalog({manual:true});};
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)void revalidateCatalog();});
+window.addEventListener("focus",()=>{if(!document.hidden)void revalidateCatalog();});
 function openAccount(){refreshAccountUi();$("accountDialog").showModal();}
 $("accountBtn").onclick=openAccount;$("profileBtn").onclick=()=>{location.href="./community.html#me";};$("syncBadge").onclick=openAccount;
 async function signInWithGoogle(button){
@@ -608,19 +647,28 @@ addEventListener("online",()=>{if(cloud.user)syncCloud();else setSyncStatus("","
 addEventListener("offline",()=>setSyncStatus("failed",cloud.user?"Offline · saved here":"On this device"));
 async function bootCloud(){
   refreshAccountUi();
+  // Public problems require no login. Do NOT wait for Firebase restoration,
+  // account progress, creator permissions or profile responses to load them.
+  const hadCachedCatalog=Boolean(cloud.readCatalogCache());
+  const catalogLoading=refreshCatalog();
+  if(hadCachedCatalog){
+    // An old cached 16-problem catalog must not masquerade as the full library.
+    void catalogLoading.then(()=>revalidateCatalog());
+  }else{
+    lastCatalogRevalidation=Date.now();
+  }
   try{
     await cloud.init();cloud.loginError=null;$("authMessage").textContent="";
   }catch(error){
     cloud.loginError=error.message;$("authMessage").textContent=error.message;
     setSyncStatus("failed","Account connection paused");
   }
-  // Firebase is the source of truth. Cached header cards never grant access.
-  // Reuse the restored session before waiting on public catalog requests.
+  // Firebase remains the source of truth for account data only.
   refreshAccountUi();
   if(document.body.dataset.page==="studio")route();
   await changeAccount(cloud.user);
   if(document.body.dataset.page!=="studio"){
-    await refreshCatalog();
+    await catalogLoading;
     const requested=new URLSearchParams(location.search).get("problem");
     if(requested&&problems.some(p=>p.id===requested))changeProblem(requested);
   }
