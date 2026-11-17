@@ -6,6 +6,8 @@ const object=value=>value&&typeof value==="object"&&!Array.isArray(value);
 // Bound records and source sizes below the existing 1 MB progress payload cap.
 export const MAX_PRACTICE_SUBMISSIONS=35;
 export const MAX_PRACTICE_SOURCE=20000;
+// Reserve headroom for the existing drafts and other account progress fields.
+export const MAX_PRACTICE_BYTES=450000;
 const practiceStatus=new Set(["practice_accepted","wrong_answer","compile_error","runtime_error","time_limit_exceeded","unavailable"]);
 const practiceId=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 function normalizePractice(row){
@@ -26,7 +28,14 @@ export function normalizePracticeSubmissions(rows){
  if(Array.isArray(rows))for(const row of rows.slice(-250)){
   const entry=normalizePractice(row);if(entry)byId.set(entry.id,entry);
  }
- return [...byId.values()].sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).slice(-MAX_PRACTICE_SUBMISSIONS);
+ const sorted=[...byId.values()].sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).slice(-MAX_PRACTICE_SUBMISSIONS);
+ const encoder=new TextEncoder();let bytes=0;const kept=[];
+ for(let i=sorted.length-1;i>=0;i--){
+  const length=encoder.encode(JSON.stringify(sorted[i])).byteLength;
+  if(bytes+length>MAX_PRACTICE_BYTES)continue;
+  bytes+=length;kept.push(sorted[i]);
+ }
+ return kept.reverse();
 }
 
 const time=value=>Number.isFinite(value)&&value>=0?value:0;
