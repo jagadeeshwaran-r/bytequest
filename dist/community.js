@@ -1,6 +1,7 @@
 import {mountCreatorAccess} from './creator-access.js?v=workbench-1';
 import {companies} from './companies.js?v=social-1';
-import {profileMarkup,profileAvatar,publicProfileHref} from './profile-view.js?v=profile-compact-1';
+import {profileMarkup,profileAvatar,publicProfileHref} from './profile-view.js?v=profile-year-1';
+import {bindProfileCalendar} from './profile-calendar.js?v=profile-year-1';
 import {hydrateRecentProblemNumbers} from './profile-extras.js?v=profile-compact-1';
 import {profileDetails} from './profile-fields.js?v=profile-2';
 import {rankCup} from './rewards.js?v=upgrade-2';
@@ -105,6 +106,7 @@ function renderProfile(r,{presencePending=false}={}){viewedProfileResult=r;viewe
  if(presencePending){presenceNode.dataset.status='checking';presenceNode.className='presence';presenceNode.textContent='Checking status…';}
  else paintPresence(presenceNode,viewedPresence);
  $('profileContent').insertAdjacentHTML('beforeend',analyticsMarkup);analytics=new Dashboard({cloud,getState:()=>({solved:{},days:r.stats.days||[]}),getCatalog:()=>catalog,getEvents:()=>r.stats.solves||[],summary:{solved:r.stats.solved,active:(r.stats.days||[]).length},topicInsights:r.insights?.skills||[],allowCompare:r.isOwn,name:r.isOwn?'You':'@'+p.username,profile:p,viewerProfile:self?.profile||null});analytics.open();
+ bindProfileCalendar($('profileContent'),r.stats.days,r.stats.serverDay);
  const recentToggle=$('profileContent').querySelector('[data-recent-toggle]');if(recentToggle)recentToggle.onclick=()=>{const expanded=recentToggle.getAttribute('aria-expanded')!=='true',rows=$('profileContent').querySelectorAll('[data-recent-row]');rows.forEach((row,i)=>row.hidden=!expanded&&i>=3);recentToggle.setAttribute('aria-expanded',String(expanded));recentToggle.textContent=expanded?'Show less':'Show all '+rows.length+' ↗';};
  $('messageFriend')?.addEventListener('click',()=>shell.openChat(p.public_id));
  $('followBtn')?.addEventListener('click',async e=>{e.target.disabled=true;try{const fresh=await act('follow',{target:p.public_id,following:!r.isFollowing});viewCache.clearOwner(cloud.user?.id);viewCache.saveSelf(cloud.user?.id,self);renderProfile(fresh);}catch(err){message(err.message,true);e.target.disabled=false;}});

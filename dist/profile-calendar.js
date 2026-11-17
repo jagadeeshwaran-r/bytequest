@@ -9,3 +9,70 @@ export function monthCalendar(days,serverDay=new Date().toISOString().slice(0,10
  }
  return{months,start:months[0].key+'-01',end};
 }
+
+/* Selectable full-year heatmap. Accepted days remain UTC and historical data is
+   derived from the profile API; no estimates or generated solves are added. */
+function utcToday(serverDay){
+ const day=validDay(serverDay)?serverDay:iso(new Date());
+ return {day,year:Number(day.slice(0,4))};
+}
+export function calendarYears(days,serverDay=new Date().toISOString().slice(0,10)){
+ const {day,year}=utcToday(serverDay);
+ let oldest=year-5;
+ for(const value of Array.isArray(days)?days:[]){
+  if(validDay(value)&&value<=day)oldest=Math.min(oldest,Number(value.slice(0,4)));
+ }
+ return Array.from({length:year-Math.max(2000,oldest)+1},(_,index)=>year-index);
+}
+export function yearCalendar(days,serverDay=new Date().toISOString().slice(0,10),selectedYear=null){
+ const {day,year:currentYear}=utcToday(serverDay);
+ const year=Number.isInteger(selectedYear)&&selectedYear>=2000&&selectedYear<=currentYear?selectedYear:currentYear;
+ const active=new Set((Array.isArray(days)?days:[]).filter(value=>validDay(value)&&value<=day));
+ const months=[];
+ for(let monthIndex=0;monthIndex<12;monthIndex++){
+  const first=new Date(Date.UTC(year,monthIndex,1,12));
+  const last=new Date(Date.UTC(year,monthIndex+1,0,12));
+  const cells=Array.from({length:first.getUTCDay()},()=>null);
+  let count=0;
+  for(let at=new Date(first);at<=last;at.setUTCDate(at.getUTCDate()+1)){
+   const date=iso(at),future=date>day,solved=!future&&active.has(date);
+   if(solved)count++;
+   cells.push({date,active:solved,future});
+  }
+  while(cells.length%7)cells.push(null);
+  months.push({
+   key:iso(first).slice(0,7),
+   label:first.toLocaleDateString('en',{month:'short',timeZone:'UTC'}),
+   title:first.toLocaleDateString('en',{month:'long',year:'numeric',timeZone:'UTC'}),
+   cells,solves:count
+  });
+ }
+ return {year,start:year+'-01-01',end:year===currentYear?day:year+'-12-31',activeCount:months.reduce((total,month)=>total+month.solves,0),months};
+}
+export function calendarMonthsMarkup(calendar){
+ return calendar.months.map(month=>
+  '<section class="calendar-month" aria-label="'+month.title+'">'+
+  '<span class="calendar-month-label">'+month.label+'</span>'+
+  '<div class="calendar-month-grid">'+month.cells.map(cell=>
+   cell?'<span class="calendar-day'+(cell.active?' solved':'')+(cell.future?' future':'')+
+    '" title="'+cell.date+(cell.active?': accepted solve':cell.future?': upcoming':': no solve')+'"></span>':
+   '<span class="calendar-padding" aria-hidden="true"></span>'
+  ).join('')+'</div></section>'
+ ).join('');
+}
+export function bindProfileCalendar(root,days,serverDay){
+ const picker=root?.querySelector?.('#profileCalendarYear'),
+  grid=root?.querySelector?.('#profileCalendarMonths'),
+  range=root?.querySelector?.('#profileCalendarRange'),
+  activity=root?.querySelector?.('#profileCalendarActivity');
+ if(!picker||!grid||!range||!activity)return false;
+ const update=()=>{
+  const calendar=yearCalendar(days,serverDay,Number(picker.value));
+  grid.innerHTML=calendarMonthsMarkup(calendar);
+  grid.setAttribute('aria-label','Accepted solve days in '+calendar.year);
+  range.textContent=calendar.start+' → '+calendar.end;
+  activity.textContent=calendar.activeCount+' '+(calendar.activeCount===1?'solve day':'solve days');
+ };
+ picker.addEventListener('change',update);
+ return true;
+}
