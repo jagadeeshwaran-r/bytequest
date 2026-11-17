@@ -41,6 +41,9 @@
  align-items:baseline;gap:4px 7px;
  color:var(--muted);font:450 10px/1.4 var(--font-sans);
  text-align:right;white-space:nowrap;
+ /* Move only the countdown closer to the profile divider. Relative
+    positioning preserves existing metric, avatar and calendar layout. */
+ position:relative;top:clamp(16px,2vw,28px);
 }
 .community-page #profileContent .streak-reset time{
  color:var(--text);font:600 11px/1.3 var(--font-mono,monospace);
@@ -62,6 +65,7 @@
  }
  .community-page #profileContent .profile-overview .profile-metrics .streak-reset{
   font-size:9px;white-space:normal;gap:2px 5px;justify-content:flex-end;
+  top:8px;
  }
  .community-page #profileContent .streak-reset time{font-size:10px}
  .community-page #profileContent .streak-reset small{font-size:8px}
