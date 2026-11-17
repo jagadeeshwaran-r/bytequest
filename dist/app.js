@@ -10,14 +10,14 @@ import {companyIcons} from './companies.js?v=company-3';
 import {problemStatusMarkup} from './problem-status.js?v=solved-1';
 import {canRevealEditorialSolution,editorialSolutionGateMarkup} from './editorial-access.js?v=editorial-1';
 import {mountWorkspace} from './workspace.js';
-import {mountShell} from "./shell.js?v=workbench-1";
+import {mountShell} from "./shell.js?v=studio-auth-1";
 import {Dashboard} from "./dashboard.js?v=topic-directory-1";
 import {languages,starterFor,NativeJudge} from "./languages.js?v=structural-2";
 import {problems as bundledProblems} from "./problems.js";
 import {Cloud} from "./cloud.js?v=profile-speed-1";
 import {createViewCache,prefetchCommunityViews} from "./view-cache.js?v=avatar-1";
 import {blankProgress, validateProgress, mergeProgress, solveStreak} from "./progress.js?v=next-1";
-import {Studio} from "./studio.js?v=structural-2";
+import {Studio} from "./studio.js?v=studio-auth-1";
 const problems=[...bundledProblems];
 const shell=mountShell();mountWorkspace();let language="java";try{const v=localStorage.getItem("bytequest.language");if(languages[v])language=v;}catch{}
 const draftId=(id=current.id)=>language==="java"?id:id+"--"+language;
