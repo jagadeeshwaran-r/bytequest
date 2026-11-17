@@ -72,7 +72,7 @@ export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=
   // Older Java practice solves never captured a source snapshot. Show the
   // existing solved timestamp honestly rather than fabricating an attempt.
   const solvedAt=Number(getSolvedAt(problem.id));
-  const legacy=!browser.length&&!server.length&&Number.isFinite(solvedAt)&&solvedAt>946684800000?
+  const legacy=!loading&&!browser.length&&!server.length&&Number.isFinite(solvedAt)&&solvedAt>946684800000?
     [{local:false,legacy:true,id:'legacy-'+problem.id,language:'java',created_at:new Date(solvedAt).toISOString()}]:[];
   const rows=[...browser,...server,...legacy].sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at)).slice(0,25);
   let content=heading();
