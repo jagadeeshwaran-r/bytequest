@@ -14,7 +14,7 @@ import {mountShell} from "./shell.js?v=studio-auth-1";
 import {Dashboard} from "./dashboard.js?v=topic-directory-1";
 import {languages,starterFor,NativeJudge} from "./languages.js?v=structural-2";
 import {problems as bundledProblems} from "./problems.js";
-import {Cloud} from "./cloud.js?v=profile-speed-1";
+import {Cloud} from "./cloud.js?v=creator-admin-1";
 import {createViewCache,prefetchCommunityViews} from "./view-cache.js?v=avatar-1";
 import {blankProgress, validateProgress, mergeProgress, solveStreak} from "./progress.js?v=next-1";
 import {Studio} from "./studio.js?v=studio-auth-1";
@@ -445,7 +445,13 @@ async function changeAccount(user){
       setSyncStatus("synced",remote.revision?"Saved to cloud":"Cloud connected");
     }else{setSyncStatus("failed","Saved on this device");$("authMessage").textContent="Could not load cloud progress. Your account’s local work is kept. Use Sync now to retry.";}
     if(loaded[1].status==="rejected")cloud.admin=false;
-    if(loaded[2].status==="fulfilled"){publicProfile=loaded[2].value.profile;communityCache.saveSelf(owner,loaded[2].value);}
+    if(loaded[2].status==="fulfilled"){
+      // The community 'self' response is the real administrator flag.
+      // The legacy 'account' admin flag includes delegated creators.
+      cloud.admin=loaded[2].value.admin===true;
+      publicProfile=loaded[2].value.profile;
+      communityCache.saveSelf(owner,loaded[2].value);
+    }else cloud.admin=false;
   }else{cloud.accessChecking=false;cloud.accessError=null;setSyncStatus("","On this device");}
   if(epoch!==accountEpoch)return;
   current=problems.find(p=>p.id===state.current)||problems[0]||null;
