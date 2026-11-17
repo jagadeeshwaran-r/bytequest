@@ -33,17 +33,19 @@
 /* The countdown occupies its own fourth row under the streak caption and
    doesn't push the large number or badges out of alignment. */
 .community-page #profileContent .profile-overview .profile-metrics .metric-streak{
- grid-template-rows:18px 62px minmax(32px,auto) auto!important;
+ grid-template-rows:18px 62px minmax(32px,auto) minmax(42px,auto)!important;
 }
 .community-page #profileContent .profile-overview .profile-metrics .streak-reset{
- grid-row:4;justify-self:end;
- display:inline-flex;flex-wrap:wrap;justify-content:flex-end;
+ grid-row:4;justify-self:end;align-self:end;
+ display:inline-flex!important;flex-wrap:wrap;justify-content:flex-end;
  align-items:baseline;gap:4px 7px;
+ min-height:24px;
  color:var(--muted);font:450 10px/1.4 var(--font-sans);
  text-align:right;white-space:nowrap;
- /* Move only the countdown closer to the profile divider. Relative
-    positioning preserves existing metric, avatar and calendar layout. */
- position:relative;top:clamp(16px,2vw,28px);
+ /* Reserve room in the fourth metric row; no off-grid translation that
+    could clip or hide the timer against the profile divider. */
+ position:static!important;top:auto!important;margin-top:10px;
+ visibility:visible!important;opacity:1!important;
 }
 .community-page #profileContent .streak-reset time{
  color:var(--text);font:600 11px/1.3 var(--font-mono,monospace);
@@ -61,11 +63,11 @@
   padding:12px 0 24px!important;row-gap:17px!important;
  }
  .community-page #profileContent .profile-overview .profile-metrics .metric-streak{
-  grid-template-rows:16px 49px minmax(30px,auto) auto!important;
+  grid-template-rows:16px 49px minmax(30px,auto) minmax(36px,auto)!important;
  }
  .community-page #profileContent .profile-overview .profile-metrics .streak-reset{
   font-size:9px;white-space:normal;gap:2px 5px;justify-content:flex-end;
-  top:8px;
+  margin-top:5px;
  }
  .community-page #profileContent .streak-reset time{font-size:10px}
  .community-page #profileContent .streak-reset small{font-size:8px}
