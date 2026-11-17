@@ -12,15 +12,25 @@ export async function submitSolution({owner,body,db,benchmarkJudge,privateJudge,
  const row=await db.privateProblem(data.problemId);if(!row)throw new HttpError(404,'Problem not found.');if(row.revision!==data.revision)throw new HttpError(409,'This problem changed. Reload it before submitting.');
  if(requiresJavaStructures(row.content)&&data.language!=='java')throw new HttpError(400,'Linked-list and tree problems currently support Java submissions only.');
  const hasHidden=(row.hidden||[]).length>0||Number(row.content.hiddenCount)>0;
- if(hasHidden&&!privateJudge?.ready&&!allowExternalHiddenJudge)throw new HttpError(503,'This problem requires a configured private Java judge. Hidden cases remain private by default.');
+ const trustedJava=data.language==='java'&&privateJudge?.ready;
+ if(hasHidden&&!trustedJava&&!allowExternalHiddenJudge)throw new HttpError(503,'This problem requires a configured private Java judge. Hidden cases remain private by default.');
  if(hasHidden&&data.language!=='java')throw new HttpError(400,'Private test submissions currently support Java only.');
  if(hasHidden&&!row.hidden?.length)throw new HttpError(503,'The private suite is unavailable. No acceptance was recorded.');
  if(!await db.claimOnlineRun(owner))throw new HttpError(429,'Wait 5 seconds between submissions. Online execution allows up to 60 runs per hour.');
  let result;
- if(hasHidden&&privateJudge?.ready){
-  const verdict=await privateJudge.run(data.source,row.content,[...row.content.tests,...row.hidden]);
+ if(trustedJava){
+  // Prefer dedicated, isolated OpenJDK for ALL Java submissions, including
+  // public-only challenges such as Lower Bound. Browser Run remains local.
+  const suite=hasHidden?[...row.content.tests,...row.hidden]:row.content.tests;
+  const started=Date.now();
+  let verdict;
+  try{verdict=await privateJudge.run(data.source,row.content,suite,{visibility:hasHidden?'private':'public'});}
+  finally{
+   // Timing only: never log source, account tokens, tests or provider output.
+   try{console.info(JSON.stringify({event:'bytequest_java_submission',backend:'trusted',elapsedMs:Date.now()-started}));}catch{}
+  }
   if(!verdict.accepted)return{...verdict,status:['compile_error','runtime_error','time_limit_exceeded','wrong_answer','unavailable'].includes(verdict.status)?verdict.status:'wrong_answer'};
-  result={accepted:true,status:'accepted',runtimeMs:verdict.runtimeMs??null,memoryBytes:verdict.memoryBytes??null,memoryMetric:'process_peak_rss',compiler:'trusted-private-java',benchmarkVersion:'bq-private-v1',total:row.content.tests.length+row.hidden.length,message:verdict.message};
+  result={accepted:true,status:'accepted',runtimeMs:verdict.runtimeMs??null,memoryBytes:verdict.memoryBytes??null,memoryMetric:'process_peak_rss',compiler:'trusted-private-java',benchmarkVersion:'bq-private-v1',total:suite.length,passed:hasHidden?undefined:suite.length,message:verdict.message};
  }else if(hasHidden&&allowExternalHiddenJudge){
   // Hosted compiler fallback: the full suite runs ONLY on the server, not in the
   // browser. Hidden inputs are transmitted to Wandbox, the existing compiler
