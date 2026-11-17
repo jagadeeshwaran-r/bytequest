@@ -251,6 +251,9 @@ async function run(submit){
     }else if(submit&&!accepted){
       const feedback=submissionFeedback({...result,accepted:false,status:"wrong_answer",passed,total:cases.length});
       output.innerHTML=feedback.html;notify(feedback.announcement);
+    }else if(accepted&&submit&&p.hiddenCount){
+      output.append(document.createTextNode(" Hidden cases require a server-verified Java submission. No non-Java acceptance was recorded."));
+      notify("Private test acceptance currently supports Java only.");
     }else if(accepted&&submit)completeQuest(p);
     else if(accepted)notify("Samples passed! Submit quest to check every built-in edge case.");
   }catch(error){if(epoch===runEpoch){const message=language!=="java"&&error?.name==='TimeoutError'?"Compiler request timed out. Your code is saved. Please try again shortly.":String(error.message||error);$("resultOutput").textContent=message;notify(message);}}
