@@ -1,126 +1,167 @@
-/* Roomier selected-year calendar with tighter profile breathing space.
-   Appended after all existing theme/profile styles to own calendar sizing. */
+/* ByteQuest selected-year solving calendar: original one-row month strip, now
+   fitted to available width instead of a 6-by-2 calendar dashboard. */
 .community-page .community-main:has(#profilePanel:not([hidden])){
-  padding-top:12px!important;
+  padding-top:10px!important;
 }
-.community-page #profileContent .profile-main-card.profile-unboxed{padding:0!important}
+.community-page #profileContent .profile-main-card.profile-unboxed{
+  padding:0!important;
+}
 .community-page #profileContent .profile-overview{
-  padding:2px 0 19px!important;
-  gap:clamp(16px,2.5vw,36px)!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,380px) minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:clamp(12px,1.4vw,22px)!important;
+  padding:2px 0 15px!important;
 }
-.community-page #profileContent .profile-hero{gap:12px 16px!important}
-.community-page #profileContent .profile-hero .profile-actions{margin-top:0!important}
+.community-page #profileContent .profile-hero{
+  gap:10px 13px!important;
+}
+.community-page #profileContent .profile-hero .profile-actions{
+  margin-top:0!important;
+}
+.community-page #profileContent .profile-overview .social-stats.profile-metrics{
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-left:0!important;
+  border-top:0!important;
+  align-items:center!important;
+  gap:clamp(12px,2vw,30px)!important;
+}
+.community-page #profileContent .profile-overview .profile-metrics .social-stat{
+  align-items:flex-start!important;
+  text-align:left!important;
+}
+.community-page #profileContent .profile-overview .profile-metrics .metric-caption{
+  max-width:16ch;
+}
 .community-page #profileContent .profile-calendar-section{
-  padding:19px 0 18px!important;
+  padding:17px 0 15px!important;
 }
 .community-page #profileContent .profile-calendar-section .calendar-heading{
   display:flex;align-items:center;justify-content:space-between;
-  gap:20px;margin:0 0 17px!important;
+  gap:16px;margin:0 0 16px!important;
 }
 .community-page #profileContent .profile-calendar-section .calendar-heading h3{
-  font:620 16px/1.3 var(--font-sans)!important;letter-spacing:-.025em;
-  margin:0 0 5px!important;
+  font:620 16px/1.3 var(--font-sans)!important;
+  letter-spacing:-.025em;
+  margin:0 0 4px!important;
 }
 .community-page #profileContent .profile-calendar-section .calendar-heading>div>span{
-  display:block;color:var(--muted);font:400 11px/1.4 var(--font-sans);
+  display:block;
   margin:0!important;
+  color:var(--muted);
+  font:400 11px/1.4 var(--font-sans);
 }
 .community-page #profileContent .calendar-year-picker{
-  display:inline-flex;align-items:center;gap:10px;flex:0 0 auto;
-  font:500 11px/1.4 var(--font-sans);color:var(--muted);
+  display:inline-flex;align-items:center;gap:9px;flex:0 0 auto;
+  color:var(--muted);font:500 11px/1.4 var(--font-sans);
 }
 .community-page #profileContent .calendar-year-picker select{
   appearance:auto;border:1px solid var(--border);background:var(--surface);
   color:var(--text);font:600 12px/1.4 var(--font-sans);
-  border-radius:8px;min-height:36px;min-width:92px;
-  padding:7px 10px;cursor:pointer;
+  border-radius:8px;min-height:34px;min-width:92px;
+  padding:6px 10px;cursor:pointer;
 }
 .community-page #profileContent .calendar-year-picker select:focus-visible{
   outline:2px solid var(--accent);outline-offset:2px;
 }
-/* Six months per row. Day squares are about twice the previous 9px,
-   rather than squeezing twelve months into a tiny horizontal strip. */
+/* cqw is relative to this scroll-free calendar container. With twelve
+   equal-width month tracks, the cells and their gaps shrink together to
+   fit the full year on any viewport, never wrapping into multiple rows. */
 .community-page #profileContent .profile-calendar-section .month-calendar-scroll{
-  overflow-x:auto;overscroll-behavior-inline:contain;
-  padding:3px 0 9px!important;scrollbar-width:thin;
+  container-type:inline-size;
+  overflow-x:hidden!important;
+  overscroll-behavior-inline:contain;
+  padding:0 0 7px!important;
+  scrollbar-width:none;
 }
 .community-page #profileContent .profile-calendar-section .month-calendar{
+  --calendar-month-gap:clamp(2px,.62cqw,9px);
+  --calendar-day-gap:clamp(1px,.2cqw,3px);
+  --calendar-cell:clamp(3px,1.02cqw,14px);
   display:grid!important;
-  width:100%!important;min-width:0;
-  grid-template-columns:repeat(6,minmax(0,1fr))!important;
-  gap:20px clamp(10px,1.7vw,23px)!important;
+  grid-template-columns:repeat(12,minmax(0,1fr))!important;
+  grid-template-rows:auto!important;
+  gap:var(--calendar-month-gap)!important;
+  width:100%!important;
+  min-width:0!important;
   min-height:0!important;
   align-items:start;
 }
 .community-page #profileContent .profile-calendar-section .calendar-month{
-  min-width:0;display:block;
+  min-width:0!important;
+  width:100%!important;
+  display:block;
 }
 .community-page #profileContent .profile-calendar-section .calendar-month-label{
-  display:block;margin:0 0 9px!important;
-  font:550 11px/1.3 var(--font-mono);color:var(--muted);
+  display:block;
+  margin:0 0 8px!important;
+  color:var(--muted);
+  font:500 clamp(8px,.8cqw,11px)/1.3 var(--font-mono);
+  white-space:nowrap;
 }
 .community-page #profileContent .profile-calendar-section .calendar-month-grid{
-  display:grid!important;grid-auto-flow:column!important;
-  grid-template-rows:repeat(7,17px)!important;
-  grid-auto-columns:17px!important;gap:4px!important;
-  width:max-content;
+  display:grid!important;
+  grid-auto-flow:column!important;
+  grid-template-rows:repeat(7,var(--calendar-cell))!important;
+  grid-auto-columns:var(--calendar-cell)!important;
+  gap:var(--calendar-day-gap)!important;
+  width:max-content!important;
+  max-width:100%;
 }
 .community-page #profileContent .profile-calendar-section .calendar-day{
-  width:17px!important;height:17px!important;
-  box-sizing:border-box;border-radius:3px;
-  transition:background .16s ease,border-color .16s ease;
+  width:var(--calendar-cell)!important;
+  height:var(--calendar-cell)!important;
+  box-sizing:border-box;
+  border-radius:2px;
+  transition:background .15s ease,border-color .15s ease;
 }
 .community-page #profileContent .profile-calendar-section .calendar-day.future{
   opacity:.35;
 }
 .community-page #profileContent .profile-calendar-section .activity-legend{
   display:flex;align-items:center;justify-content:space-between;
-  gap:8px;margin-top:10px;flex-wrap:wrap;
+  flex-wrap:wrap;gap:8px;
+  margin-top:8px;
 }
 .community-page #profileContent .profile-calendar-section .calendar-note{
   margin:5px 0 0!important;
 }
-.community-page #profileContent .recent-solves{padding:17px 0!important}
-@media(max-width:1200px){
-  .community-page #profileContent .profile-calendar-section .month-calendar{
-    grid-template-columns:repeat(4,minmax(0,1fr))!important;
-    row-gap:20px!important;
+.community-page #profileContent .recent-solves{
+  padding:16px 0!important;
+}
+@media(max-width:860px){
+  .community-page #profileContent .profile-overview{
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:13px!important;
+    padding-bottom:13px!important;
+  }
+  .community-page #profileContent .profile-overview .social-stats.profile-metrics{
+    padding:12px 0 0!important;
+    border-top:1px solid var(--border)!important;
+    gap:10px!important;
   }
 }
-@media(max-width:750px){
-  .community-page .community-main:has(#profilePanel:not([hidden])){padding-top:8px!important}
-  .community-page #profileContent .profile-overview{padding-bottom:15px!important}
+@media(max-width:620px){
   .community-page #profileContent .profile-calendar-section{
-    padding:16px 0!important;
+    padding:13px 0!important;
   }
-  .community-page #profileContent .profile-calendar-section .month-calendar{
-    grid-template-columns:repeat(3,minmax(0,1fr))!important;
-    gap:18px 13px!important;
-  }
-  .community-page #profileContent .profile-calendar-section .calendar-month-grid{
-    grid-template-rows:repeat(7,15px)!important;grid-auto-columns:15px!important;gap:3px!important;
-  }
-  .community-page #profileContent .profile-calendar-section .calendar-day{
-    width:15px!important;height:15px!important;
-  }
-}
-@media(max-width:450px){
   .community-page #profileContent .profile-calendar-section .calendar-heading{
-    align-items:flex-start;margin-bottom:12px!important;
+    align-items:center;gap:10px;margin-bottom:12px!important;
   }
-  .community-page #profileContent .profile-calendar-section .month-calendar{
-    grid-template-columns:repeat(2,minmax(0,1fr))!important;
-    gap:18px 10px!important;
+  .community-page #profileContent .calendar-year-picker select{
+    min-width:76px;padding:6px;
   }
-  .community-page #profileContent .profile-calendar-section .calendar-month-grid{
-    grid-template-rows:repeat(7,17px)!important;grid-auto-columns:17px!important;gap:4px!important;
+  .community-page #profileContent .profile-calendar-section .calendar-month-label{
+    margin-bottom:5px!important;
   }
-  .community-page #profileContent .profile-calendar-section .calendar-day{
-    width:17px!important;height:17px!important;
+  .community-page #profileContent .profile-overview .social-stats.profile-metrics{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
   }
-  .community-page #profileContent .calendar-year-picker{gap:5px}
-  .community-page #profileContent .calendar-year-picker select{min-width:76px;padding:6px}
 }
 @media(prefers-reduced-motion:reduce){
-  .community-page #profileContent .profile-calendar-section .calendar-day{transition:none}
+  .community-page #profileContent .profile-calendar-section .calendar-day{
+    transition:none;
+  }
 }
