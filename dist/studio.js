@@ -1,4 +1,5 @@
 import {mountCompanyPicker} from './companies.js?v=social-1';
+import {studioAccessState} from './studio-access.js?v=studio-auth-1';
 import {JavaJudge,buildTests} from "./judge.js?v=structural-2";
 import {mountBulkImport} from "./bulk-import.js?v=structural-2";
 import {validateProblem} from "./catalog.js?v=structural-2";
@@ -35,28 +36,18 @@ export class Studio{
   }
   message(message){$("studioStatus").textContent=message;}
   async open(){
-    const user=this.cloud.user,allowed=Boolean(user&&this.cloud.canCreate);
-    const title=$("studioGateTitle"),detail=$("studioGateMessage");
-    const button=$("studioSignIn"),note=$("studioGateNote");
+    const access=studioAccessState(this.cloud),user=this.cloud.user,allowed=access.allowed;
     $("studioGate").hidden=allowed;
     $("studioWorkspace").hidden=!allowed;
     $("newProblemBtn").hidden=!allowed;
+    $("studioGate").dataset.accessState=access.kind;
     if(!allowed){
-      if(!user){
-        const error=this.cloud.loginError;
-        title.textContent=error?"Couldn't restore your session":this.cloud.loginReady?"Connect your ByteQuest account":"Restoring your session…";
-        detail.textContent=error|| (this.cloud.loginReady?"Use your existing Google sign-in to create and publish problems.":"Checking the Google account already connected to ByteQuest.");
-        button.hidden=!this.cloud.loginReady&&!error;
-        button.textContent=error?"Retry connection":"Continue with Google";
-        note.textContent="Your drafts and published problems stay with your ByteQuest account.";
-      }else{
-        const checking=this.cloud.accessChecking,problem=this.cloud.accessError;
-        title.textContent=checking?"Checking publishing access…":problem?"Couldn't verify publishing access":"Publishing access required";
-        detail.textContent=checking?"Your existing Google session is connected. Checking your creator permissions…":problem||"You're signed in, but publishing requires creator access. An administrator can enable it for your account.";
-        button.hidden=!problem;
-        button.textContent="Retry access check";
-        note.textContent="You are already signed in. No second Google sign-in is needed.";
-      }
+      $("studioGateTitle").textContent=access.title;
+      $("studioGateMessage").textContent=access.message;
+      $("studioGateNote").textContent=access.note;
+      const button=$("studioSignIn");
+      button.hidden=!access.buttonVisible;
+      if(access.buttonVisible)button.textContent=access.buttonText;
       return;
     }
     this.companyPicker??=mountCompanyPicker();
