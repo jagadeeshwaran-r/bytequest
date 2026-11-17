@@ -3,9 +3,10 @@ import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './sub
 import {launchCelebration} from './celebration.js?v=next-1';
 import {mountEditorTools} from './editor-tools.js?v=copy-enabled-1';
 import {mountWorkspaceLayout} from './workspace-layout.js?v=workspace-1';
-import {submissionFeedback} from './submission-feedback.js?v=browser-submit-1';
+import {submissionFeedback} from './submission-feedback.js?v=reliability-1';
 import {usesRemoteSubmit,browserSubmissionCases,browserSubmissionVerdict} from './browser-submit.js?v=local-java-1';
 import {createPracticeSubmission,addPracticeSubmission} from './practice-history.js?v=practice-history-1';
+import {readSafeProgress,writeSafeProgress} from './reliable-storage.js?v=reliability-1';
 import {pointsFor,totalPoints} from './rewards.js?v=upgrade-2';
 import {companyIcons} from './companies.js?v=company-3';
 import {problemStatusMarkup} from './problem-status.js?v=solved-1';
@@ -34,7 +35,18 @@ let storageKey=guestStorageKey;
 const blank=blankProgress;
 const validateBackup=validateProgress;
 let state=blank(),storageOK=true;
-function readLocal(key){try{const saved=JSON.parse(localStorage.getItem(key));return saved?validateProgress(saved):blank();}catch{return blank();}}
+const storageTargets=new Map(),storageWarnings=new Map();
+function readLocal(key){
+  let result;
+  try{result=readSafeProgress(localStorage,key,validateProgress,blank);}
+  catch{result={state:blank(),saveKey:null,warning:"Browser storage could not be accessed. Export your work before closing this page."};}
+  storageTargets.set(key,result.saveKey);
+  if(result.warning)storageWarnings.set(key,result.warning);
+  return result.state;
+}
+function writeLocalProgress(key,value){
+  writeSafeProgress(localStorage,storageTargets.has(key)?storageTargets.get(key):key,value);
+}
 state=readLocal(storageKey);
 let publicProfile=null;
 const communityCache=createViewCache();
@@ -83,9 +95,15 @@ const javaOnlyProblem=p=>Boolean(p?.params?.some(param=>param.type==="ListNode"|
 function setLanguage(v){if(!languages[v])return;if(javaOnlyProblem(current)&&v!=="java"){notify("Linked-list and tree problems currently support Java 17 only.");return;}if(busy)stopRun();language=v;try{localStorage.setItem("bytequest.language",v);}catch{}renderPractice();}
 $("languageSelect").onchange=e=>setLanguage(e.target.value);
 function persist() {
-  try { localStorage.setItem(storageKey,JSON.stringify(state)); storageOK=true; $("saveStatus").textContent=cloud.user?"Draft saved · cloud sync queued":"Draft saved on this device"; }
-  catch { storageOK=false; $("saveStatus").textContent="Storage full or unavailable — export a backup"; }
-  if(accountReady&&cloud.user){clearTimeout(syncTimer);setSyncStatus("syncing","Changes saved here");syncTimer=setTimeout(()=>syncCloud(),1800);}
+  try{
+    writeLocalProgress(storageKey,state);storageOK=true;
+    $("saveStatus").textContent=storageWarnings.has(storageKey)?"Recovery copy saved · damaged original preserved":
+      cloud.user?"Draft saved · cloud sync queued":"Draft saved on this device";
+  }catch{
+    storageOK=false;$("saveStatus").textContent="Not saved · storage unavailable — export a backup";
+  }
+  if(accountReady&&cloud.user){clearTimeout(syncTimer);setSyncStatus("syncing",storageOK?"Changes saved here":"Local save failed · cloud sync queued");syncTimer=setTimeout(()=>syncCloud(),1800);}
+  return storageOK;
 }
 function notify(message) { clearTimeout(toastTimer); $("toast").textContent=message; $("toast").classList.add("show"); toastTimer=setTimeout(()=>$("toast").classList.remove("show"),4000); }
 function dateKey(date = new Date()) { return date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0"); }
@@ -266,12 +284,15 @@ async function run(submit){
       // and no private-suite or server-benchmark claims for this practice solve.
       const verdict=browserSubmissionVerdict(p,passed,cases.length,customCases.length);
       const saved=rememberJavaSubmit(p,source,verdict.status,passed,cases.length,result.elapsedMs??null,customCases.length);
-      verdict.message+=saved?" Saved privately under My submissions.":" Could not save the practice history on this device; export your backup.";
+      if(!saved&&verdict.accepted){
+        verdict.accepted=false;verdict.status="save_failed";
+        verdict.message="All "+cases.length+" browser cases passed, but storage did not save the attempt. Your solve is NOT recorded. Export your work before leaving.";
+      }else verdict.message+=saved?" Saved privately under My submissions.":" The attempt was not saved; export your backup.";
       const feedback=submissionFeedback(verdict);
       output.insertAdjacentHTML("afterbegin",feedback.html);
       openMySubmissions(output);
       notify(feedback.announcement);
-      if(verdict.accepted)completeQuest(p,true);
+      if(verdict.accepted&&saved)completeQuest(p,true);
     }else if(submit&&!accepted){
       const feedback=submissionFeedback({...result,accepted:false,status:"wrong_answer",passed,total:cases.length});
       output.innerHTML=feedback.html;notify(feedback.announcement);
@@ -305,6 +326,7 @@ function logAttempt(p,passed,total){
   state.activity=state.activity.slice(-200);persist();updateStats();
 }
 function completeQuest(p,practice=false){
+  const previous=structuredClone(state);
   const solvedDay=new Date().toISOString().slice(0,10);state.acceptedDays??=[];if(!state.acceptedDays.includes(solvedDay))state.acceptedDays.push(solvedDay);
   const first=!state.solved[p.id],isReview=!first&&due(p.id);
   if(first){state.solved[p.id]=Date.now();state.reviews[p.id]={anchor:Date.now(),step:0};}
@@ -314,7 +336,14 @@ function completeQuest(p,practice=false){
   $("successCopy").textContent=(first?"+"+pointsFor(p.difficulty)+" points! ":isReview?"Review complete! ":"")+p.title+(practice?" passed the browser practice cases. No server submission was recorded.":" passed the problem test suite.")+" "+(first?"Your first review is in 2 days.":isReview?"Review progress saved.":"Try explaining why your approach works.");
   $("successNote").value=state.notes[p.id]||"";
   document.querySelectorAll("[data-confidence]").forEach(b=>b.classList.toggle("selected",Number(b.dataset.confidence)===state.confidence[p.id]));
-  persist();updateStats();if(tab==="learn"&&current.id===p.id)renderLearning();$("successDialog").showModal();celebrate();
+  if(!persist()){
+    state=previous;
+    updateStats();
+    notify("Tests passed, but the solve was not saved. Export your work and retry.");
+    return false;
+  }
+  updateStats();if(tab==="learn"&&current.id===p.id)renderLearning();$("successDialog").showModal();celebrate();
+  return true;
 }
 function celebrate(){launchCelebration();}
 $("successNote").addEventListener("input",()=>{state.notes[current.id]=$("successNote").value.slice(0,4000);touch("notes",current.id);persist();});
@@ -484,20 +513,23 @@ async function changeAccount(user){
   if(needsSync)syncTimer=setTimeout(()=>syncCloud(),500);
 }
 async function syncCloud(){
-  clearTimeout(syncTimer);if(!cloud.user||!accountReady)return;
-  if(syncing){syncAgain=true;return;}
-  if(!navigator.onLine){setSyncStatus("failed","Offline · saved here");return;}
+  clearTimeout(syncTimer);if(!cloud.user||!accountReady)return false;
+  if(syncing){syncAgain=true;return false;}
+  if(!navigator.onLine){setSyncStatus("failed","Offline · saved here");return false;}
   const owner=cloud.user.id,epoch=accountEpoch,snapshot=JSON.stringify(state);syncing=true;setSyncStatus("syncing","Syncing progress");
   try{
     const merged=await cloud.syncProgress(owner,JSON.parse(snapshot),mergeProgress);if(epoch!==accountEpoch||cloud.user?.id!==owner)return;
     const changedWhileSaving=JSON.stringify(state)!==snapshot;state=mergeProgress(state,merged);
-    try{localStorage.setItem(storageKey,JSON.stringify(state));}catch{}
+    try{writeLocalProgress(storageKey,state);storageOK=true;}
+    catch{storageOK=false;$("saveStatus").textContent="Saved to cloud · local cache unavailable";}
     if(current&&document.activeElement!==$("codeEditor")){loadEditor(state.drafts[draftId()]??currentStarter());updateEditor();}
     updateStats();if(location.hash==="#progress")renderProgress();
-    $("saveStatus").textContent=changedWhileSaving?"New edits saved here · sync queued":"Draft saved to your account";
+    $("saveStatus").textContent=!storageOK?"Cloud synced · local cache unavailable":
+      changedWhileSaving?"New edits saved here · sync queued":"Draft saved to your account";
     setSyncStatus("synced",changedWhileSaving?"New changes queued":"Saved to cloud");$("authMessage").textContent="";
     if(changedWhileSaving)syncAgain=true;
-  }catch(error){if(epoch===accountEpoch){setSyncStatus("failed","Saved here · retry sync");$("authMessage").textContent=error.message;}}
+    return !changedWhileSaving;
+  }catch(error){if(epoch===accountEpoch){setSyncStatus("failed","Saved here · retry sync");$("authMessage").textContent=error.message;}return false;}
   finally{if(epoch===accountEpoch){syncing=false;if(syncAgain){syncAgain=false;syncTimer=setTimeout(()=>syncCloud(),1000);}}}
 }
 async function refreshCatalog(){
@@ -549,7 +581,21 @@ $("studioSignIn").onclick=async()=>{
  finally{button.disabled=false;studioAuthBusy=false;route();}
 };
 $("syncNowBtn").onclick=async()=>{await syncCloud();};
-$("signOutBtn").onclick=async()=>{try{await syncCloud();await cloud.signOut();$("accountDialog").close();await changeAccount(null);notify("Signed out on this device. Your account progress is kept.");}catch(error){$("authMessage").textContent=error.message;}};
+$("signOutBtn").onclick=async()=>{
+ const button=$("signOutBtn");if(button.disabled)return;button.disabled=true;
+ try{
+   const synced=await syncCloud();
+   if(!synced){
+     const message="Your latest changes are not confirmed in the cloud. They remain on this device only. Sign out anyway?";
+     $("authMessage").textContent="Cloud sync did not finish. Local work will remain on this device if you sign out.";
+     if(!window.confirm(message))return;
+   }
+   await cloud.signOut();$("accountDialog").close();await changeAccount(null);
+   notify(synced?"Signed out. Your latest progress was confirmed in the cloud.":
+     "Signed out. Unsynced work remains on this device; sign back in here to retry syncing.");
+ }catch(error){$("authMessage").textContent=error.message;}
+ finally{button.disabled=false;}
+};
 $("importGuestBtn").onclick=()=>{if(!cloud.user)return;state=mergeProgress(state,readLocal(guestStorageKey));persist();renderPractice();updateStats();notify("Guest progress added to this account. Cloud sync queued.");};
 addEventListener("online",()=>{if(cloud.user)syncCloud();else setSyncStatus("","On this device");});
 addEventListener("offline",()=>setSyncStatus("failed",cloud.user?"Offline · saved here":"On this device"));

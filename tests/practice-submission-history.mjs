@@ -79,7 +79,7 @@ assert.equal(sync,client,'Browser and Edge Function must use identical progress 
 assert.match(app,/rememberJavaSubmit\(p,source,result\.status,0,cases\.length/);
 assert.match(app,/rememberJavaSubmit\(p,source,verdict\.status,passed,cases\.length/);
 assert.match(app,/getPracticeSubmissions:\(\)=>state\.practiceSubmissions\|\|\[\]/);
-assert.match(app,/if\(verdict\.accepted\)completeQuest\(p,true\)/,'Practice history must not change solved grading');
+assert.match(app,/if\(verdict\.accepted&&saved\)completeQuest\(p,true\)/,'Only persisted accepted attempts can earn solve credit');
 assert.match(history,/renderHistory\(\[\],\{loading:Boolean\(user\)\}\)/,'Paint local history before remote API');
 assert.match(history,/renderHistory\(\[\],\{error:error\.message/,'Offline response must preserve visible practice history');
 assert.match(history,/localRows\(\)/);
