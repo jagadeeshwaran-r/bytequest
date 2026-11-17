@@ -49,8 +49,12 @@ async function boot(){
      viewCache.invalidateProfile(owner,cachedSelf.profile?.username);
      viewCache.invalidateProfile(owner,own.profile?.username);
    }
-   if(!cachedSelf||renamed)await route();
-   if(!cachedSelf)await refreshInbox(false);
+   // Profile navigation and notifications are independent. Overlap their
+   // network waits without caching unread counts or delaying profile paint.
+   const profileTask=(!cachedSelf||renamed)?route():null;
+   const inboxTask=!cachedSelf?refreshInbox(false):null;
+   if(profileTask)await profileTask;
+   if(inboxTask)await inboxTask;
    if(ticket===bootEpoch)message('');
  }catch(e){
    if(ticket===bootEpoch)message(cachedSelf?'Showing saved profile while account data reconnects.':e.message,true);
