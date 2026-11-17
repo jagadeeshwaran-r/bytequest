@@ -483,8 +483,41 @@ async function refreshCatalog(){
   }catch(error){notify("The offline library is available while the connection recovers.");}
 }
 function openAccount(){refreshAccountUi();$("accountDialog").showModal();}
-$("accountBtn").onclick=openAccount;$("profileBtn").onclick=()=>{location.href="./community.html#me";};$("syncBadge").onclick=openAccount;$("studioSignIn").onclick=openAccount;
-$("googleSignInBtn").onclick=async()=>{const button=$("googleSignInBtn");button.disabled=true;try{$("authMessage").textContent="Opening Google sign-in…";await cloud.signIn();$("authMessage").textContent="";$("accountDialog").close();}catch(error){$("authMessage").textContent=error.message;}finally{button.disabled=false;}};
+$("accountBtn").onclick=openAccount;$("profileBtn").onclick=()=>{location.href="./community.html#me";};$("syncBadge").onclick=openAccount;
+async function signInWithGoogle(button){
+ if(!cloud.loginReady){$("authMessage").textContent="Google sign-in is still connecting. Please retry once the account is ready.";return;}
+ button.disabled=true;
+ try{
+   $("authMessage").textContent="Opening Google sign-in…";
+   await cloud.signIn();cloud.loginError=null;$("authMessage").textContent="";
+   if($("accountDialog").open)$("accountDialog").close();
+ }catch(error){
+   $("authMessage").textContent=error.message;
+   if(document.body.dataset.page==="studio"){cloud.loginError=error.message;route();}
+ }finally{button.disabled=false;}
+}
+$("googleSignInBtn").onclick=()=>signInWithGoogle($("googleSignInBtn"));
+let studioAuthBusy=false;
+$("studioSignIn").onclick=async()=>{
+ if(studioAuthBusy)return;
+ studioAuthBusy=true;const button=$("studioSignIn");button.disabled=true;
+ try{
+   if(!cloud.loginReady){
+     // Retry restoring the SAME persisted Firebase identity. No new account.
+     cloud.loginError=null;route();
+     await cloud.init();cloud.loginError=null;
+     refreshAccountUi();await changeAccount(cloud.user);
+     // A signed-out session can now use the regular Google button on the next click.
+   }else if(cloud.user){
+     // Retry only the creator permission check; never ask to sign in twice.
+     const owner=cloud.user.id;cloud.accessChecking=true;cloud.accessError=null;route();
+     try{await cloud.checkAdmin(owner);if(cloud.user?.id===owner)cloud.accessError=null;}
+     catch(error){if(cloud.user?.id===owner){cloud.accessError=error.message;cloud.admin=false;cloud.canCreate=false;}}
+     finally{cloud.accessChecking=false;refreshAccountUi();}
+   }else await signInWithGoogle(button);
+ }catch(error){cloud.loginError=error.message;$("authMessage").textContent=error.message;}
+ finally{button.disabled=false;studioAuthBusy=false;route();}
+};
 $("syncNowBtn").onclick=async()=>{await syncCloud();};
 $("signOutBtn").onclick=async()=>{try{await syncCloud();await cloud.signOut();$("accountDialog").close();await changeAccount(null);notify("Signed out on this device. Your account progress is kept.");}catch(error){$("authMessage").textContent=error.message;}};
 $("importGuestBtn").onclick=()=>{if(!cloud.user)return;state=mergeProgress(state,readLocal(guestStorageKey));persist();renderPractice();updateStats();notify("Guest progress added to this account. Cloud sync queued.");};
@@ -492,8 +525,22 @@ addEventListener("online",()=>{if(cloud.user)syncCloud();else setSyncStatus("","
 addEventListener("offline",()=>setSyncStatus("failed",cloud.user?"Offline · saved here":"On this device"));
 async function bootCloud(){
   refreshAccountUi();
-  try{await cloud.init();$("authMessage").textContent="";}catch(error){$("authMessage").textContent=error.message;setSyncStatus("failed","Account connection paused");}
-  await refreshCatalog();await changeAccount(cloud.user);const requested=new URLSearchParams(location.search).get("problem");if(requested&&problems.some(p=>p.id===requested))changeProblem(requested);
+  try{
+    await cloud.init();cloud.loginError=null;$("authMessage").textContent="";
+  }catch(error){
+    cloud.loginError=error.message;$("authMessage").textContent=error.message;
+    setSyncStatus("failed","Account connection paused");
+  }
+  // Firebase is the source of truth. Cached header cards never grant access.
+  // Reuse the restored session before waiting on public catalog requests.
+  refreshAccountUi();
+  if(document.body.dataset.page==="studio")route();
+  await changeAccount(cloud.user);
+  if(document.body.dataset.page!=="studio"){
+    await refreshCatalog();
+    const requested=new URLSearchParams(location.search).get("problem");
+    if(requested&&problems.some(p=>p.id===requested))changeProblem(requested);
+  }
 }
 renderPractice();updateStats();route();bootCloud();
 if(!storageOK){$("saveStatus").textContent="Storage unavailable — use Save progress";notify("Local storage is unavailable. Export your progress before leaving.");}
