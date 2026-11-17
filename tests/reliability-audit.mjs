@@ -49,7 +49,7 @@ assert.deepEqual(readSafeProgress(new MemoryStorage(),owner,validateProgress,bla
 const app=readFileSync('dist/app.js','utf8');
 const history=readFileSync('dist/submissions.js','utf8');
 const index=readFileSync('dist/index.html','utf8');
-assert.ok(index.includes('app.js?v=ctrl-run-1'),'Force a fresh startup bundle');
+assert.ok(index.includes('app.js?v=company-hover-1'),'Force a fresh startup bundle');
 assert.ok(app.includes('readSafeProgress(localStorage,key,validateProgress,blank)'));
 assert.ok(app.includes('writeSafeProgress(localStorage,storageTargets.has(key)?storageTargets.get(key):key,value)'));
 assert.ok(app.includes('return storageOK;'),'Persistence must report whether a save succeeded');
