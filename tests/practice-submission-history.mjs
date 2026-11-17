@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {blankProgress,validateProgress,mergeProgress,MAX_PRACTICE_SUBMISSIONS,MAX_PRACTICE_SOURCE} from '../dist/progress.js';
+import {blankProgress,validateProgress,mergeProgress,MAX_PRACTICE_SUBMISSIONS,MAX_PRACTICE_SOURCE,MAX_PRACTICE_BYTES} from '../dist/progress.js';
 import {createPracticeSubmission,addPracticeSubmission,recentPracticeSubmissions} from '../dist/practice-history.js';
 import {validateProgress as serverValidateProgress} from '../supabase/functions/bytequest-firebase/domain/progress.js';
 
@@ -64,6 +64,13 @@ assert.ok(JSON.stringify({...blankProgress(),practiceSubmissions:Array.from({len
    passed:1,total:1,now:1800000010000+i}))}).length<980000,
  'Bound the synced payload under the existing one-megabyte database limit');
 
+const unicodeRows=Array.from({length:MAX_PRACTICE_SUBMISSIONS},(_,i)=>
+ createPracticeSubmission({problem,source:'⚡'.repeat(MAX_PRACTICE_SOURCE),status:'practice_accepted',
+  passed:1,total:1,now:1800000100000+i}));
+const bounded=validateProgress({...blankProgress(),practiceSubmissions:unicodeRows}).practiceSubmissions;
+assert.ok(bounded.length<MAX_PRACTICE_SUBMISSIONS,'Byte budget must trim long multi-byte sources');
+assert.ok(new TextEncoder().encode(JSON.stringify(bounded)).byteLength<=MAX_PRACTICE_BYTES,
+ 'History must leave enough space for other private progress under the 1 MB backend limit');
 const app=readFileSync('dist/app.js','utf8');
 const history=readFileSync('dist/submissions.js','utf8');
 const sync=readFileSync('supabase/functions/bytequest-firebase/domain/progress.js','utf8');
