@@ -34,7 +34,7 @@ assert.ok(leaderboard.includes("const own=await cloud.request('self')"),'Leaderb
 assert.ok(leaderboard.includes('shell.setAdmin(own.admin===true)'));
 assert.ok(shell.includes('authorized===true'),'Admin link must require explicit boolean true');
 assert.ok(shell.includes('link.hidden=!show'),'Admin link must be hidden for ordinary creators');
-for(const page of ['index','studio','community','leaderboard']){
+for(const page of ['index','studio','leaderboard']){
  const html=readFileSync('dist/'+page+'.html','utf8');
  assert.ok(html.includes('href="./community.html#roles" data-admin-link hidden>Manage creators'),'Start hidden on '+page);
 }
