@@ -137,7 +137,12 @@ export class Cloud {
     return this.bootstrap.promise;
   }
   async checkAdmin(userId){
-    const result=await this.account(userId);if(this.user?.id===userId){this.admin=result.admin===true;this.canCreate=result.canCreate===true;}return result.admin===true;
+    const result=await this.account(userId);
+    // Legacy account.admin means "editor OR library admin", not a library
+    // administrator. Only the authenticated community "self" response can
+    // determine whether Manage creators is shown.
+    if(this.user?.id===userId)this.canCreate=result.canCreate===true;
+    return result.canCreate===true;
   }
   async loadProgress(userId){const result=await this.account(userId);return {state:validateProgress(result.progress?.payload||blankProgress()),revision:result.progress?.revision||0};}
   async syncProgress(userId,local,merge){
