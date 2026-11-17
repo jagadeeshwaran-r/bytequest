@@ -1,0 +1,102 @@
+/* Solving Rhythm: clear chart-first hierarchy without removing any filters,
+   friend comparisons, forecasting or topic controls. */
+.community-page #profileAnalytics .dashboard-chart{
+ position:relative;
+ padding:clamp(18px,2vw,28px)!important;
+ border:1px solid var(--border)!important;border-radius:16px!important;
+ background:transparent!important;box-shadow:none!important;
+}
+.community-page #profileAnalytics .chart-heading{
+ align-items:center;gap:16px;margin-bottom:16px!important;
+}
+.community-page #profileAnalytics .chart-heading h2{
+ font-size:17px!important;font-weight:600!important;letter-spacing:-.03em;
+}
+.community-page #profileAnalytics .chart-heading p{
+ font-size:10px!important;line-height:1.5!important;
+}
+.community-page #profileAnalytics .chart-actions{
+ display:flex;align-items:center;justify-content:flex-end;
+ flex:1 1 auto;gap:8px;min-width:0;flex-wrap:wrap;
+}
+.community-page #profileAnalytics .chart-filters{
+ display:flex;gap:6px;width:auto;flex-wrap:nowrap;
+}
+.community-page #profileAnalytics .chart-filters select,
+.community-page #profileAnalytics .graph-more>summary{
+ min-height:32px!important;height:32px!important;
+ border-radius:9px!important;
+ border:1px solid var(--border)!important;
+ background:var(--surface-2)!important;
+ color:var(--text)!important;
+ font:500 10px/1.4 var(--font-sans)!important;
+ padding:6px 9px;
+}
+.community-page #profileAnalytics .chart-filters #graphMeasure{min-width:120px}
+.community-page #profileAnalytics .graph-more{
+ position:relative;z-index:10;flex:0 0 auto;
+}
+.community-page #profileAnalytics .graph-more>summary{
+ display:flex;align-items:center;justify-content:center;
+ padding:6px 11px;cursor:pointer;white-space:nowrap;
+ list-style:none;user-select:none;
+}
+.community-page #profileAnalytics .graph-more>summary::-webkit-details-marker{display:none}
+.community-page #profileAnalytics .graph-more>summary::after{
+ content:'⌄';font-size:13px;margin-left:8px;color:var(--muted);
+}
+.community-page #profileAnalytics .graph-more[open]>summary{
+ color:var(--accent)!important;border-color:var(--accent)!important;
+}
+.community-page #profileAnalytics .graph-more>summary:focus-visible{
+ outline:2px solid var(--accent);outline-offset:2px;
+}
+.community-page #profileAnalytics .graph-more-controls{
+ position:absolute;right:0;top:calc(100% + 8px);
+ display:flex;align-items:stretch;flex-direction:column;
+ gap:9px;width:min(235px,calc(100vw - 48px));
+ padding:13px;border-radius:12px;
+ border:1px solid var(--border);
+ background:var(--surface);
+ box-shadow:0 18px 40px #0005;
+}
+.community-page #profileAnalytics .graph-more-controls>:is(input,select),
+.community-page #profileAnalytics .graph-more-controls>.graph-forecast-toggle{
+ width:100%;min-width:0;min-height:33px!important;
+ box-sizing:border-box;
+}
+.community-page #profileAnalytics .graph-more-controls>[hidden]{display:none!important}
+.community-page #profileAnalytics .graph-scroll{
+ min-height:175px!important;padding:4px 0 0!important;
+}
+.community-page #profileAnalytics #frequencyChart{
+ max-height:235px!important;
+}
+.community-page #profileAnalytics #frequencyChart .graph-grid{
+ stroke:var(--border);opacity:.5;
+}
+.community-page #profileAnalytics #frequencyChart .graph-precise-line{
+ stroke-width:2.2!important;
+}
+.community-page #profileAnalytics .graph-legend{
+ gap:8px 13px!important;margin:0 0 10px!important;
+}
+.community-page #profileAnalytics .comparison-controls{
+ display:flex;align-items:center;flex-wrap:wrap;
+ gap:8px;margin-top:8px!important;padding-top:11px;
+ border-top:1px solid var(--border);
+ color:var(--muted);
+}
+.community-page #profileAnalytics .chart-footnote{
+ margin-top:9px!important;font-size:9px!important;opacity:.85;
+}
+@media(max-width:720px){
+ .community-page #profileAnalytics .chart-heading{align-items:flex-start}
+ .community-page #profileAnalytics .chart-actions{justify-content:flex-start;width:100%}
+ .community-page #profileAnalytics .chart-filters{width:auto!important;flex:1 1 auto}
+ .community-page #profileAnalytics .chart-filters select{min-width:95px;max-width:170px}
+ .community-page #profileAnalytics .graph-more-controls{left:auto;right:0}
+}
+@media(prefers-reduced-motion:reduce){
+ .community-page #profileAnalytics .graph-more>summary{transition:none}
+}
