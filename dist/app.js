@@ -284,13 +284,15 @@ async function run(submit){
       // and no private-suite or server-benchmark claims for this practice solve.
       const verdict=browserSubmissionVerdict(p,passed,cases.length,customCases.length);
       const saved=rememberJavaSubmit(p,source,verdict.status,passed,cases.length,result.elapsedMs??null,customCases.length);
-      verdict.message+=saved?" Saved privately under My submissions.":" Could not save the practice history on this device; export your backup.";
+      if(!saved&&verdict.accepted){
+        verdict.accepted=false;verdict.status="save_failed";
+        verdict.message="All "+cases.length+" browser cases passed, but storage did not save the attempt. Your solve is NOT recorded. Export your work before leaving.";
+      }else verdict.message+=saved?" Saved privately under My submissions.":" The attempt was not saved; export your backup.";
       const feedback=submissionFeedback(verdict);
       output.insertAdjacentHTML("afterbegin",feedback.html);
       openMySubmissions(output);
       notify(feedback.announcement);
       if(verdict.accepted&&saved)completeQuest(p,true);
-      else if(verdict.accepted)notify("Tests passed, but progress could not be saved. Export your work and free browser storage.");
     }else if(submit&&!accepted){
       const feedback=submissionFeedback({...result,accepted:false,status:"wrong_answer",passed,total:cases.length});
       output.innerHTML=feedback.html;notify(feedback.announcement);
