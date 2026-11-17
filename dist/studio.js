@@ -40,7 +40,7 @@ export class Studio{
     $("studioGate").hidden=allowed;$("studioWorkspace").hidden=!allowed;$("newProblemBtn").hidden=!allowed;
     $("studioSignIn").hidden=!!this.cloud.user;
     if(!allowed){$("studioGate").querySelector("p").textContent=this.cloud.user?"Your account can practise and sync progress. Sign in to publish your own problems.":"Sign in with Google to create and publish problems.";return;}
-    if(!navigator.connection?.saveData&&this.judge.phase==="cold")this.judge.preload();
+    // Keep Studio responsive: the Java browser JVM boots when Validate is clicked, not while loading the library.
     if(this.loadedFor===this.cloud.user.id)return;
     const userId=this.cloud.user.id;this.message("Loading your problem library…");
     try{
