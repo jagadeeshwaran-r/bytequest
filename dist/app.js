@@ -37,7 +37,9 @@ const validateBackup=validateProgress;
 let state=blank(),storageOK=true;
 const storageTargets=new Map(),storageWarnings=new Map();
 function readLocal(key){
-  const result=readSafeProgress(localStorage,key,validateProgress,blank);
+  let result;
+  try{result=readSafeProgress(localStorage,key,validateProgress,blank);}
+  catch{result={state:blank(),saveKey:null,warning:"Browser storage could not be accessed. Export your work before closing this page."};}
   storageTargets.set(key,result.saveKey);
   if(result.warning)storageWarnings.set(key,result.warning);
   return result.state;
