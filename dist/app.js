@@ -3,7 +3,7 @@ import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './sub
 import {launchCelebration} from './celebration.js?v=next-1';
 import {mountEditorTools} from './editor-tools.js?v=copy-enabled-1';
 import {mountWorkspaceLayout} from './workspace-layout.js?v=workspace-1';
-import {submissionFeedback} from './submission-feedback.js?v=browser-submit-1';
+import {submissionFeedback} from './submission-feedback.js?v=reliability-1';
 import {usesRemoteSubmit,browserSubmissionCases,browserSubmissionVerdict} from './browser-submit.js?v=local-java-1';
 import {createPracticeSubmission,addPracticeSubmission} from './practice-history.js?v=practice-history-1';
 import {readSafeProgress,writeSafeProgress} from './reliable-storage.js?v=reliability-1';
