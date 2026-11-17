@@ -509,9 +509,9 @@ async function changeAccount(user){
   if(needsSync)syncTimer=setTimeout(()=>syncCloud(),500);
 }
 async function syncCloud(){
-  clearTimeout(syncTimer);if(!cloud.user||!accountReady)return;
-  if(syncing){syncAgain=true;return;}
-  if(!navigator.onLine){setSyncStatus("failed","Offline · saved here");return;}
+  clearTimeout(syncTimer);if(!cloud.user||!accountReady)return false;
+  if(syncing){syncAgain=true;return false;}
+  if(!navigator.onLine){setSyncStatus("failed","Offline · saved here");return false;}
   const owner=cloud.user.id,epoch=accountEpoch,snapshot=JSON.stringify(state);syncing=true;setSyncStatus("syncing","Syncing progress");
   try{
     const merged=await cloud.syncProgress(owner,JSON.parse(snapshot),mergeProgress);if(epoch!==accountEpoch||cloud.user?.id!==owner)return;
@@ -520,10 +520,12 @@ async function syncCloud(){
     catch{storageOK=false;$("saveStatus").textContent="Saved to cloud · local cache unavailable";}
     if(current&&document.activeElement!==$("codeEditor")){loadEditor(state.drafts[draftId()]??currentStarter());updateEditor();}
     updateStats();if(location.hash==="#progress")renderProgress();
-    $("saveStatus").textContent=changedWhileSaving?"New edits saved here · sync queued":"Draft saved to your account";
+    $("saveStatus").textContent=!storageOK?"Cloud synced · local cache unavailable":
+      changedWhileSaving?"New edits saved here · sync queued":"Draft saved to your account";
     setSyncStatus("synced",changedWhileSaving?"New changes queued":"Saved to cloud");$("authMessage").textContent="";
     if(changedWhileSaving)syncAgain=true;
-  }catch(error){if(epoch===accountEpoch){setSyncStatus("failed","Saved here · retry sync");$("authMessage").textContent=error.message;}}
+    return !changedWhileSaving;
+  }catch(error){if(epoch===accountEpoch){setSyncStatus("failed","Saved here · retry sync");$("authMessage").textContent=error.message;}return false;}
   finally{if(epoch===accountEpoch){syncing=false;if(syncAgain){syncAgain=false;syncTimer=setTimeout(()=>syncCloud(),1000);}}}
 }
 async function refreshCatalog(){
@@ -575,7 +577,19 @@ $("studioSignIn").onclick=async()=>{
  finally{button.disabled=false;studioAuthBusy=false;route();}
 };
 $("syncNowBtn").onclick=async()=>{await syncCloud();};
-$("signOutBtn").onclick=async()=>{try{await syncCloud();await cloud.signOut();$("accountDialog").close();await changeAccount(null);notify("Signed out on this device. Your account progress is kept.");}catch(error){$("authMessage").textContent=error.message;}};
+$("signOutBtn").onclick=async()=>{
+ const button=$("signOutBtn");if(button.disabled)return;button.disabled=true;
+ try{
+   const synced=await syncCloud();
+   if(!synced){
+     const message="Sign-out paused: your latest progress has not finished syncing. Your local copy is kept. Choose Sync now and retry when connected.";
+     $("authMessage").textContent=message;notify(message);return;
+   }
+   await cloud.signOut();$("accountDialog").close();await changeAccount(null);
+   notify("Signed out. Your latest progress was confirmed in the cloud.");
+ }catch(error){$("authMessage").textContent=error.message;}
+ finally{button.disabled=false;}
+};
 $("importGuestBtn").onclick=()=>{if(!cloud.user)return;state=mergeProgress(state,readLocal(guestStorageKey));persist();renderPractice();updateStats();notify("Guest progress added to this account. Cloud sync queued.");};
 addEventListener("online",()=>{if(cloud.user)syncCloud();else setSyncStatus("","On this device");});
 addEventListener("offline",()=>setSyncStatus("failed",cloud.user?"Offline · saved here":"On this device"));
