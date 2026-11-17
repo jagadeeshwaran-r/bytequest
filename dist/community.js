@@ -7,7 +7,7 @@ import {rankCup} from './rewards.js?v=upgrade-2';
 import {receivedPresence,presenceOnline,relativeTime,profilePreferences} from './presence-model.js?v=social-1';
 import {Dashboard} from './dashboard.js?v=topic-directory-1';
 import {analyticsMarkup} from './profile-analytics.js?v=topic-directory-1';
-import {mountShell} from './shell.js?v=workbench-1';
+import {mountShell} from './shell.js?v=studio-auth-1';
 import {prepareAvatar} from './avatar-upload.js';
 import {Cloud} from './cloud.js?v=profile-speed-1';
 import {createViewCache} from './view-cache.js?v=avatar-1';
@@ -26,7 +26,7 @@ async function boot(){
  const owner=cloud.user?.id||null;
  if(lastOwner&&lastOwner!==owner)viewCache.clearOwner(lastOwner);
  lastOwner=owner;self=null;viewedProfileResult=null;creatorAccess.reset();pendingPhoto=null;
- $('profilePhotoFile').value='';shell.setAccount(cloud.user);
+ $('profilePhotoFile').value='';shell.setAccount(cloud.user);shell.setAdmin(false);
  $('signedOut').hidden=!!owner;$('signedIn').hidden=!owner;
  $('communityAccount').textContent=owner?'Sign out':'Sign in with Google';
  if(!owner){message('Your next good idea starts with one small step.');return;}
@@ -34,7 +34,7 @@ async function boot(){
  // The verified Firebase account can safely reuse its own cached header/profile
  // without waiting for another Supabase 'self' round trip.
  if(cachedSelf){
-   self=cachedSelf;shell.setAccount(cloud.user,self.profile);
+   self=cachedSelf;shell.setAccount(cloud.user,self.profile);shell.setAdmin(self.admin===true);
    void route();
    void refreshInbox(false).catch(()=>{}); // Notifications are always fetched live.
    message('');
@@ -43,7 +43,7 @@ async function boot(){
  try{
    const own=await act('self');
    if(ticket!==bootEpoch||cloud.user?.id!==owner)return;
-   self=own;viewCache.saveSelf(owner,own);shell.setAccount(cloud.user,own.profile);
+   self=own;viewCache.saveSelf(owner,own);shell.setAccount(cloud.user,own.profile);shell.setAdmin(self.admin===true);
    const renamed=!!cachedSelf&&cachedSelf.profile?.username!==own.profile?.username;
    if(renamed){
      viewCache.invalidateProfile(owner,cachedSelf.profile?.username);

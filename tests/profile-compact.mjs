@@ -65,7 +65,7 @@ const html=readFileSync('dist/community.html','utf8');
 const ui=readFileSync('dist/community.js','utf8');
 const css=readFileSync('dist/profile-compact.css','utf8');
 assert.ok(html.includes('profile-compact.css?v=profile-compact-1'));
-assert.ok(html.includes('community.js?v=profile-speed-1'),'Updated community bundle still includes the compact profile');
+assert.ok(html.includes('community.js?v=studio-auth-1'),'Updated community bundle still includes the compact profile');
 assert.ok(ui.includes('hydrateRecentProblemNumbers($(\'profileContent\'),catalog)'));
 assert.ok(ui.includes('catalogCount:catalog.length,catalog'));
 assert.ok(css.includes('social-stats.profile-metrics'));

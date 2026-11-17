@@ -1,4 +1,4 @@
-import {mountShell} from './shell.js?v=workbench-1';
+import {mountShell} from './shell.js?v=studio-auth-1';
 import {Cloud} from './cloud.js?v=profile-speed-1';
 import {leaderboardRow,latestLeaderboard} from './leaderboard-model.js?v=avatar-1';
 import {createViewCache} from './view-cache.js?v=avatar-1';
@@ -32,7 +32,7 @@ async function load({force=false}={}){
  }catch(e){if(cloud.user?.id!==owner)return;$('leaderLoading').hidden=true;$('leaderError').hidden=false;$('leaderErrorText').textContent=e.message;$('leaderPanel').setAttribute('aria-busy','false');$('leaderRefresh').disabled=false;setMessage('Rankings could not be loaded.',true);}
 }
 async function accountChanged(){
- const ticket=++accountGeneration;loader.cancel();const nextOwner=cloud.user?.id||null;if(lastOwner&&lastOwner!==nextOwner)cache.clearOwner(lastOwner);lastOwner=nextOwner;shell.setAccount(cloud.user);clearResults();const signedIn=!!cloud.user;
+ const ticket=++accountGeneration;loader.cancel();const nextOwner=cloud.user?.id||null;if(lastOwner&&lastOwner!==nextOwner)cache.clearOwner(lastOwner);lastOwner=nextOwner;shell.setAccount(cloud.user);shell.setAdmin(false);clearResults();const signedIn=!!cloud.user;
  $('leaderAuthMessage').hidden=signedIn;$('leaderSignedOut').hidden=signedIn;$('leaderSignedIn').hidden=!signedIn;$('communityAccount').textContent=signedIn?'Sign out':'Sign in with Google';
  if(!signedIn){setMessage('Sign in to see the community and your friends.');return;}
  // Show cached rankings immediately; load verified profile details independently.
@@ -41,12 +41,12 @@ async function accountChanged(){
  const savedAccount=cache.self(nextOwner);
  if(savedAccount){
    // Account is already verified by Firebase; no duplicate self RPC within TTL.
-   shell.setAccount(cloud.user,savedAccount.profile);
+   shell.setAccount(cloud.user,savedAccount.profile);shell.setAdmin(savedAccount.admin===true);
  }else{
    try{
      const own=await cloud.request('self');
      if(ticket===accountGeneration&&cloud.user?.id===nextOwner){
-       cache.saveSelf(nextOwner,own);shell.setAccount(cloud.user,own.profile);
+       cache.saveSelf(nextOwner,own);shell.setAccount(cloud.user,own.profile);shell.setAdmin(own.admin===true);
      }
    }catch(e){
      if(ticket===accountGeneration)console.warn('ByteQuest profile details are temporarily unavailable:',e.message);

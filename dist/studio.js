@@ -1,4 +1,5 @@
 import {mountCompanyPicker} from './companies.js?v=social-1';
+import {studioAccessState} from './studio-access.js?v=studio-auth-1';
 import {JavaJudge,buildTests} from "./judge.js?v=structural-2";
 import {mountBulkImport} from "./bulk-import.js?v=structural-2";
 import {validateProblem} from "./catalog.js?v=structural-2";
@@ -35,16 +36,26 @@ export class Studio{
   }
   message(message){$("studioStatus").textContent=message;}
   async open(){
+    const access=studioAccessState(this.cloud),user=this.cloud.user,allowed=access.allowed;
+    $("studioGate").hidden=allowed;
+    $("studioWorkspace").hidden=!allowed;
+    $("newProblemBtn").hidden=!allowed;
+    $("studioGate").dataset.accessState=access.kind;
+    if(!allowed){
+      $("studioGateTitle").textContent=access.title;
+      $("studioGateMessage").textContent=access.message;
+      $("studioGateNote").textContent=access.note;
+      const button=$("studioSignIn");
+      button.hidden=!access.buttonVisible;
+      if(access.buttonVisible)button.textContent=access.buttonText;
+      return;
+    }
     this.companyPicker??=mountCompanyPicker();
-    const allowed=!!this.cloud.user&&this.cloud.canCreate;
-    $("studioGate").hidden=allowed;$("studioWorkspace").hidden=!allowed;$("newProblemBtn").hidden=!allowed;
-    $("studioSignIn").hidden=!!this.cloud.user;
-    if(!allowed){$("studioGate").querySelector("p").textContent=this.cloud.user?"Your account can practise and sync progress. Sign in to publish your own problems.":"Sign in with Google to create and publish problems.";return;}
-    // Keep Studio responsive: the Java browser JVM boots when Validate is clicked, not while loading the library.
-    if(this.loadedFor===this.cloud.user.id)return;
-    const userId=this.cloud.user.id;this.message("Loading your problem library…");
+    if(this.loadedFor===user.id)return;
+    const userId=user.id;this.message("Loading your problem library…");
     try{
-      const rows=await this.cloud.adminCatalog();if(this.cloud.user?.id!==userId||!this.cloud.canCreate)return;
+      const rows=await this.cloud.adminCatalog();
+      if(this.cloud.user?.id!==userId||!this.cloud.canCreate)return;
       this.rows=rows;this.loadedFor=userId;this.fillSelect();this.row=null;this.fill(sample);
       try{
         const local=JSON.parse(localStorage.getItem("bytequest.studio."+userId));
