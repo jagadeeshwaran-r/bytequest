@@ -17,4 +17,7 @@ for(const id of ['studioGate','studioSignIn','studioWorkspace','studioStatus','p
 const app=readFileSync('dist/app.js','utf8');
 assert.ok(app.includes('document.body.dataset.page==="studio"'),'App must recognize the standalone Studio page');
 assert.ok(app.includes('if(view==="studio")studio.open()'),'Studio route must open its controller');
+const controller=readFileSync('dist/studio.js','utf8');
+assert.ok(!controller.includes('this.judge.preload();'),'Do not start downloading the browser JVM while opening the library');
+assert.ok(controller.includes('this.judge.run(problem.reference,problem,cases)'),'Validation must still compile Java on demand');
 console.log('PASS: Studio entrypoint cache parity, visible startup gate and required editor DOM.');
