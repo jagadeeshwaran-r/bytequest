@@ -70,6 +70,6 @@ assert.ok(studio.includes('<h3 id="studioGateTitle">Restoring your session…</h
 assert.ok(studio.includes('id="studioSignIn" class="button primary" type="button" hidden'));
 assert.ok(studio.includes('studio-access.css?v=studio-access-1'));
 assert.ok(index.includes('studio-access.css?v=studio-access-1'));
-assert.ok(studio.includes('studio-page.js?v=dedicated-1'),'Studio uses a dedicated module');
+assert.ok(studio.includes('studio-page.js?v=creator-admin-1'),'Studio uses a dedicated module');
 assert.ok(!studio.includes('app.js?v='),'Studio never loads the Problems application');
 console.log('PASS: Studio Firebase session reuse, immediate permission gate, and admin-only creator navigation.');

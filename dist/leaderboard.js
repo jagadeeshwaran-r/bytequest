@@ -1,5 +1,5 @@
-import {mountShell} from './shell.js?v=studio-auth-1';
-import {Cloud} from './cloud.js?v=profile-speed-1';
+import {mountShell} from './shell.js?v=creator-admin-1';
+import {Cloud} from './cloud.js?v=creator-admin-1';
 import {leaderboardRow,latestLeaderboard} from './leaderboard-model.js?v=avatar-1';
 import {createViewCache} from './view-cache.js?v=avatar-1';
 import {hydrateLeaderboardAvatars,releaseAvatarObjectUrls} from './avatar-cache.js?v=avatar-1';
@@ -39,18 +39,18 @@ async function accountChanged(){
  // Neither the account response nor notifications are cached.
  const rankings=load();
  const savedAccount=cache.self(nextOwner);
- if(savedAccount){
-   // Account is already verified by Firebase; no duplicate self RPC within TTL.
-   shell.setAccount(cloud.user,savedAccount.profile);shell.setAdmin(savedAccount.admin===true);
- }else{
-   try{
-     const own=await cloud.request('self');
-     if(ticket===accountGeneration&&cloud.user?.id===nextOwner){
-       cache.saveSelf(nextOwner,own);shell.setAccount(cloud.user,own.profile);shell.setAdmin(own.admin===true);
-     }
-   }catch(e){
-     if(ticket===accountGeneration)console.warn('ByteQuest profile details are temporarily unavailable:',e.message);
+ // Cache only presentation data. Administrator navigation always starts hidden
+ // until the current authenticated role has been checked against the backend.
+ if(savedAccount)shell.setAccount(cloud.user,savedAccount.profile);
+ try{
+   const own=await cloud.request('self');
+   if(ticket===accountGeneration&&cloud.user?.id===nextOwner){
+     cache.saveSelf(nextOwner,own);
+     shell.setAccount(cloud.user,own.profile);
+     shell.setAdmin(own.admin===true);
    }
+ }catch(e){
+   if(ticket===accountGeneration)console.warn('ByteQuest administrator role could not be refreshed:',e.message);
  }
  await rankings;
 }

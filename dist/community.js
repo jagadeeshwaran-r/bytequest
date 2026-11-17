@@ -7,9 +7,9 @@ import {rankCup} from './rewards.js?v=upgrade-2';
 import {receivedPresence,presenceOnline,relativeTime,profilePreferences} from './presence-model.js?v=social-1';
 import {Dashboard} from './dashboard.js?v=topic-directory-1';
 import {analyticsMarkup} from './profile-analytics.js?v=topic-directory-1';
-import {mountShell} from './shell.js?v=studio-auth-1';
+import {mountShell} from './shell.js?v=creator-admin-1';
 import {prepareAvatar} from './avatar-upload.js';
-import {Cloud} from './cloud.js?v=profile-speed-1';
+import {Cloud} from './cloud.js?v=creator-admin-1';
 import {createViewCache} from './view-cache.js?v=avatar-1';
 import {activityStats,escapeHtml as h} from './community-model.js';
 const shell=mountShell();let pendingPhoto=null;let analytics=null,catalog=[],viewedTarget=null,viewedProfileResult=null,viewedPresence=null,presenceReading=false;
@@ -34,11 +34,19 @@ async function boot(){
  // The verified Firebase account can safely reuse its own cached header/profile
  // without waiting for another Supabase 'self' round trip.
  if(cachedSelf){
-   self=cachedSelf;shell.setAccount(cloud.user,self.profile);shell.setAdmin(self.admin===true);
+   // Cached profile content is fine for instant paint, but its administrator
+   // flag must be revalidated after login and role changes.
+   self={...cachedSelf,admin:false};shell.setAccount(cloud.user,self.profile);shell.setAdmin(false);
    void route();
    void refreshInbox(false).catch(()=>{}); // Notifications are always fetched live.
+   void act('self').then(own=>{
+     if(ticket!==bootEpoch||cloud.user?.id!==owner)return;
+     self=own;viewCache.saveSelf(owner,own);
+     shell.setAccount(cloud.user,own.profile);shell.setAdmin(own.admin===true);
+     if(location.hash==='#roles')void route();
+   }).catch(()=>{}); // Fail closed on admin navigation when role check is offline.
    message('');
-   return; // Fresh (2-minute) account cache: no redundant self query.
+   return;
  }
  try{
    const own=await act('self');

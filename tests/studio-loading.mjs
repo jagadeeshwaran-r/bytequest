@@ -6,7 +6,7 @@ const studio=readFileSync('dist/studio.html','utf8');
 const studioBoot=readFileSync('dist/studio-page.js','utf8');
 const script=html=>html.split('<script type="module" src="')[1]?.split('"')[0];
 assert.ok(script(problems)?.startsWith('./app.js?v='),'Problems must load their workbench app');
-assert.equal(script(studio),'./studio-page.js?v=dedicated-1','Studio must load its own lightweight entrypoint');
+assert.equal(script(studio),'./studio-page.js?v=creator-admin-1','Studio must load its own lightweight entrypoint');
 assert.notEqual(script(studio),script(problems),'Studio must not initialize the Problems workspace bundle');
 assert.ok(studio.includes('<body data-page="studio">'));
 assert.ok(studio.includes('<section id="studioView" class="view">'));

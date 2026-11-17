@@ -1,9 +1,9 @@
 // Standalone Studio entrypoint. Do NOT initialize the Problems workbench here:
 // that workbench expects editor/catalog DOM nodes absent from studio.html and
 // previously crashed before Firebase could restore an existing session.
-import {Cloud} from './cloud.js?v=profile-speed-1';
+import {Cloud} from './cloud.js?v=creator-admin-1';
 import {Studio} from './studio.js?v=studio-auth-1';
-import {mountShell} from './shell.js?v=studio-auth-1';
+import {mountShell} from './shell.js?v=creator-admin-1';
 
 window.__bytequestStudioStarted=true;
 const $=id=>document.getElementById(id);
@@ -42,7 +42,17 @@ async function verifyAccess(){
   if(!owner)return;
   const epoch=++accountEpoch;
   cloud.accessChecking=true;cloud.accessError=null;
+  cloud.admin=false; // Never reuse the legacy editor flag as admin authority.
   paintAccount();void studio.open();
+  // Check actual admin rights without delaying creator workspace loading.
+  void cloud.request('self',{},owner).then(response=>{
+    if(epoch!==accountEpoch||cloud.user?.id!==owner)return;
+    cloud.admin=response.admin===true;
+    paintAccount();
+  }).catch(()=>{
+    if(epoch!==accountEpoch||cloud.user?.id!==owner)return;
+    cloud.admin=false;paintAccount();
+  });
   try{
     await cloud.checkAdmin(owner);
     if(epoch!==accountEpoch||cloud.user?.id!==owner)return;
