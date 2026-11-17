@@ -1,10 +1,11 @@
 import {profileAvatar,publicProfileHref} from './profile-view.js?v=workbench-1';
-import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=browser-submit-1';
+import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=practice-history-1';
 import {launchCelebration} from './celebration.js?v=next-1';
 import {mountEditorTools} from './editor-tools.js?v=copy-enabled-1';
 import {mountWorkspaceLayout} from './workspace-layout.js?v=workspace-1';
 import {submissionFeedback} from './submission-feedback.js?v=browser-submit-1';
 import {usesRemoteSubmit,browserSubmissionCases,browserSubmissionVerdict} from './browser-submit.js?v=local-java-1';
+import {createPracticeSubmission,addPracticeSubmission} from './practice-history.js?v=practice-history-1';
 import {pointsFor,totalPoints} from './rewards.js?v=upgrade-2';
 import {companyIcons} from './companies.js?v=company-3';
 import {problemStatusMarkup} from './problem-status.js?v=solved-1';
@@ -16,7 +17,7 @@ import {languages,starterFor,NativeJudge} from "./languages.js?v=structural-2";
 import {problems as bundledProblems} from "./problems.js";
 import {Cloud} from "./cloud.js?v=creator-admin-1";
 import {createViewCache,prefetchCommunityViews} from "./view-cache.js?v=avatar-1";
-import {blankProgress, validateProgress, mergeProgress, solveStreak} from "./progress.js?v=next-1";
+import {blankProgress, validateProgress, mergeProgress, solveStreak} from "./progress.js?v=practice-history-1";
 import {Studio} from "./studio.js?v=studio-auth-1";
 const problems=[...bundledProblems];
 const shell=mountShell();mountWorkspace();let language="java";try{const v=localStorage.getItem("bytequest.language");if(languages[v])language=v;}catch{}
@@ -51,7 +52,7 @@ function scheduleCommunityWarmup(owner,profile){
 let syncTimer,syncing=false,syncAgain=false,accountEpoch=0,accountOwner,accountReady=false;
 const cloud=new Cloud(user=>changeAccount(user));shell.connect(cloud);
 const studio=new Studio({cloud,notify:message=>notify(message),onCatalogChanged:()=>refreshCatalog()});
-const submissions=mountSubmissions(cloud,{notify});
+const submissions=mountSubmissions(cloud,{notify,getPracticeSubmissions:()=>state.practiceSubmissions||[]});
 const dashboard=new Dashboard({cloud,getState:()=>state,getCatalog:()=>problems});
 function touch(field,id){state.modified[id]??={};state.modified[id][field]=Date.now();}
 let current = problems.find(p => p.id === state.current) || problems[0];
@@ -219,6 +220,26 @@ function setBusy(value){busy=value;$("runBtn").disabled=value;$("submitBtn").dis
 function stopRun(message="Run stopped. Your draft is saved."){
   runEpoch++;clearTimeout(watchdog);judge.stop();setBusy(false);$("runStatus").textContent=languages[language].name+(language==="java"?" · browser compiler":" · online via Wandbox");$("resultOutput").textContent=message;
 }
+function rememberJavaSubmit(problem,source,status,passed,total,elapsedMs,customCount){
+  try{
+    const allowed=["practice_accepted","wrong_answer","compile_error","runtime_error","time_limit_exceeded","unavailable"];
+    const entry=createPracticeSubmission({problem,source,status:allowed.includes(status)?status:"runtime_error",
+      passed,total,elapsedMs,customCount});
+    state.practiceSubmissions=addPracticeSubmission(state,entry);
+    persist();submissions.refresh();
+    return storageOK;
+  }catch(error){
+    notify("The result was shown, but the practice history could not be saved: "+error.message);
+    return false;
+  }
+}
+function openMySubmissions(output){
+  const button=document.createElement("button");
+  button.type="button";button.className="button secondary";
+  button.textContent="View My submissions";
+  button.onclick=()=>{tab="submissions";renderLearning();};
+  output.append(button);
+}
 async function run(submit){
   if(busy||!current)return;
   if(usesRemoteSubmit(language,Boolean(cloud.user),submit)){await submitOnline();return;}
@@ -229,7 +250,7 @@ async function run(submit){
   try{
     const result=await judge.run(source,p,cases);
     if(epoch!==runEpoch)return;
-    if(result.status!=="ok"){$("resultOutput").textContent=(result.code==="compiler_timeout"?"Compiler request timed out\n":result.status==="unavailable"?"Compiler temporarily unavailable\n":result.status==="compile_error"?"Compile error\n":"Runtime error\n")+result.message;if(submit){const feedback=submissionFeedback({...result,accepted:false});$("resultOutput").innerHTML=feedback.html;notify(feedback.announcement);}else notify(result.status==="compile_error"?"Compilation failed. Review the compiler output.":"Run failed. Review the test results.");if(result.status!=="unavailable")logAttempt(p,0,cases.length);return;}
+    if(result.status!=="ok"){if(submit&&language==="java")rememberJavaSubmit(p,source,result.status,0,cases.length,result.elapsedMs??null,customCases.length);$("resultOutput").textContent=(result.code==="compiler_timeout"?"Compiler request timed out\n":result.status==="unavailable"?"Compiler temporarily unavailable\n":result.status==="compile_error"?"Compile error\n":"Runtime error\n")+result.message;if(submit){const feedback=submissionFeedback({...result,accepted:false});$("resultOutput").innerHTML=feedback.html;openMySubmissions($("resultOutput"));notify(feedback.announcement);}else notify(result.status==="compile_error"?"Compilation failed. Review the compiler output.":"Run failed. Review the test results.");if(result.status!=="unavailable")logAttempt(p,0,cases.length);return;}
     results={...result,cases:submit?[...result.cases.slice(0,2),...result.cases.slice(p.tests.length)]:result.cases};
     renderTests();
     const passed=result.cases.filter(c=>c.passed).length, accepted=passed===cases.length;
@@ -244,8 +265,11 @@ async function run(submit){
       // Java Submit follows Run in the browser: no unavailable hosted compiler,
       // and no private-suite or server-benchmark claims for this practice solve.
       const verdict=browserSubmissionVerdict(p,passed,cases.length,customCases.length);
+      const saved=rememberJavaSubmit(p,source,verdict.status,passed,cases.length,result.elapsedMs??null,customCases.length);
+      verdict.message+=saved?" Saved privately under My submissions.":" Could not save the practice history on this device; export your backup.";
       const feedback=submissionFeedback(verdict);
       output.insertAdjacentHTML("afterbegin",feedback.html);
+      openMySubmissions(output);
       notify(feedback.announcement);
       if(verdict.accepted)completeQuest(p,true);
     }else if(submit&&!accepted){
@@ -256,7 +280,7 @@ async function run(submit){
       notify("Private test acceptance currently supports Java only.");
     }else if(accepted&&submit)completeQuest(p);
     else if(accepted)notify("Samples passed! Submit quest to check every built-in edge case.");
-  }catch(error){if(epoch===runEpoch){const message=language!=="java"&&error?.name==='TimeoutError'?"Compiler request timed out. Your code is saved. Please try again shortly.":String(error.message||error);$("resultOutput").textContent=message;notify(message);}}
+  }catch(error){if(epoch===runEpoch){if(submit&&language==="java")rememberJavaSubmit(p,source,"runtime_error",0,cases.length,null,customCases.length);const message=language!=="java"&&error?.name==='TimeoutError'?"Compiler request timed out. Your code is saved. Please try again shortly.":String(error.message||error);$("resultOutput").textContent=message;notify(message);}}
   finally{if(epoch===runEpoch){clearTimeout(watchdog);setBusy(false);$("runStatus").textContent=languages[language].name+(language==="java"?" · browser compiler":" · online via Wandbox");updateStats();persist();}}
 }
 async function submitOnline(){
