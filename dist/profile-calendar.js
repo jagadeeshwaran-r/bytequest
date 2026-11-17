@@ -49,21 +49,16 @@ export function yearCalendar(days,serverDay=new Date().toISOString().slice(0,10)
  }
  return {year,start:year+'-01-01',end:year===currentYear?day:year+'-12-31',activeCount:months.reduce((total,month)=>total+month.solves,0),months};
 }
-// The marker is based on today's UTC date, never a local-time midnight.
-// Accepted-day fill still comes from the server's verified profile history.
-export function calendarMonthsMarkup(calendar,todayUtc=iso(new Date())){
+// Show accepted UTC solve days without a special today border or animation.
+export function calendarMonthsMarkup(calendar){
  return calendar.months.map(month=>
   '<section class="calendar-month" aria-label="'+month.title+'">'+
   '<span class="calendar-month-label">'+month.label+'</span>'+
   '<div class="calendar-month-grid">'+month.cells.map(cell=>{
    if(!cell)return '<span class="calendar-padding" aria-hidden="true"></span>';
-   const today=cell.date===todayUtc;
-   const todayClass=today?(cell.active?' today-solved':' today-pending'):'';
-   const label=cell.date+(cell.active?': accepted solve':cell.future?': upcoming':': no solve')+
-     (today?(cell.active?', today (UTC)':', today (UTC), not solved yet'):'');
-   return '<span class="calendar-day'+(cell.active?' solved':'')+(cell.future?' future':'')+todayClass+
-    '" data-calendar-date="'+cell.date+'"'+(today?' aria-label="'+label+'" role="img" aria-current="date"':'')+
-    ' title="'+label+'"></span>';
+   const label=cell.date+(cell.active?': accepted solve':cell.future?': upcoming':': no solve');
+   return '<span class="calendar-day'+(cell.active?' solved':'')+(cell.future?' future':'')+
+    '" data-calendar-date="'+cell.date+'" title="'+label+'"></span>';
   }).join('')+'</div></section>'
  ).join('');
 }
@@ -91,7 +86,7 @@ export function refreshProfileCalendar(root,days,serverDay,now=Date.now()){
   picker.value=actualUtc.slice(0,4);
  }
  const calendar=yearCalendar(days,effectiveDay,Number(picker.value));
- grid.innerHTML=calendarMonthsMarkup(calendar,actualUtc);
+ grid.innerHTML=calendarMonthsMarkup(calendar);
  grid.setAttribute('aria-label','Accepted solve days in '+calendar.year);
  range.textContent=calendar.start+' → '+calendar.end;
  activity.textContent=calendar.activeCount+' '+(calendar.activeCount===1?'solve day':'solve days');

@@ -76,7 +76,7 @@ assert.ok(dashboard.includes("pageSize:10"),'Never render an unbounded list');
 assert.ok(dashboard.includes("this.topicQuery=event.target.value"),'Search without dropping focus');
 assert.ok(dashboard.includes('topicProgress(catalog,this.topicInsights,events,opts)'),'Retain exact published catalog problem totals');
 assert.ok(html.includes('topic-directory.css?v=topic-directory-1'));
-assert.ok(html.includes('community.js?v=today-ribbon-1'));
+assert.ok(html.includes('community.js?v=lifetime-awards-1'));
 assert.ok(index.includes('app.js?v=ctrl-run-1'),'Refresh cached Problems bundle');
 assert.ok(index.includes('id="questGrid"'),'Keep Problems catalog screen and editor unchanged');
 assert.ok(topicsCss.includes('@media(max-width:650px)'),'Work on mobile');

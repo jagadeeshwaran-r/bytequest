@@ -1,0 +1,112 @@
+/* Lifetime streak awards: earned only. Five podium-style medallions are
+   constructed from scalable SVG, not raster assets. */
+.community-page #profileContent .streak-awards{
+ display:flex;align-items:center;gap:clamp(16px,2vw,32px);
+ justify-content:space-between;flex-wrap:wrap;
+ padding:clamp(14px,1.8vw,26px) 0 clamp(16px,2.2vw,28px);
+ border-top:1px solid var(--border);
+}
+.community-page #profileContent .streak-awards-heading{flex:1 1 180px;min-width:160px}
+.community-page #profileContent .streak-awards-heading .eyebrow{
+ color:var(--muted);font-size:9px;letter-spacing:.15em;
+}
+.community-page #profileContent .streak-awards-heading h3{
+ font-size:clamp(16px,1.5vw,21px);font-weight:600;
+ letter-spacing:-.035em;margin:7px 0 5px;color:var(--text);
+}
+.community-page #profileContent .streak-awards-heading p{
+ margin:0;font-size:11px;color:var(--muted);line-height:1.55;
+ max-width:32ch;
+}
+.community-page #profileContent .streak-awards-list{
+ display:flex;align-items:center;justify-content:flex-end;
+ flex-wrap:wrap;gap:clamp(8px,1.4vw,22px);
+ min-width:0;flex:2 1 auto;
+}
+.community-page #profileContent .streak-award{
+ --badge-dark:#111820;
+ position:relative;display:flex;align-items:center;justify-content:center;
+ width:clamp(88px,7.7vw,118px);
+ flex:0 0 clamp(88px,7.7vw,118px);
+ min-height:116px;user-select:none;
+}
+.community-page #profileContent .streak-award.tier-silver{
+ --badge-light:#f1f5fa;--badge-edge:#a9b6c7;--badge-shadow:#6c7b8d;
+ --badge-dark:#141c25;
+}
+.community-page #profileContent .streak-award.tier-blue{
+ --badge-light:#87c9ff;--badge-edge:#3f94e8;--badge-shadow:#185ca8;
+ --badge-dark:#0c1f35;
+}
+.community-page #profileContent .streak-award.tier-gold{
+ --badge-light:#ffe495;--badge-edge:#f3b73d;--badge-shadow:#a87817;
+ --badge-dark:#261c11;
+}
+.community-page #profileContent .streak-award.tier-purple{
+ --badge-light:#dbadff;--badge-edge:#a76be6;--badge-shadow:#6b3b9c;
+ --badge-dark:#22152f;
+}
+.community-page #profileContent .streak-award.tier-red{
+ --badge-light:#ffb07e;--badge-edge:#f15f52;--badge-shadow:#a7252d;
+ --badge-dark:#2b141a;
+}
+.community-page #profileContent .streak-award-art{
+ display:block;width:100%;height:auto;overflow:visible;
+ filter:drop-shadow(0 3px 5px #11182722);
+ transition:transform .18s ease,filter .18s ease;
+}
+.community-page #profileContent .streak-award:hover .streak-award-art{
+ transform:translateY(-2px);
+ filter:drop-shadow(0 5px 7px #11182738);
+}
+.community-page #profileContent .streak-art-number{
+ fill:#f8f9fb;font-family:var(--font-sans,Inter,sans-serif);
+ font-weight:750;font-size:32px;letter-spacing:-1.2px;
+ font-variant-numeric:tabular-nums;
+}
+.community-page #profileContent .streak-art-days{
+ fill:var(--badge-light);font:700 10px var(--font-sans,Inter,sans-serif);
+ letter-spacing:1.5px;
+}
+.community-page #profileContent .streak-art-name{
+ fill:var(--badge-dark);font:800 11px var(--font-sans,Inter,sans-serif);
+ letter-spacing:.1px;
+ paint-order:stroke;
+}
+.community-page #profileContent .streak-award.tier-silver .streak-art-name,
+.community-page #profileContent .streak-award.tier-blue .streak-art-name,
+.community-page #profileContent .streak-award.tier-red .streak-art-name{
+ fill:#fcfdff;
+}
+.community-page #profileContent .streak-award-multiplier{
+ position:absolute;right:-3px;top:1px;z-index:1;
+ display:inline-flex;align-items:center;justify-content:center;
+ min-width:30px;height:24px;padding:0 7px;
+ border-radius:999px;
+ background:var(--surface);
+ border:1.5px solid var(--badge-edge);
+ color:var(--text);
+ box-shadow:0 2px 7px #0a17201a;
+ font:700 12px/1 var(--font-sans,Inter,sans-serif);
+ font-variant-numeric:tabular-nums;
+}
+@media(max-width:850px){
+ .community-page #profileContent .streak-awards{
+  align-items:flex-start;gap:16px;
+ }
+ .community-page #profileContent .streak-awards-list{justify-content:flex-start}
+}
+@media(max-width:540px){
+ .community-page #profileContent .streak-awards{
+  padding:18px 0 24px;gap:16px;
+ }
+ .community-page #profileContent .streak-awards-heading{flex-basis:100%}
+ .community-page #profileContent .streak-awards-list{gap:8px}
+ .community-page #profileContent .streak-award{
+  width:clamp(82px,25vw,108px);flex-basis:clamp(82px,25vw,108px);
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ .community-page #profileContent .streak-award-art{transition:none}
+ .community-page #profileContent .streak-award:hover .streak-award-art{transform:none}
+}

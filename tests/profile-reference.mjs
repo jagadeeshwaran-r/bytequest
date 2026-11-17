@@ -18,7 +18,7 @@ assert.ok(html.indexOf('profile-calendar-section')<html.indexOf('recent-solves')
 const metrics=profileMetrics({solved:22,total:31,streak:4},250,31);
 assert.ok(!metrics.includes('streak-flame'),"Remove the flame graphic, not just conceal it");
 assert.ok(metrics.includes('class="streak-count is-burning"'),"Retain number shimmer without an SVG");
-assert.ok(metrics.includes('streak-milestones'),"Keep earned/locked streak badges");
+assert.ok(!metrics.includes('streak-milestones'),"Remove locked/current streak milestone placeholders");
 assert.ok(metrics.includes('22<small> / 31</small>'),"No score data changes");
 assert.ok(metrics.includes('250'),"Points remain actual");
 const css=readFileSync("dist/profile-reference.css","utf8");
