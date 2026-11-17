@@ -9,6 +9,7 @@ import "./problem-library-bootstrap.mjs";
 import "./editor-operators.mjs";
 import "./workbench.mjs";
 import "./browser-submit.mjs";
+import "./studio-loading.mjs";
 import "./compiler-recovery.mjs";
 import "./security-hardening.mjs";
 import "./next-features.mjs";
