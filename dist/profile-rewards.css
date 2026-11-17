@@ -55,15 +55,6 @@
   justify-content:flex-end;
   gap:3px;
 }
-.community-page #profileContent .profile-overview .streak-count .streak-flame{
-  align-self:center;
-  width:clamp(14px,1.4vw,19px);
-  height:clamp(19px,2vw,26px);
-  flex:0 0 auto;
-  filter:drop-shadow(0 0 3px #ffb24466);
-  transform-origin:50% 87%;
-  animation:bq-streak-flame 2s ease-in-out infinite;
-}
 .community-page #profileContent .profile-overview .streak-count.is-burning .streak-digits{
   color:#ed842c;
   background:linear-gradient(112deg,#efae53 0%,#e97422 27%,#ed5936 50%,#f6b65b 73%,#e97223 100%);
@@ -72,11 +63,6 @@
   background-clip:text;
   -webkit-text-fill-color:transparent;
   animation:bq-streak-text 3s ease-in-out infinite;
-}
-@keyframes bq-streak-flame{
-  0%,100%{transform:rotate(-5deg) scale(.98);opacity:.9}
-  35%{transform:rotate(4deg) scale(1.07);opacity:1}
-  65%{transform:rotate(-2deg) scale(.94);opacity:.86}
 }
 @keyframes bq-streak-text{
   0%,100%{background-position:0% 50%}
@@ -168,7 +154,6 @@
   .community-page #profileContent .streak-milestone{font-size:9px;padding:4px 5px}
 }
 @media(prefers-reduced-motion:reduce){
-  .community-page #profileContent .profile-overview .streak-count .streak-flame,
   .community-page #profileContent .profile-overview .streak-count.is-burning .streak-digits,
   .community-page #profileContent .profile-username-line .presence.online .presence-radar{
     animation:none!important;

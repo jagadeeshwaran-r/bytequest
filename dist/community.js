@@ -1,6 +1,6 @@
 import {mountCreatorAccess} from './creator-access.js?v=workbench-1';
 import {companies} from './companies.js?v=social-1';
-import {profileMarkup,profileAvatar,publicProfileHref} from './profile-view.js?v=profile-year-1&rewards=1';
+import {profileMarkup,profileAvatar,publicProfileHref} from './profile-view.js?v=profile-year-1&rewards=2';
 import {bindProfileCalendar} from './profile-calendar.js?v=profile-year-1';
 import {hydrateRecentProblemNumbers} from './profile-extras.js?v=profile-compact-1';
 import {profileDetails} from './profile-fields.js?v=profile-2';
