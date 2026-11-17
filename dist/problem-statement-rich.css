@@ -1,0 +1,9 @@
+/* Rich examples and accessible illustration: statement-only presentation. */
+#practiceView .problem-statement-copy{margin:13px 0 18px;display:grid;gap:13px}
+#practiceView .problem-statement-copy .body-copy{margin:0;line-height:1.76;white-space:pre-line}
+#practiceView .problem-illustration{margin:14px 0 22px;max-width:100%;padding:0}
+#practiceView .problem-illustration img{display:block;width:100%;height:auto;border:1px solid var(--line,rgba(128,128,128,.15));border-radius:12px;background:#f5faf7}
+#practiceView .problem-illustration figcaption{font-size:12px;line-height:1.6;color:var(--muted,#6b7280);margin:8px 2px 0}
+#practiceView .example-card .example-explanation{margin-top:13px;padding-top:12px;border-top:1px solid var(--line,rgba(128,128,128,.18))}
+#practiceView .example-card .example-explanation strong{display:block;font-size:11px;letter-spacing:.03em;color:var(--text,#111827);font-weight:650;margin-bottom:6px}
+#practiceView .example-card .example-explanation p{margin:0;font-size:12px;line-height:1.76;white-space:pre-line;color:var(--muted,#5f6674)}

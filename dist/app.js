@@ -148,6 +148,13 @@ function renderPractice() {
   $("resultOutput").replaceChildren();
 }
 function timerHtml() { return mode==="challenge"?'<div class="timer">'+icon("clock")+'<span id="timerDisplay" class="stopwatch-text">20:00</span><span>optional focus timer</span><button id="timerButton">Start</button></div>':""; }
+function problemIllustrationMarkup(problem){
+  const src=String(problem.illustration||"");
+  if(!src||!(/^(?:\.\/assets\/problem-illustrations\/[a-z0-9-]+\.svg)$/.test(src)||/^https:\/\/[^\s<>"']+$/.test(src)))return "";
+  const alt=problem.illustrationAlt||("Visual illustration for "+problem.title);
+  const caption=problem.illustrationCaption||"";
+  return '<figure class="problem-illustration"><img src="'+html(src)+'" alt="'+html(alt)+'" loading="lazy" decoding="async" referrerpolicy="no-referrer">'+(caption?'<figcaption>'+html(caption)+'</figcaption>':'')+'</figure>';
+}
 function renderLearning(){
   pauseTrace();creditEpoch++;
   document.querySelectorAll("[data-tab]").forEach(b=>{b.classList.toggle("active",b.dataset.tab===tab);b.setAttribute("aria-selected",String(b.dataset.tab===tab));});
@@ -155,8 +162,8 @@ function renderLearning(){
   if(tab==="submissions"){submissions.mount($("learningContent"),current,language);return;}
   let content=timerHtml();
   if(tab==="problem"){
-    content+='<div class="problem-heading"><p class="problem-eyebrow">Coding challenge</p><div class="problem-title-row"><h3>'+String(problems.indexOf(current)+1)+'. '+html(current.title)+'</h3><div class="problem-badges"><span class="problem-difficulty '+html(current.difficulty.toLowerCase())+'">'+html(current.difficulty)+'</span>'+(state.solved[current.id]?'<span class="problem-solved"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>Solved</span>':'')+'</div></div></div><div id="problemCredits" class="problem-credits"></div><p class="body-copy">'+html(current.description)+'</p><h4>Input</h4><p class="body-copy">'+html(current.inputGuide||current.params.map(p=>p.name+' ('+p.type+')').join(', '))+'</p><h4>Output</h4><p class="body-copy">'+html(current.outputGuide||('Return '+current.returns+' from '+current.method+'.'))+'</p><h4>Examples</h4>';
-    current.tests.slice(0,2).forEach((c,i)=>{content+='<div class="example-card"><div class="example-label">Example '+(i+1)+'</div><code>Input: <b>'+html(formatArgs(c.args))+'</b>\nOutput: <b>'+html(JSON.stringify(c.expected))+'</b></code><p>'+html(c.label)+'</p></div>';});
+    content+='<div class="problem-heading"><p class="problem-eyebrow">Coding challenge</p><div class="problem-title-row"><h3>'+String(problems.indexOf(current)+1)+'. '+html(current.title)+'</h3><div class="problem-badges"><span class="problem-difficulty '+html(current.difficulty.toLowerCase())+'">'+html(current.difficulty)+'</span>'+(state.solved[current.id]?'<span class="problem-solved"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>Solved</span>':'')+'</div></div></div><div id="problemCredits" class="problem-credits"></div><div class="problem-statement-copy">'+html(current.description).split(/\n\n+/).map(paragraph=>'<p class="body-copy">'+paragraph+'</p>').join('')+'</div>'+problemIllustrationMarkup(current)+'<h4>Input</h4><p class="body-copy">'+html(current.inputGuide||current.params.map(p=>p.name+' ('+p.type+')').join(', '))+'</p><h4>Output</h4><p class="body-copy">'+html(current.outputGuide||('Return '+current.returns+' from '+current.method+'.'))+'</p><h4>Examples</h4>';
+    current.tests.slice(0,2).forEach((c,i)=>{const explanation=Array.isArray(current.exampleExplanations)?String(current.exampleExplanations[i]||"").trim():"";content+='<div class="example-card"><div class="example-label">Example '+(i+1)+'</div><code>Input: <b>'+html(formatArgs(c.args))+'</b>\nOutput: <b>'+html(JSON.stringify(c.expected))+'</b></code>'+(explanation?'<div class="example-explanation"><strong>Explanation</strong><p>'+html(explanation)+'</p></div>':(c.label&&!/^Example \d+$/.test(c.label)?'<p>'+html(c.label)+'</p>':''))+'</div>';});
     content+='<h4>Constraints</h4><div class="constraints">'+html(current.constraints)+'</div><details class="concept-hint"><summary>Reveal the key concept</summary><p>'+html(current.topic)+(current.pattern&&current.pattern!==current.topic?' · '+html(current.pattern):'')+'</p></details>';
   } else if(tab==="learn"){
     content+='<span class="pattern-tag">EDITORIAL</span><h3>Approach</h3><p class="body-copy">'+html(current.idea)+'</p><div class="pattern-callout"><strong>Invariant</strong>'+html(current.invariant)+'</div><div class="complexity-row"><div class="complexity-box"><small>TIME</small><b>'+html(current.complexity.time)+'</b></div><div class="complexity-box"><small>EXTRA SPACE</small><b>'+html(current.complexity.space)+'</b></div></div><p class="tradeoff">'+html(current.complexity.tradeoff)+'</p>'+editorialSolutionGateMarkup(canRevealEditorialSolution(state,current.id))+'';

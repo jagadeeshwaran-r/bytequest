@@ -1,6 +1,18 @@
 import {buildTests} from "./judge.js";
 const types = new Set(["int","int[]","int[][]","boolean","String","ListNode","TreeNode"]);
 const reserved = new Set("abstract assert boolean break byte case catch char class const continue default do double else enum extends final finally float for goto if implements import instanceof int interface long native new package private protected public return short static strictfp super switch synchronized this throw throws transient try void volatile while true false null record var yield".split(" "));
+function safeIllustration(value) {
+  if (value == null || value === "") return "";
+  if (typeof value !== "string") throw new Error("Illustration URL must be text.");
+  const src=value.trim();
+  if(src.length>1000||!(/^(?:\.\/assets\/problem-illustrations\/[a-z0-9-]+\.svg)$/.test(src)||/^https:\/\/[^\s<>"']+$/.test(src))) throw new Error("Illustration must be an HTTPS URL or local problem-illustrations SVG.");
+  return src;
+}
+function exampleExplanations(value){
+  if(value==null)return [];
+  if(!Array.isArray(value)||value.length>2||value.some(v=>typeof v!=="string"||v.length>2400))throw new Error("Provide up to two example explanations, each below 2400 characters.");
+  return value.map(v=>v.trim());
+}
 export const problemId = /^[a-z][a-z0-9-]{1,63}$/;
 const identifier = value => typeof value === "string" && /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(value) && !reserved.has(value);
 function text(value,name,max=10000){if(typeof value!=="string"||!value.trim()||value.length>max)throw new Error(name+" is required (up to "+max+" characters).");return value.trim();}
@@ -22,6 +34,10 @@ export function validateProblem(input) {
     companySource:typeof input.companySource==='string'&&/^https:\/\//.test(input.companySource)?input.companySource.slice(0,1000):'',
     inputGuide:typeof input.inputGuide==='string'?input.inputGuide.slice(0,3000):'',
     outputGuide:typeof input.outputGuide==='string'?input.outputGuide.slice(0,3000):'',
+    illustration:safeIllustration(input.illustration),
+    illustrationAlt:typeof input.illustrationAlt==='string'?input.illustrationAlt.slice(0,240):'',
+    illustrationCaption:typeof input.illustrationCaption==='string'?input.illustrationCaption.slice(0,360):'',
+    exampleExplanations:exampleExplanations(input.exampleExplanations),
     hiddenCount:Number.isInteger(input.hiddenCount)&&input.hiddenCount>=0&&input.hiddenCount<=100?input.hiddenCount:0,
     method:input.method,returns:input.returns,params,difficulty:input.difficulty,
     description:text(input.description,"Description",10000),constraints:text(input.constraints,"Constraints",5000),
