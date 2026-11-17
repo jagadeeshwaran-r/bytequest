@@ -83,6 +83,9 @@
 
 /* Single hover treatment: no separate browser title popups and no overlapping
    tooltip labels over the expanded +N company panel. */
+#mapView .company-overflow:hover,#mapView .company-overflow:focus-within{z-index:50}
+#mapView .problem-table tbody tr:has(.company-overflow:hover),
+#mapView .problem-table tbody tr:has(.company-overflow:focus-within){position:relative;z-index:20}
 #mapView .company-overflow-panel{
  top:100%;
  padding:8px;
