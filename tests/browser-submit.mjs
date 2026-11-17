@@ -47,7 +47,7 @@ const app=readFileSync('dist/app.js','utf8'),editor=readFileSync('dist/editor-to
 assert.match(app,/usesRemoteSubmit\(language,Boolean\(cloud\.user\),submit\)/,'Remote selection must use the shared policy');
 assert.match(app,/browserSubmissionVerdict\(p,passed,cases\.length,customCases\.length\)/,'Local result must be labeled as practice');
 assert.ok(!app.includes('cloud.request("hidden-submit"'),'Java browser Submit must never call hidden-submit');
-assert.match(app,/if\(verdict\.accepted\)completeQuest\(p,true\)/,'Practice acceptance must save learning progress');
+assert.match(app,/if\(verdict\.accepted&&saved\)completeQuest\(p,true\)/,'Practice completion must require a durable save');
 assert.match(editor,/blocksEditorClipboardEvent\(event\)/);
 assert.match(editor,/blocksEditorShortcut\(key,mod\)/);
 assert.match(editor,/blocksEditorBeforeInput\(e\.inputType\)/);
