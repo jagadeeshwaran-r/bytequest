@@ -26,7 +26,7 @@ assert.ok(submissions.includes("history=true;load();},close()"));
 assert.ok(submissions.includes("Community rankings"));
 assert.ok(submissions.includes("My submissions"));
 assert.ok(submissions.includes("including private solutions"));
-assert.ok(submissions.includes("Run checks do not save submissions"));
+assert.ok(submissions.includes("Java browser practice solves update learning progress but do not create verified submission records"));
 
 // The problem number stays in the IDE toolbar while changing tabs, and in
 // the description title when the Description tab is selected.
