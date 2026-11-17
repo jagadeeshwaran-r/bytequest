@@ -2,6 +2,7 @@ import './problem-statement-rich.mjs';
 import './catalog-cold-start.mjs';
 import './compiler-security.mjs';
 import "./profile-inbox.mjs";
+import "./profile-github.mjs";
 import "./profile-compact.mjs";
 import "./profile-unboxed.mjs";
 import "./profile-rewards.mjs";
