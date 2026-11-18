@@ -259,9 +259,9 @@ function setBusy(value){
  busy=value;
  $("runBtn").disabled=value;$("submitBtn").disabled=value;$("customBtn").disabled=value;
  $("stopBtn").hidden=!value;$("problemSelect").disabled=value;
- // Compilation uses a captured source snapshot. Keep the editor editable while
- // tests run; never leave it locked after a compile error or failed test.
- $("codeEditor").readOnly=!accountReady;
+ // Compilation uses a captured source snapshot. The account/progress API can
+ // still be loading when users press Run. Never lock typing on either condition.
+ $("codeEditor").readOnly=false;
  document.body.classList.toggle("busy",value);
 }
 function stopRun(message="Run stopped. Your draft is saved."){
@@ -330,7 +330,12 @@ async function run(submit,{forceBrowser=false,sourceOverride=null}={}){
       output.append(document.createTextNode(" Hidden cases require a server-verified Java submission. No non-Java acceptance was recorded."));
       notify("Private test acceptance currently supports Java only.");
     }else if(accepted&&submit)completeQuest(p);
-    else if(accepted)notify("Samples passed! Submit quest to check every built-in edge case.");
+    else if(accepted){
+      const note=document.createElement("p");note.className="run-sample-note";
+      note.textContent="Run passed. This is a test run, not a recorded solve. Choose Submit to save your solution and update your profile.";
+      output.append(note);
+      notify("Samples passed! Use Submit to record your solve.");
+    }
   }catch(error){if(epoch===runEpoch){if(submit&&language==="java")rememberJavaSubmit(p,source,"runtime_error",0,cases.length,null,customCases.length);const message=language!=="java"&&error?.name==='TimeoutError'?"Compiler request timed out. Your code is saved. Please try again shortly.":String(error.message||error);$("resultOutput").textContent=message;notify(message);}}
   finally{if(epoch===runEpoch){clearTimeout(watchdog);setBusy(false);$("runStatus").textContent=languages[language].name+(language==="java"?" · browser compiler":" · online via Wandbox");updateStats();persist();}}
 }
@@ -547,7 +552,7 @@ async function changeAccount(user){
   document.querySelectorAll('.submit-confirm[open],#successDialog[open]').forEach(d=>d.close());
   if(busy)stopRun();studio.accountChanged();dashboard.accountChanged();storageKey=owner?"bytequest.user."+owner:guestStorageKey;
   state=readLocal(storageKey);current=deepLinkedProblem()||problems.find(p=>p.id===state.current)||problems[0]||null;
-  renderPractice();$("codeEditor").readOnly=true;updateStats();refreshAccountUi();
+  renderPractice();$("codeEditor").readOnly=false;updateStats();refreshAccountUi();
   let needsSync=false;
   if(owner){
     cloud.accessChecking=true;cloud.accessError=null;
