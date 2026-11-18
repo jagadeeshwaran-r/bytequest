@@ -10,14 +10,14 @@ function showAuth(text,{login=false,retry=false}={}){
  $('maAuthText').textContent=text;
  $('maSignIn').hidden=!login;
  $('maRetry').hidden=!retry;
- $('adminSiteLink').hidden=true;
+ 
 }
 function setBusy(value){
  busy=value;for(const id of ['maSave','maArm','maDisable'])$(id).disabled=value;
 }
 function paint(record){
  current=record;
- $('maAuth').hidden=true;$('maControl').hidden=false;$('adminSiteLink').hidden=false;
+ $('maAuth').hidden=true;$('maControl').hidden=false;
  $('maOwner').textContent=cloud.user?.email||'Verified library administrator';
  $('maMode').value=record.mode;
  $('maStart').value=isoToISTInput(record.startsAt);
