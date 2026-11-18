@@ -58,6 +58,6 @@ assert.equal(native.headers.get('Cross-Origin-Embedder-Policy'),'require-corp',
  'Browser Java runtime must keep SharedArrayBuffer isolation');
 assert.equal(native.headers.get('Cache-Control'),'no-store');
 const shell=readFileSync('dist/shell.js','utf8');
-assert.ok(shell.includes("navigator.serviceWorker.register('./runtime-sw.js?v=maintenance-controls-1'"),
+assert.ok(shell.includes("navigator.serviceWorker.register('./runtime-sw.js?v=strict-1'"),
  'All main pages install recovery page caching when service workers are supported');
 console.log('PASS: offline recovery page loads with cached JS/CSS, private progress never cached, Java runner isolation preserved.');
