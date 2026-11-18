@@ -20,6 +20,7 @@ import "./problem-library-bootstrap.mjs";
 import "./editor-operators.mjs";
 import "./workbench.mjs";
 import "./browser-submit.mjs";
+import "./editor-run-recovery.mjs";
 import "./practice-submission-history.mjs";
 import "./reliability-audit.mjs";
 import "./studio-loading.mjs";
