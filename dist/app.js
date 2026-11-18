@@ -22,7 +22,7 @@ import {Cloud} from "./cloud.js?v=cloud-health-1";
 import {createViewCache,prefetchCommunityViews} from "./view-cache.js?v=avatar-1";
 import {blankProgress, validateProgress, mergeProgress, solveStreak} from "./progress.js?v=practice-history-1";
 import {recoverOwnProfileSolves} from "./profile-solve-recovery.js?v=1";
-import {Studio} from "./studio.js?v=studio-auth-1";
+// Problem Studio runs solely in studio.html. Never initialize its form on Problems.
 const problems=[...bundledProblems];
 const shell=mountShell();mountWorkspace();let language="java";try{const v=localStorage.getItem("bytequest.language");if(languages[v])language=v;}catch{}
 const draftId=(id=current.id)=>language==="java"?id:id+"--"+language;
@@ -66,7 +66,7 @@ function scheduleCommunityWarmup(owner,profile){
 
 let syncTimer,syncing=false,syncAgain=false,syncFailures=0,accountEpoch=0,accountOwner,accountReady=false,pendingProfileRefresh=false;
 const cloud=new Cloud(user=>changeAccount(user));shell.connect(cloud);
-const studio=new Studio({cloud,notify:message=>notify(message),onCatalogChanged:()=>refreshCatalog()});
+const studio={accountChanged(){},stop(){},open(){}}; // Standalone studio-page.js owns Studio.
 const submissions=mountSubmissions(cloud,{notify,getPracticeSubmissions:()=>state.practiceSubmissions||[],getSolvedAt:id=>state.solved[id]||null});
 const dashboard=new Dashboard({cloud,getState:()=>state,getCatalog:()=>problems});
 function touch(field,id){state.modified[id]??={};state.modified[id][field]=Date.now();}
@@ -98,7 +98,7 @@ const judge={run:(source,p,cases)=>language==="java"?javaJudge.run(source,p,case
 const javaOnlyProblem=p=>Boolean(p?.params?.some(param=>param.type==="ListNode"||param.type==="TreeNode"||param.type==="int[][]")||["ListNode","int[][]"].includes(p?.returns));
 function setLanguage(v){if(!languages[v])return;if(javaOnlyProblem(current)&&v!=="java"){notify("Linked-list and tree problems currently support Java 17 only.");return;}if(busy)stopRun();language=v;try{localStorage.setItem("bytequest.language",v);}catch{}renderPractice();}
 $("languageSelect").onchange=e=>setLanguage(e.target.value);
-function persist() {
+function persist({scheduleSync=true}={}) {
   try{
     writeLocalProgress(storageKey,state);storageOK=true;
     $("saveStatus").textContent=storageWarnings.has(storageKey)?"Recovery copy saved · damaged original preserved":
@@ -108,7 +108,7 @@ function persist() {
   }
   // Surface unsynced local work on all ByteQuest pages, including Profile.
   if(cloud.user||!storageOK)cloud.onHealth?.({kind:storageOK?'pending':'storage-failed',localSaved:storageOK});
-  if(accountReady&&cloud.user){clearTimeout(syncTimer);setSyncStatus("syncing",storageOK?"Changes saved here":"Local save failed · cloud sync queued");syncTimer=setTimeout(()=>syncCloud(),1800);}
+  if(scheduleSync&&accountReady&&cloud.user){clearTimeout(syncTimer);setSyncStatus("syncing",storageOK?"Changes saved here":"Local save failed · cloud sync queued");syncTimer=setTimeout(()=>syncCloud(),1800);}
   return storageOK;
 }
 function notify(message) { clearTimeout(toastTimer); $("toast").textContent=message; $("toast").classList.add("show"); toastTimer=setTimeout(()=>$("toast").classList.remove("show"),4000); }
@@ -682,22 +682,34 @@ async function changeAccount(user){
   syncFailures=0;
   document.querySelectorAll('.submit-confirm[open],#successDialog[open]').forEach(d=>d.close());
   if(busy)stopRun();
-  studio.accountChanged();
-  dashboard.accountChanged();
+  // Progress initialization is a critical path; optional Studio/dashboard
+  // components must not be allowed to abort it. Studio has its own entrypoint.
   storageKey=owner?"bytequest.user."+owner:guestStorageKey;
-  // Preserve both saved drafts and accepted practice attempts from this device.
   state=reconcilePracticeProgress(readLocal(storageKey));
-  // A recovered accepted practice record must refresh cached profile stats
-  // after the first confirmed cloud sync.
   if(owner&&Object.keys(state.solved).length)pendingProfileRefresh=true;
   current=deepLinkedProblem()||problems.find(p=>p.id===state.current)||problems[0]||null;
   accountReady=true;
-  persist();
-  renderPractice();
-  $("codeEditor").readOnly=false;
-  updateStats();
-  refreshAccountUi();
-  route();
+  // Do not attempt a cloud write with a blank local snapshot before fetching
+  // the account's existing remote progress and merging it first.
+  persist({scheduleSync:false});
+  if(owner){
+    clearTimeout(syncTimer);
+    syncTimer=setTimeout(()=>{
+      if(epoch===accountEpoch&&cloud.user?.id===owner)void refreshCloudProgress(owner,epoch);
+    },100);
+  }
+  try{dashboard.accountChanged();}
+  catch(error){console.warn("ByteQuest: noncritical dashboard initialization failed",error);}
+  try{
+    renderPractice();
+    $("codeEditor").readOnly=false;
+    updateStats();
+    refreshAccountUi();
+    route();
+  }catch(error){
+    console.error("ByteQuest: account UI could not finish rendering",error);
+    $("authMessage").textContent="Account UI needs attention, but your local drafts are preserved and cloud progress recovery is running: "+String(error?.message||error);
+  }
 
   if(!owner){
     cloud.accessChecking=false;
@@ -735,12 +747,8 @@ async function changeAccount(user){
     void restoreOwnProfileHistory(owner,epoch,value.profile);
     scheduleCommunityWarmup(owner,publicProfile);
   }).catch(()=>{if(epoch===accountEpoch)cloud.admin=false;});
-  // Read cloud progress first, independently of any upload, so previous-day
-  // solves appear on a different device even if a subsequent write is blocked.
-  clearTimeout(syncTimer);
-  syncTimer=setTimeout(()=>{
-    if(epoch===accountEpoch&&cloud.user?.id===owner)void refreshCloudProgress(owner,epoch);
-  },100);
+  // The first cloud read was already scheduled immediately after the
+  // owner-scoped local progress became ready, before noncritical UI work.
 }
 
 async function syncCloud(){
