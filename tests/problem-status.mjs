@@ -13,10 +13,16 @@ assert.ok(unsolved.includes('class="problem-status is-unsolved"'));
 assert.ok(unsolved.includes('Unsolved'));
 assert.ok(!unsolved.includes('<svg'),"Unsolved or merely visited problems must not have a checkmark.");
 assert.equal(problemStatusMarkup(false),unsolved);
+assert.ok(problemStatusMarkup(false,{complete:false}).includes('Checking…'),
+  'Unloaded account progress must not falsely show Unsolved');
+assert.ok(problemStatusMarkup(false,{complete:false,failed:true}).includes('Status unavailable'),
+  'Cloud account failures must show status unavailable, not Unsolved');
+assert.ok(problemStatusMarkup(true,{complete:false}).includes('is-solved'),
+  'Existing locally accepted solves remain visible while cloud loads');
 
 const app=readFileSync("dist/app.js","utf8");
-assert.ok(app.includes('problemStatusMarkup(Boolean(state.solved[p.id]))'),
-  "Problem row completion is derived exclusively from persisted accepted-solution state.");
+assert.ok(app.includes('problemStatusMarkup(Boolean(state.solved[p.id]),{complete:accountHistoryStatus==="ready",failed:accountHistoryStatus==="failed"})'),
+  "Problem rows derive accepted status from saved solves but never label unconfirmed account progress as unsolved.");
 assert.ok(app.includes('if(view==="map"){if(previousView!==null&&previousView!=="map")$("questGrid").scrollLeft=0;renderMap();}'),
   "Navigating back from a practice problem must reset horizontal grid scrolling to the left.");
 assert.ok(app.includes('if(first){state.solved[p.id]=Date.now()'),
