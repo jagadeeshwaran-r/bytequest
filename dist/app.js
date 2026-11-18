@@ -5,7 +5,7 @@ import {mountEditorTools} from './editor-tools.js?v=copy-enabled-1';
 import {mountWorkspaceLayout} from './workspace-layout.js?v=workspace-1';
 import {submissionFeedback} from './submission-feedback.js?v=reliability-1';
 import {usesRemoteSubmit,browserSubmissionCases,browserSubmissionVerdict,privateJavaJudgeUnavailable} from './browser-submit.js?v=verified-java-1';
-import {createPracticeSubmission,addPracticeSubmission} from './practice-history.js?v=practice-history-1';
+import {createPracticeSubmission,addPracticeSubmission,reconcilePracticeProgress} from './practice-history.js?v=practice-history-2';
 import {shouldRunCodeShortcut} from './run-shortcut.js?v=ctrl-run-1';
 import {selectedProblemUrl} from './problem-navigation.js?v=1';
 import {readSafeProgress,writeSafeProgress} from './reliable-storage.js?v=reliability-1';
@@ -49,7 +49,7 @@ function readLocal(key){
 function writeLocalProgress(key,value){
   writeSafeProgress(localStorage,storageTargets.has(key)?storageTargets.get(key):key,value);
 }
-state=readLocal(storageKey);
+state=reconcilePracticeProgress(readLocal(storageKey));
 let publicProfile=null;
 const communityCache=createViewCache();
 let communityWarmupTimer=null;
@@ -63,7 +63,7 @@ function scheduleCommunityWarmup(owner,profile){
   },350);
 }
 
-let syncTimer,syncing=false,syncAgain=false,accountEpoch=0,accountOwner,accountReady=false,pendingProfileRefresh=false;
+let syncTimer,syncing=false,syncAgain=false,syncFailures=0,accountEpoch=0,accountOwner,accountReady=false,pendingProfileRefresh=false;
 const cloud=new Cloud(user=>changeAccount(user));shell.connect(cloud);
 const studio=new Studio({cloud,notify:message=>notify(message),onCatalogChanged:()=>refreshCatalog()});
 const submissions=mountSubmissions(cloud,{notify,getPracticeSubmissions:()=>state.practiceSubmissions||[],getSolvedAt:id=>state.solved[id]||null});
@@ -524,7 +524,7 @@ $("importFile").onchange=async event=>{
   try{
     if(file.size>2000000)throw new Error("Choose a backup smaller than 2 MB.");
     const incoming=validateBackup(JSON.parse(await file.text()));
-    state=mergeProgress(state,incoming);
+    state=reconcilePracticeProgress(mergeProgress(state,incoming));
     persist();updateStats();renderProgress();notify("Backup merged with your progress. Newer edits kept.");
   }catch(error){notify("Could not restore: "+error.message);}event.target.value="";
 };
@@ -548,10 +548,10 @@ function refreshAccountUi(){
 async function changeAccount(user){
   const owner=user?.id||null;if(owner===accountOwner&&accountReady)return;
   const previousOwner=accountOwner;
-  const epoch=++accountEpoch;clearTimeout(communityWarmupTimer);if(previousOwner&&previousOwner!==owner)communityCache.clearOwner(previousOwner);publicProfile=null;pendingProfileRefresh=false;accountOwner=owner;accountReady=false;clearTimeout(syncTimer);syncing=false;syncAgain=false;
+  const epoch=++accountEpoch;clearTimeout(communityWarmupTimer);if(previousOwner&&previousOwner!==owner)communityCache.clearOwner(previousOwner);publicProfile=null;pendingProfileRefresh=false;accountOwner=owner;accountReady=false;clearTimeout(syncTimer);syncing=false;syncAgain=false;syncFailures=0;
   document.querySelectorAll('.submit-confirm[open],#successDialog[open]').forEach(d=>d.close());
   if(busy)stopRun();studio.accountChanged();dashboard.accountChanged();storageKey=owner?"bytequest.user."+owner:guestStorageKey;
-  state=readLocal(storageKey);current=deepLinkedProblem()||problems.find(p=>p.id===state.current)||problems[0]||null;
+  state=reconcilePracticeProgress(readLocal(storageKey));current=deepLinkedProblem()||problems.find(p=>p.id===state.current)||problems[0]||null;
   renderPractice();$("codeEditor").readOnly=false;updateStats();refreshAccountUi();
   let needsSync=false;
   if(owner){
@@ -573,7 +573,7 @@ async function changeAccount(user){
     const loaded=await Promise.allSettled([cloud.loadProgress(owner),permissions,cloud.request("self")]);
     if(epoch!==accountEpoch)return;
     if(loaded[0].status==="fulfilled"){
-      const remote=loaded[0].value;state=mergeProgress(state,remote.state);needsSync=JSON.stringify(state)!==JSON.stringify(remote.state);
+      const remote=loaded[0].value;state=reconcilePracticeProgress(mergeProgress(state,remote.state));needsSync=JSON.stringify(state)!==JSON.stringify(remote.state);
       setSyncStatus("synced",remote.revision?"Saved to cloud":"Cloud connected");
     }else{setSyncStatus("failed","Saved on this device");$("authMessage").textContent="Could not load cloud progress. Your account’s local work is kept. Use Sync now to retry.";}
     if(loaded[1].status==="rejected")cloud.admin=false;
@@ -598,10 +598,12 @@ async function syncCloud(){
   const owner=cloud.user.id,epoch=accountEpoch,snapshot=JSON.stringify(state);syncing=true;setSyncStatus("syncing","Syncing progress");
   try{
     const merged=await cloud.syncProgress(owner,JSON.parse(snapshot),mergeProgress);if(epoch!==accountEpoch||cloud.user?.id!==owner)return;
-    const changedWhileSaving=JSON.stringify(state)!==snapshot;state=mergeProgress(state,merged);
+    const changedWhileSaving=JSON.stringify(state)!==snapshot;state=reconcilePracticeProgress(mergeProgress(state,merged));
     try{writeLocalProgress(storageKey,state);storageOK=true;}
     catch{storageOK=false;$("saveStatus").textContent="Saved to cloud · local cache unavailable";}
-    if(current&&document.activeElement!==$("codeEditor")){loadEditor(state.drafts[draftId()]??currentStarter());updateEditor();}
+    // Never overwrite or remount the active code editor when background sync
+    // finishes. Runs and submissions deliberately use source snapshots.
+    syncFailures=0;
     updateStats();if(location.hash==="#progress")renderProgress();
     $("saveStatus").textContent=!storageOK?"Cloud synced · local cache unavailable":
       changedWhileSaving?"New edits saved here · sync queued":"Draft saved to your account";
@@ -609,7 +611,16 @@ async function syncCloud(){
     if(pendingProfileRefresh){communityCache.clearOwner(owner);pendingProfileRefresh=false;}
     if(changedWhileSaving)syncAgain=true;
     return !changedWhileSaving;
-  }catch(error){if(epoch===accountEpoch){setSyncStatus("failed","Saved here · retry sync");$("authMessage").textContent=error.message;}return false;}
+  }catch(error){if(epoch===accountEpoch){
+    syncFailures++;
+    setSyncStatus("failed","Cloud sync failed · retrying");
+    $("saveStatus").textContent="Saved on this device · cloud sync not confirmed";
+    $("authMessage").textContent=error.message;
+    if(navigator.onLine&&cloud.user?.id===owner){
+      const backoff=Math.min(60000,10000*Math.pow(2,Math.min(syncFailures-1,3)));
+      syncTimer=setTimeout(()=>{if(epoch===accountEpoch)void syncCloud();},backoff);
+    }
+  }return false;}
   finally{if(epoch===accountEpoch){syncing=false;if(syncAgain){syncAgain=false;syncTimer=setTimeout(()=>syncCloud(),1000);}}}
 }
 // Public catalog loading must never depend on Firebase sign-in or profile requests.
@@ -715,7 +726,7 @@ $("signOutBtn").onclick=async()=>{
  }catch(error){$("authMessage").textContent=error.message;}
  finally{button.disabled=false;}
 };
-$("importGuestBtn").onclick=()=>{if(!cloud.user)return;state=mergeProgress(state,readLocal(guestStorageKey));persist();renderPractice();updateStats();notify("Guest progress added to this account. Cloud sync queued.");};
+$("importGuestBtn").onclick=()=>{if(!cloud.user)return;state=reconcilePracticeProgress(mergeProgress(state,readLocal(guestStorageKey)));persist();renderPractice();updateStats();notify("Guest progress added to this account. Cloud sync queued.");};
 addEventListener("online",()=>{if(cloud.user)syncCloud();else setSyncStatus("","On this device");});
 addEventListener("offline",()=>setSyncStatus("failed",cloud.user?"Offline · saved here":"On this device"));
 async function bootCloud(){
