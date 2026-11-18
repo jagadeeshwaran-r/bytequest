@@ -613,6 +613,8 @@ async function changeAccount(user){
   pendingProfileRefresh=false;
   accountOwner=owner;
   accountReady=false;
+  progressRefreshInFlight=null;
+  lastProgressRefreshAt=0;
   clearTimeout(syncTimer);
   syncing=false;
   syncAgain=false;
