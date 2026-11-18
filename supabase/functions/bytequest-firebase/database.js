@@ -7,6 +7,31 @@ export function createDatabase(url,serviceKey,{fetchImpl=fetch}={}){
   const rpcError=error=>{if(!error)return;if(error.code==="P0001"&&error.message?.startsWith("Please slow"))throw new HttpError(429,error.message);if(error.code==="28000")throw new HttpError(403,"This account was removed. Sign out to finish.");if(error.code==="23505")throw new HttpError(409,"That username or problem ID is already taken.");if(error.code==="42501")throw new HttpError(403,"You do not have access to this action. Friend chat requires mutual follows; shared solutions require an accepted submission. Library changes require author or administrator access.");if(error.code==="P0002")throw new HttpError(404,"Profile not found.");if(error.code==="40001")throw new HttpError(409,"This problem changed. Reload it before saving.");if(error.code==="22023")throw new HttpError(400,error.message);throw new Error("Database request failed");};
   async function enrich(result){const profiles=[result.profile,result.me,result.peer,result.author,...(result.events||[]).map(e=>e.actor),...(result.users||[]),...(result.creators||[])].filter(Boolean);const paths=[...new Set(profiles.map(p=>p.avatar_path).filter(Boolean))];let urls=[];if(paths.length){const signed=await client.storage.from("bytequest-avatars").createSignedUrls(paths,600);urls=signed.data||[];}for(const p of profiles){if(p.avatar_path){p.uploadedAvatar=true;p.avatar_url=urls.find(u=>u.path===p.avatar_path)?.signedUrl||"";}delete p.avatar_path;}return result;}
   return {
+    // The only maintenance row is private to the service-role client.
+    async maintenance(){
+      const {data,error}=await client.from('bytequest_site_maintenance').select('*').eq('key','site').maybeSingle();
+      if(error||!data)throw new HttpError(503,'Maintenance configuration unavailable. Deploy database/site-maintenance.sql before the Edge Function.');
+      return data;
+    },
+    async isLibraryAdmin(owner){
+      const {data,error}=await client.from('bytequest_library_admins').select('user_id').eq('user_id',owner).maybeSingle();
+      if(error)throw new HttpError(503,'Administrator role verification unavailable.');
+      return !!data;
+    },
+    async saveMaintenance(owner,settings){
+      if(!await this.isLibraryAdmin(owner))throw new HttpError(403,'Only library administrators can configure site maintenance.');
+      // Optimistic concurrency protects against two admins silently overwriting
+      // one another, including the safety-critical enabled flag.
+      const {data,error}=await client.from('bytequest_site_maintenance').update({
+        enabled:settings.enabled,mode:settings.mode,
+        starts_at:settings.startsAt,ends_at:settings.endsAt,
+        message:settings.message,revision:settings.revision+1,
+        updated_at:new Date().toISOString(),updated_by:owner
+      }).eq('key','site').eq('revision',settings.revision).select('*').maybeSingle();
+      if(error)throw new HttpError(503,'Could not save maintenance settings. Your previous settings remain in effect.');
+      if(!data)throw new HttpError(409,'Another administrator updated maintenance. Reload the current settings and try again.');
+      return data;
+    },
     async liveEvents(owner,after,announcementsAfter=null){const r=await client.rpc('bytequest_activity_feed',{owner_id:owner,after_id:after,announcements_after:announcementsAfter});rpcError(r.error);return enrich(r.data);},
     async existingSubmission(owner,nonce){return checked(await client.from('bytequest_submissions').select('*').eq('owner_id',owner).eq('client_nonce',nonce).maybeSingle());},
     async recordSubmission(owner,data){const r=await client.rpc('bytequest_submission_record',{owner_id:owner,data});rpcError(r.error);return r.data;},
