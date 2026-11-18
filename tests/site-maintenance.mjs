@@ -131,6 +131,10 @@ assert.ok(gate.includes('await import(appSource)'),'Application bundles must loa
 assert.ok(gate.includes("if(status.active===true){blockAndRedirect('maintenance')"),'Active maintenance must force redirect');
 assert.ok(gate.includes('document.documentElement.dataset.bqMaintenanceCheck=\'pending\''),'Open workspaces must be hidden before redirect');
 assert.ok(!gate.includes("access.request('maintenance-admin-get'"),'No general application admin bypass is permitted');
+assert.ok(gate.includes("window.addEventListener('pageshow'")&&gate.includes('event.persisted'),
+ 'Browser Back must re-verify maintenance even when restoring pages from back/forward cache');
+assert.ok(gate.includes('clearInterval(timer)')&&gate.includes('setInterval('),
+ 'Resuming from browser cache must restore ongoing schedule checks');
 const adminPage=readFileSync('dist/maintenance-admin.js','utf8');
 assert.ok(adminPage.includes('confirm('),'Enabling must require explicit administrator confirmation');
 assert.ok(adminPage.includes("mode==='on'"),'Immediate mode supported');
