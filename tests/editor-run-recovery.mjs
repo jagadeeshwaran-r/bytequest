@@ -40,8 +40,8 @@ assert.ok(run.includes('finally{if(epoch===runEpoch){clearTimeout(watchdog);setB
 
 assert.ok(source.includes('let current = deepLinkedProblem() || problems.find('),
  'A refresh should restore the deep-linked problem before account initialization finishes');
-assert.equal(source.split('current=deepLinkedProblem()||problems.find(').length-1,2,
- 'Both pre-sync and post-sync account restoration must respect the linked problem');
+assert.equal(source.split('current=deepLinkedProblem()||problems.find(').length-1,1,
+ 'Restore the selected problem once; background cloud sync must not reset it to Two Sum');
 
 
 const refresh=source.slice(source.indexOf('async function refreshCatalog('),source.indexOf('function revalidateCatalog('));
