@@ -22,6 +22,6 @@ const bodies = {
 for(const problem of problems){
   const body=bodies[problem.id];
   if(typeof body!=='string')throw new Error('Missing test-only reference for '+problem.id);
-  problem.reference='import java.util.*;\\n\\nclass Solution {\\n    public '+problem.returns+' '+problem.method+'('+problem.params.map(p=>p.type+' '+p.name).join(', ')+') {\\n'+body.split('\\n').map(line=>'        '+line).join('\\n')+'\\n    }\\n}\\n';
+  problem.reference='import java.util.*;\n\nclass Solution {\n    public '+problem.returns+' '+problem.method+'('+problem.params.map(p=>p.type+' '+p.name).join(', ')+') {\n'+body.split('\n').map(line=>'        '+line).join('\n')+'\n    }\n}\n';
 }
 export {bodies as testOnlyReferenceBodies};
