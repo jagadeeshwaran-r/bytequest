@@ -21,6 +21,7 @@ import {problems as bundledProblems} from "./problems.js";
 import {Cloud} from "./cloud.js?v=cloud-health-1";
 import {createViewCache,prefetchCommunityViews} from "./view-cache.js?v=avatar-1";
 import {blankProgress, validateProgress, mergeProgress, solveStreak} from "./progress.js?v=practice-history-1";
+import {recoverOwnProfileSolves} from "./profile-solve-recovery.js?v=1";
 import {Studio} from "./studio.js?v=studio-auth-1";
 const problems=[...bundledProblems];
 const shell=mountShell();mountWorkspace();let language="java";try{const v=localStorage.getItem("bytequest.language");if(languages[v])language=v;}catch{}
@@ -547,6 +548,37 @@ function refreshAccountUi(){
   if(!cloud.enabled)$("authMessage").textContent="Cloud accounts are being connected. You can keep practising on this device.";
   else if(!user&&!cloud.loginReady&&!$("authMessage").textContent)$("authMessage").textContent="Loading secure sign-in…";
 }
+// Independent authenticated profile fallback. The profile RPC provides
+// server-recorded problem IDs and solve timestamps (up to 25 recent solves).
+// We use them only when the response certifies it belongs to this exact
+// Firebase user's own public profile. Never use someone else's leaderboard.
+async function restoreOwnProfileHistory(owner,epoch,ownerProfile){
+  if(epoch!==accountEpoch||cloud.user?.id!==owner||
+    typeof ownerProfile?.public_id!=="string"||!ownerProfile?.username)return false;
+  try{
+    const response=await cloud.request("profile",{target:ownerProfile.username},owner);
+    if(epoch!==accountEpoch||cloud.user?.id!==owner)return false;
+    const recovery=recoverOwnProfileSolves(state,response,ownerProfile.public_id);
+    if(!recovery.restored)return false;
+    state=reconcilePracticeProgress(recovery.state);
+    if(!persist()){
+      $("authMessage").textContent="Your older solves were found on the server but could not be backed up locally. Export a backup before leaving.";
+      return false;
+    }
+    pendingProfileRefresh=true;
+    communityCache.clearOwner(owner);
+    updateStats();renderMap();
+    if(location.hash==="#progress")renderProgress();
+    $("authMessage").textContent="Restored "+recovery.restored+" previously saved solve"+(recovery.restored===1?"":"s")+" from your own cloud profile. Syncing the complete account progress…";
+    return true;
+  }catch(error){
+    if(epoch===accountEpoch&&cloud.user?.id===owner&&
+      !Object.keys(state.solved).length){
+      $("authMessage").textContent="Could not cross-check saved solves against your profile: "+String(error?.message||error)+". Your local drafts are unchanged.";
+    }
+    return false;
+  }
+}
 // Read progress independently of writes. On a new phone the server may have
 // accepted solves even if this device has never saved a local account snapshot.
 // A failed upload must not hide data already successfully downloaded.
@@ -686,6 +718,9 @@ async function changeAccount(user){
     publicProfile=value.profile;
     communityCache.saveSelf(owner,value);
     refreshAccountUi();
+    // This server-backed path restores accepted status even when the separate
+    // account progress endpoint remains unavailable to the Problems page.
+    void restoreOwnProfileHistory(owner,epoch,value.profile);
     scheduleCommunityWarmup(owner,publicProfile);
   }).catch(()=>{if(epoch===accountEpoch)cloud.admin=false;});
   // Read cloud progress first, independently of any upload, so previous-day
