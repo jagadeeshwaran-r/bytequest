@@ -65,7 +65,7 @@ assert.ok(change.includes('catch(error){console.warn("ByteQuest: noncritical das
  'An optional chart cannot strand account progress in Loading forever');
 
 const sync=app.slice(app.indexOf('async function syncCloud(){'),app.indexOf('// Public catalog loading'));
-assert.ok(sync.includes('try{await changeAccount(cloud.user)}'),
+assert.ok(sync.includes('await changeAccount(cloud.user);'),
  'Sync now must repair a partially initialized owner instead of returning an endless Loading message');
 assert.ok(!sync.includes('Your account progress is still loading. Your drafts are saved locally'),
  'Old misleading permanent-loading diagnostic must be removed');
