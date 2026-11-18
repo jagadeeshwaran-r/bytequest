@@ -21,7 +21,7 @@ export function mountShell(){
  // A narrowly scoped cache makes the recovery page available after a
  // connection drops; normal account/catalog/editor requests are never cached.
  if(typeof navigator!=='undefined'&&navigator.serviceWorker&&window.isSecureContext){
-  navigator.serviceWorker.register('./runtime-sw.js?v=outage-1',{scope:'./'}).catch(()=>{});
+  navigator.serviceWorker.register('./runtime-sw.js?v=maintenance-1',{scope:'./'}).catch(()=>{});
  }
  // Administrator controls are hidden until authorization is confirmed by the server.
  function setAdmin(authorized){
