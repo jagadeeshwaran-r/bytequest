@@ -8,7 +8,8 @@ const manual=app.slice(app.indexOf('$("syncNowBtn").onclick='),app.indexOf('$("s
 
 assert.ok(html.includes('manual-sync-feedback=1'),'Live pages must load a fresh version of the manual sync code');
 assert.match(sync,/if\(!accountReady\)\{/,'Unready accounts must be handled explicitly');
-assert.match(sync,/Your account progress is still loading/,'Account boot must visibly explain why sync cannot start');
+assert.match(sync,/Account setup could not complete/,'If local account setup truly fails, explain the actual failure instead of an endless loading message');
+assert.match(sync,/await changeAccount\(cloud\.user\)/,'Sync now must attempt local account recovery when boot was interrupted');
 assert.match(sync,/Save in progress · another queued/,'Concurrent clicks must explain queued sync');
 assert.match(sync,/You appear offline/,'Offline sync must have visible diagnostic');
 assert.match(manual,/button.disabled=true;button.textContent="Syncing…"/,'Manual sync must visibly show in-progress status');

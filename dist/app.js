@@ -11,7 +11,7 @@ import {selectedProblemUrl} from './problem-navigation.js?v=1';
 import {readSafeProgress,writeSafeProgress} from './reliable-storage.js?v=reliability-1';
 import {pointsFor,totalPoints} from './rewards.js?v=upgrade-2';
 import {companyIcons} from './companies.js?v=company-tooltips-1';
-import {problemStatusMarkup} from './problem-status.js?v=solved-1';
+import {problemStatusMarkup} from './problem-status.js?v=auth-ready-1';
 import {canRevealEditorialSolution,editorialSolutionGateMarkup} from './editorial-access.js?v=editorial-1';
 import {mountWorkspace} from './workspace.js';
 import {mountShell} from "./shell.js?v=cloud-health-1";
@@ -22,7 +22,7 @@ import {Cloud} from "./cloud.js?v=cloud-health-1";
 import {createViewCache,prefetchCommunityViews} from "./view-cache.js?v=avatar-1";
 import {blankProgress, validateProgress, mergeProgress, solveStreak} from "./progress.js?v=practice-history-1";
 import {recoverOwnProfileSolves} from "./profile-solve-recovery.js?v=1";
-import {Studio} from "./studio.js?v=studio-auth-1";
+// Problem Studio runs solely in studio.html. Never initialize its form on Problems.
 const problems=[...bundledProblems];
 const shell=mountShell();mountWorkspace();let language="java";try{const v=localStorage.getItem("bytequest.language");if(languages[v])language=v;}catch{}
 const draftId=(id=current.id)=>language==="java"?id:id+"--"+language;
@@ -37,7 +37,7 @@ const guestStorageKey="bytequest.v1";
 let storageKey=guestStorageKey;
 const blank=blankProgress;
 const validateBackup=validateProgress;
-let state=blank(),storageOK=true;
+let state=blank(),storageOK=true,accountHistoryStatus="loading";
 const storageTargets=new Map(),storageWarnings=new Map();
 function readLocal(key){
   let result;
@@ -66,7 +66,7 @@ function scheduleCommunityWarmup(owner,profile){
 
 let syncTimer,syncing=false,syncAgain=false,syncFailures=0,accountEpoch=0,accountOwner,accountReady=false,pendingProfileRefresh=false;
 const cloud=new Cloud(user=>changeAccount(user));shell.connect(cloud);
-const studio=new Studio({cloud,notify:message=>notify(message),onCatalogChanged:()=>refreshCatalog()});
+const studio={accountChanged(){},stop(){},open(){}}; // Standalone studio-page.js owns Studio.
 const submissions=mountSubmissions(cloud,{notify,getPracticeSubmissions:()=>state.practiceSubmissions||[],getSolvedAt:id=>state.solved[id]||null});
 const dashboard=new Dashboard({cloud,getState:()=>state,getCatalog:()=>problems});
 function touch(field,id){state.modified[id]??={};state.modified[id][field]=Date.now();}
@@ -98,7 +98,7 @@ const judge={run:(source,p,cases)=>language==="java"?javaJudge.run(source,p,case
 const javaOnlyProblem=p=>Boolean(p?.params?.some(param=>param.type==="ListNode"||param.type==="TreeNode"||param.type==="int[][]")||["ListNode","int[][]"].includes(p?.returns));
 function setLanguage(v){if(!languages[v])return;if(javaOnlyProblem(current)&&v!=="java"){notify("Linked-list and tree problems currently support Java 17 only.");return;}if(busy)stopRun();language=v;try{localStorage.setItem("bytequest.language",v);}catch{}renderPractice();}
 $("languageSelect").onchange=e=>setLanguage(e.target.value);
-function persist() {
+function persist({scheduleSync=true}={}) {
   try{
     writeLocalProgress(storageKey,state);storageOK=true;
     $("saveStatus").textContent=storageWarnings.has(storageKey)?"Recovery copy saved · damaged original preserved":
@@ -108,7 +108,7 @@ function persist() {
   }
   // Surface unsynced local work on all ByteQuest pages, including Profile.
   if(cloud.user||!storageOK)cloud.onHealth?.({kind:storageOK?'pending':'storage-failed',localSaved:storageOK});
-  if(accountReady&&cloud.user){clearTimeout(syncTimer);setSyncStatus("syncing",storageOK?"Changes saved here":"Local save failed · cloud sync queued");syncTimer=setTimeout(()=>syncCloud(),1800);}
+  if(scheduleSync&&accountReady&&cloud.user){clearTimeout(syncTimer);setSyncStatus("syncing",storageOK?"Changes saved here":"Local save failed · cloud sync queued");syncTimer=setTimeout(()=>syncCloud(),1800);}
   return storageOK;
 }
 function notify(message) { clearTimeout(toastTimer); $("toast").textContent=message; $("toast").classList.add("show"); toastTimer=setTimeout(()=>$("toast").classList.remove("show"),4000); }
@@ -494,10 +494,10 @@ document.addEventListener("keydown",event=>{
 function renderMap(){
   const pattern=$("patternFilter").value,technique=$("techniqueFilter").value;
   const query=$("searchInput").value.trim().toLowerCase(),topic=$("topicFilter").value,level=$("difficultyFilter").value,status=$("statusFilter").value;
-  const list=problems.filter(p=>(p.title+" "+String(problems.indexOf(p)+1)).toLowerCase().includes(query)&&(!topic||p.topic===topic)&&(!pattern||(p.pattern||p.topic)===pattern)&&(!technique||(p.techniques||[]).includes(technique))&&(!level||p.difficulty===level)&&(!status||(status==="solved"?state.solved[p.id]:status==="new"?!state.solved[p.id]:due(p.id))));
+  const list=problems.filter(p=>(p.title+" "+String(problems.indexOf(p)+1)).toLowerCase().includes(query)&&(!topic||p.topic===topic)&&(!pattern||(p.pattern||p.topic)===pattern)&&(!technique||(p.techniques||[]).includes(technique))&&(!level||p.difficulty===level)&&(!status||(status==="solved"?state.solved[p.id]:status==="new"?accountHistoryStatus==="ready"&&!state.solved[p.id]:due(p.id))));
   $("clearProblemSearch").hidden=!$("searchInput").value;
   $("visibleProblemCount").textContent=list.length===problems.length?"Showing all "+problems.length+" problems":"Showing "+list.length+" of "+problems.length+" problems";
-  $("questGrid").innerHTML=list.length?'<table class="problem-table"><thead><tr><th>No.</th><th>Title</th><th>Companies</th><th>Difficulty</th><th>Status</th></tr></thead><tbody>'+list.map(p=>'<tr><td>'+String(problems.indexOf(p)+1).padStart(2,'0')+'</td><td><button class="problem-title" data-problem="'+p.id+'">'+html(p.title)+'</button></td><td>'+(companyIcons(p.companies)||'<span class="muted">—</span>')+'</td><td><span class="difficulty '+p.difficulty.toLowerCase()+'">'+html(p.difficulty)+'</span><small class="problem-points">'+pointsFor(p.difficulty)+' pts</small></td><td>'+ problemStatusMarkup(Boolean(state.solved[p.id]))+'</td></tr>').join('')+'</tbody></table><p class="company-note">Company tags are community-reported historical associations, not employer endorsements. <a href="https://github.com/duanehutchins/leetcode-questions-by-company" target="_blank" rel="noopener">Tag source</a></p>':'<p class="empty-state">No matching problems.</p>';
+  $("questGrid").innerHTML=list.length?'<table class="problem-table"><thead><tr><th>No.</th><th>Title</th><th>Companies</th><th>Difficulty</th><th>Status</th></tr></thead><tbody>'+list.map(p=>'<tr><td>'+String(problems.indexOf(p)+1).padStart(2,'0')+'</td><td><button class="problem-title" data-problem="'+p.id+'">'+html(p.title)+'</button></td><td>'+(companyIcons(p.companies)||'<span class="muted">—</span>')+'</td><td><span class="difficulty '+p.difficulty.toLowerCase()+'">'+html(p.difficulty)+'</span><small class="problem-points">'+pointsFor(p.difficulty)+' pts</small></td><td>'+ problemStatusMarkup(Boolean(state.solved[p.id]),{complete:accountHistoryStatus==="ready",failed:accountHistoryStatus==="failed"})+'</td></tr>').join('')+'</tbody></table><p class="company-note">Company tags are community-reported historical associations, not employer endorsements. <a href="https://github.com/duanehutchins/leetcode-questions-by-company" target="_blank" rel="noopener">Tag source</a></p>':'<p class="empty-state">No matching problems.</p>';
   $("questGrid").querySelectorAll("[data-problem]").forEach(b=>b.onclick=()=>changeProblem(b.dataset.problem));
 }
 function renderProgress(){
@@ -566,13 +566,22 @@ async function restoreOwnProfileHistory(owner,epoch,ownerProfile){
     const response=await cloud.request("profile",{target:ownerProfile.username},owner);
     if(epoch!==accountEpoch||cloud.user?.id!==owner)return false;
     const recovery=recoverOwnProfileSolves(state,response,ownerProfile.public_id);
-    if(response.isOwn===true&&response.profile?.public_id===ownerProfile.public_id)
+    const own=response.isOwn===true&&response.profile?.public_id===ownerProfile.public_id;
+    if(own){
       showAccountProgress("Account @"+ownerProfile.username+" · "+Number(response.stats?.solved||0)+" cloud-recorded solves");
-    if(!recovery.restored)return false;
+      // Recent solves are capped at 25. Treat the own profile as complete only
+      // when it accounts for all server-reported solves; otherwise keep unknown
+      // problems in a non-misleading Checking state.
+      const total=Number(response.stats?.solved);
+      if(Number.isSafeInteger(total)&&total>=0&&
+         Object.keys(recovery.state.solved||{}).length>=total&&
+         (response.insights?.recentSolves?.length||0)>=Math.min(total,25)&&
+         total<=25)accountHistoryStatus="ready";
+    }
+    if(!recovery.restored){renderMap();return false;}
     state=reconcilePracticeProgress(recovery.state);
-    if(!persist()){
+    if(!persist({scheduleSync:false})){
       $("authMessage").textContent="Your older solves were found on the server but could not be backed up locally. Export a backup before leaving.";
-      return false;
     }
     pendingProfileRefresh=true;
     communityCache.clearOwner(owner);
@@ -604,6 +613,7 @@ async function refreshCloudProgress(owner=accountOwner,epoch=accountEpoch){
       const remote=await cloud.request("progress",{},owner);
       if(epoch!==accountEpoch||cloud.user?.id!==owner)return false;
       const cloudState=validateProgress(remote.payload||blank());
+      accountHistoryStatus="ready";
       showAccountProgress("Cloud history loaded · "+Object.keys(cloudState.solved).length+" saved solves");
       // Merge using the most recent in-memory edits, not a snapshot from before
       // the request. Never discard the code currently open in the editor.
@@ -645,6 +655,8 @@ async function refreshCloudProgress(owner=accountOwner,epoch=accountEpoch){
     }catch(error){
       if(epoch!==accountEpoch||cloud.user?.id!==owner)return false;
       setSyncStatus("failed","Cloud progress could not load · retrying");
+      if(accountHistoryStatus!=="ready")accountHistoryStatus="failed";
+      renderMap();
       showAccountProgress("Account progress unavailable · solved ticks may be outdated");
       $("saveStatus").textContent="Your cloud history is not loaded on this device";
       $("authMessage").textContent="Cloud progress could not load: "+String(error?.message||error)+". Your local drafts have not been deleted.";
@@ -672,6 +684,7 @@ async function changeAccount(user){
   publicProfile=null;
   pendingProfileRefresh=false;
   accountOwner=owner;
+  accountHistoryStatus=owner?"loading":"ready";
   showAccountProgress(owner?"Checking your saved solves…":"Sign in to load your solved problems");
   accountReady=false;
   progressRefreshInFlight=null;
@@ -682,22 +695,34 @@ async function changeAccount(user){
   syncFailures=0;
   document.querySelectorAll('.submit-confirm[open],#successDialog[open]').forEach(d=>d.close());
   if(busy)stopRun();
-  studio.accountChanged();
-  dashboard.accountChanged();
+  // Progress initialization is a critical path; optional Studio/dashboard
+  // components must not be allowed to abort it. Studio has its own entrypoint.
   storageKey=owner?"bytequest.user."+owner:guestStorageKey;
-  // Preserve both saved drafts and accepted practice attempts from this device.
   state=reconcilePracticeProgress(readLocal(storageKey));
-  // A recovered accepted practice record must refresh cached profile stats
-  // after the first confirmed cloud sync.
   if(owner&&Object.keys(state.solved).length)pendingProfileRefresh=true;
   current=deepLinkedProblem()||problems.find(p=>p.id===state.current)||problems[0]||null;
   accountReady=true;
-  persist();
-  renderPractice();
-  $("codeEditor").readOnly=false;
-  updateStats();
-  refreshAccountUi();
-  route();
+  // Do not attempt a cloud write with a blank local snapshot before fetching
+  // the account's existing remote progress and merging it first.
+  persist({scheduleSync:false});
+  if(owner){
+    clearTimeout(syncTimer);
+    syncTimer=setTimeout(()=>{
+      if(epoch===accountEpoch&&cloud.user?.id===owner)void refreshCloudProgress(owner,epoch);
+    },100);
+  }
+  try{dashboard.accountChanged();}
+  catch(error){console.warn("ByteQuest: noncritical dashboard initialization failed",error);}
+  try{
+    renderPractice();
+    $("codeEditor").readOnly=false;
+    updateStats();
+    refreshAccountUi();
+    route();
+  }catch(error){
+    console.error("ByteQuest: account UI could not finish rendering",error);
+    $("authMessage").textContent="Account UI needs attention, but your local drafts are preserved and cloud progress recovery is running: "+String(error?.message||error);
+  }
 
   if(!owner){
     cloud.accessChecking=false;
@@ -735,12 +760,8 @@ async function changeAccount(user){
     void restoreOwnProfileHistory(owner,epoch,value.profile);
     scheduleCommunityWarmup(owner,publicProfile);
   }).catch(()=>{if(epoch===accountEpoch)cloud.admin=false;});
-  // Read cloud progress first, independently of any upload, so previous-day
-  // solves appear on a different device even if a subsequent write is blocked.
-  clearTimeout(syncTimer);
-  syncTimer=setTimeout(()=>{
-    if(epoch===accountEpoch&&cloud.user?.id===owner)void refreshCloudProgress(owner,epoch);
-  },100);
+  // The first cloud read was already scheduled immediately after the
+  // owner-scoped local progress became ready, before noncritical UI work.
 }
 
 async function syncCloud(){
@@ -751,9 +772,18 @@ async function syncCloud(){
     return false;
   }
   if(!accountReady){
-    setSyncStatus("syncing","Account is still loading");
-    $("authMessage").textContent="Your account progress is still loading. Your drafts are saved locally; retry Sync now after account initialization finishes.";
-    return false;
+    // Repair a boot interrupted by a nonessential UI failure. A valid Firebase
+    // owner has enough information to restore owner-local progress immediately.
+    try{await changeAccount(cloud.user);}
+    catch(error){
+      console.error("ByteQuest: account bootstrap recovery failed",error);
+      $("authMessage").textContent="Account setup failed: "+String(error?.message||error)+". Your saved drafts are preserved; export a backup before reloading.";
+    }
+    if(!accountReady){
+      setSyncStatus("failed","Account setup could not complete");
+      if(!$("authMessage").textContent)$("authMessage").textContent="Could not initialize account progress. Your local drafts have not been removed; export a backup.";
+      return false;
+    }
   }
   if(syncing){
     syncAgain=true;
@@ -770,6 +800,7 @@ async function syncCloud(){
   try{
     const merged=await cloud.syncProgress(owner,JSON.parse(snapshot),mergeProgress);if(epoch!==accountEpoch||cloud.user?.id!==owner)return;
     const changedWhileSaving=JSON.stringify(state)!==snapshot;state=reconcilePracticeProgress(mergeProgress(state,merged));
+    accountHistoryStatus="ready";
     try{writeLocalProgress(storageKey,state);storageOK=true;}
     catch{storageOK=false;$("saveStatus").textContent="Saved to cloud · local cache unavailable";}
     // Never overwrite or remount the active code editor when background sync
@@ -958,6 +989,7 @@ async function bootCloud(){
     await cloud.init();cloud.loginError=null;$("authMessage").textContent="";
   }catch(error){
     cloud.loginError=error.message;$("authMessage").textContent=error.message;
+    accountHistoryStatus="failed";renderMap();
     setSyncStatus("failed","Account connection paused");
   }
   // Firebase remains the source of truth for account data only.

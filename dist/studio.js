@@ -60,7 +60,7 @@ export class Studio{
       this.rows=rows;this.loadedFor=userId;this.fillSelect();this.row=null;this.fill(sample);
       try{
         const local=JSON.parse(localStorage.getItem("bytequest.studio."+userId));
-        if(local?.fields){for(const field of fields)if(typeof local.fields[field]==="string")$("p"+field).value=local.fields[field];
+        if(local?.fields){for(const field of fields)if(typeof local.fields[field]==="string"&&$("p"+field))$("p"+field).value=local.fields[field];
           $("pPublished").checked=!!local.published;this.row=this.rows.find(r=>r.id===local.rowId)||null;this.normalize=local.normalize||this.row?.content.normalize;
           $("pId").readOnly=!!this.row;$("studioSelect").value=this.row?.id||"";$("studioDirty").textContent="Draft restored from this device";}
       }catch{}
@@ -75,18 +75,20 @@ export class Studio{
   fill(p,row=null){
     this.normalize=p.normalize;
     const values={Companies:(p.companies||[]).join(", "),CompanySource:p.companySource||"",InputGuide:p.inputGuide||"",OutputGuide:p.outputGuide||"",Title:p.title,Id:p.id,Topic:p.topic,Difficulty:p.difficulty,Minutes:p.minutes,Description:p.description,Constraints:p.constraints,Method:p.method,Returns:p.returns,Params:JSON.stringify(p.params),Starter:p.starter,Reference:p.reference,Tests:JSON.stringify(p.tests,null,2),Idea:p.idea,Invariant:p.invariant,Time:p.complexity.time,Space:p.complexity.space,Tradeoff:p.complexity.tradeoff,Hints:p.hints.join("\n"),Frames:JSON.stringify(p.frames||[],null,2),Position:row?.position??this.rows.length,Pattern:p.pattern||p.topic,Techniques:(p.techniques||[]).join(", "),HiddenTests:JSON.stringify(row?.hiddenTests||[],null,2),Correction:"",Illustration:p.illustration||"",IllustrationAlt:p.illustrationAlt||"",IllustrationCaption:p.illustrationCaption||"",ExampleExplanations:JSON.stringify(p.exampleExplanations||[],null,2)};
-    for(const field of fields)$("p"+field).value=values[field];this.companyPicker?.refresh();
+    // The stand-alone Studio has all fields. Other/older layouts may omit
+    // optional illustration fields; a missing field must not crash account boot.
+    for(const field of fields){const control=$("p"+field);if(control)control.value=values[field]??"";}this.companyPicker?.refresh();
     $("pPublished").checked=!!row?.published;$("pId").readOnly=!!row;
     this.validated=null;$("studioValidation").replaceChildren();$("studioDirty").textContent=row?"Loaded from library":"New problem · not saved";
     this.message("Validate the reference solution before publishing.");
   }
   read(){
-    const v=name=>$("p"+name).value;
+    const v=name=>$("p"+name)?.value??"";
     let params,tests,frames,exampleExplanations;try{params=JSON.parse(v("Params"));tests=JSON.parse(v("Tests"));frames=JSON.parse(v("Frames")||"[]");exampleExplanations=JSON.parse(v("ExampleExplanations")||"[]");}catch{throw new Error("Parameters, tests, example explanations and animation steps must contain valid JSON.");}
     return validateProblem({illustration:v("Illustration"),illustrationAlt:v("IllustrationAlt"),illustrationCaption:v("IllustrationCaption"),exampleExplanations,companies:v("Companies").split(",").map(s=>s.trim()).filter(Boolean),companySource:v("CompanySource"),inputGuide:v("InputGuide"),outputGuide:v("OutputGuide"),pattern:v("Pattern")||v("Topic"),techniques:v("Techniques").split(",").map(s=>s.trim()).filter(Boolean),id:v("Id"),title:v("Title"),topic:v("Topic"),difficulty:v("Difficulty"),minutes:Number(v("Minutes")),description:v("Description"),constraints:v("Constraints"),method:v("Method"),returns:v("Returns"),params,tests,frames,starter:v("Starter"),reference:v("Reference"),idea:v("Idea"),invariant:v("Invariant"),complexity:{time:v("Time"),space:v("Space"),tradeoff:v("Tradeoff")},hints:v("Hints").split("\n").map(s=>s.trim()).filter(Boolean),...(this.normalize?{normalize:this.normalize}:{})});
   }
   saveLocalDraft(){
-    if(!this.cloud.user)return;try{localStorage.setItem("bytequest.studio."+this.cloud.user.id,JSON.stringify({rowId:this.row?.id||null,normalize:this.normalize,published:$("pPublished").checked,fields:Object.fromEntries(fields.map(f=>[f,$("p"+f).value]))}));}catch{}
+    if(!this.cloud.user)return;try{localStorage.setItem("bytequest.studio."+this.cloud.user.id,JSON.stringify({rowId:this.row?.id||null,normalize:this.normalize,published:$("pPublished").checked,fields:Object.fromEntries(fields.map(f=>[f,$("p"+f)?.value??""]))}));}catch{}
   }
   hiddenTests(problem){let cases;try{cases=JSON.parse($("pHiddenTests").value||"[]");}catch{throw new Error("Hidden cases must contain valid JSON.");}if(!Array.isArray(cases)||cases.length>100)throw new Error("Provide up to 100 hidden cases.");buildTests(problem,cases);return cases;}
   async validateJava(){
