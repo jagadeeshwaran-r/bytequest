@@ -55,6 +55,10 @@ retry.onclick=()=>{
 updateConnectivity();
 
 if(state.kind==='maintenance'){
+  // Maintenance is informational: never offer a retry/home action that
+  // implies maintenance has ended or lets visitors bypass the notice.
+  $('statusRetry').hidden=true;
+  $('statusContinue').hidden=true;
   $('statusAdminLink').hidden=false;
   const timing=$('statusWindow'),feedbackArea=$('statusFeedback');
   async function readSchedule(){
