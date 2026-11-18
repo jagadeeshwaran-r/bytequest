@@ -1,10 +1,11 @@
 import {profileAvatar,publicProfileHref} from './profile-view.js?v=workbench-1';
-import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=verified-java-1';
+import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=verification-evidence-1';
 import {launchCelebration} from './celebration.js?v=next-1';
 import {mountEditorTools} from './editor-tools.js?v=copy-enabled-1';
 import {mountWorkspaceLayout} from './workspace-layout.js?v=workspace-1';
 import {submissionFeedback} from './submission-feedback.js?v=reliability-1';
 import {usesRemoteSubmit,browserSubmissionCases,browserSubmissionVerdict,privateJavaJudgeUnavailable} from './browser-submit.js?v=verified-java-1';
+import {privateJudgeUnavailableSummary} from './verification-evidence.js?v=1';
 import {createPracticeSubmission,addPracticeSubmission,reconcilePracticeProgress} from './practice-history.js?v=practice-history-2';
 import {shouldRunCodeShortcut} from './run-shortcut.js?v=ctrl-run-1';
 import {selectedProblemUrl} from './problem-navigation.js?v=1';
@@ -365,7 +366,7 @@ async function submitOnline(){
  catch(error){notify(error?.message||'Could not open the submission dialog. Please try again.');return;}
  if(!options||current?.id!==p.id||language!==lang||cloud.user?.id!==user||account!==accountEpoch)return;
  const epoch=++runEpoch;
- let browserFallback=false;
+ let browserFallback=false,verificationFailure="";
  setBusy(true);
  try{
   results=null;renderTests();$("resultOutput").textContent='Running and measuring your solution…';
@@ -374,7 +375,7 @@ async function submitOnline(){
   if(epoch!==runEpoch||account!==accountEpoch||cloud.user?.id!==user)return;
   if(lang==="java"&&result.status==="unavailable"){
    browserFallback=true;
-   $("resultOutput").textContent="Server-side Java verification is temporarily unavailable. Running public browser practice instead. This will not unlock shared solutions.";
+   verificationFailure="The server-side Java judge returned unavailable. No accepted submission was recorded.";
   }else{
   if(result.status!=='unavailable')logAttempt(p,result.passed||0,result.total||p.tests.length);
   const output=$("resultOutput"),feedback=submissionFeedback(result);output.innerHTML=feedback.html;notify(feedback.announcement);output.tabIndex=-1;output.focus({preventScroll:true});output.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
@@ -384,7 +385,7 @@ async function submitOnline(){
   if(epoch===runEpoch&&account===accountEpoch&&cloud.user?.id===user){
    if(lang==="java"&&privateJavaJudgeUnavailable(e)){
     browserFallback=true;
-    $("resultOutput").textContent="Private Java verification is not configured for this problem. Running public browser practice instead. A practice pass counts toward your personal progress after sync but cannot unlock server-verified solutions.";
+    verificationFailure=String(e?.message||"The private Java judge is not configured for this problem.");
    }else{
     const text=e?.name==='TimeoutError'?'The submission request timed out. Your code is saved. Check My submissions before retrying.':e.message;
     const feedback=submissionFeedback({status:'error',message:text});
@@ -396,12 +397,34 @@ async function submitOnline(){
   if(epoch===runEpoch&&account===accountEpoch){clearTimeout(watchdog);setBusy(false);$("runStatus").textContent=languages[language].name+' · ready';persist();updateStats();}
  }
  if(browserFallback&&epoch===runEpoch&&account===accountEpoch&&cloud.user?.id===user&&current?.id===p.id&&language===lang){
-  if($("codeEditor").value!==source){
-   notify("Your code changed during server verification. Submit it again to save a practice result.");
-   return;
-  }
-  notify("Server verification unavailable. Saving a browser-only practice result instead.");
-  await run(true,{forceBrowser:true,sourceOverride:source});
+  // Fail closed: a Submit request must never silently become a browser-only
+  // practice acceptance. That previously made 30/30 public tests look like
+  // successful execution of 70 private hidden cases.
+  const summary=privateJudgeUnavailableSummary(p),output=$("resultOutput");
+  const notice=document.createElement("section");notice.className="submission-verification-unavailable";
+  const title=document.createElement("strong");title.textContent=summary.title;
+  const counts=document.createElement("p");counts.textContent=summary.hidden;
+  const detail=document.createElement("p");detail.textContent=summary.explanation;
+  const cause=document.createElement("p");cause.textContent=verificationFailure;
+  const actions=document.createElement("div");actions.className="submission-verification-actions";
+  const practice=document.createElement("button");practice.type="button";
+  practice.className="button secondary";practice.textContent="Run public practice (not verified)";
+  const retry=document.createElement("button");retry.type="button";
+  retry.className="button secondary";retry.textContent="Retry server verification";
+  const unchanged=()=>current?.id===p.id&&language===lang&&accountEpoch===account&&
+    cloud.user?.id===user&&$("codeEditor").value===source;
+  practice.onclick=()=>{
+    if(!unchanged()){notify("Your code or account changed. Submit the new version instead.");return;}
+    void run(true,{forceBrowser:true,sourceOverride:source});
+  };
+  retry.onclick=()=>{
+    if(!unchanged()){notify("Your code or account changed. Submit the new version instead.");return;}
+    void submitOnline();
+  };
+  actions.append(practice,retry);
+  notice.append(title,counts,detail,cause,actions);
+  output.replaceChildren(notice);
+  notify("Server verification unavailable. Your code is saved. No hidden-test acceptance was recorded.");
  }
 }
 function logAttempt(p,passed,total){
