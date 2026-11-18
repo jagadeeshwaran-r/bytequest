@@ -34,6 +34,11 @@ assert.ok(run.indexOf('try{\n    results=null;renderTests()')>run.indexOf('setBu
  'A rendering error after beginning a run must still reach finally/unlock');
 assert.ok(run.includes('finally{if(epoch===runEpoch){clearTimeout(watchdog);setBusy(false)'));
 
+assert.ok(source.includes('let current = deepLinkedProblem() || problems.find('),
+ 'A refresh should restore the deep-linked problem before account initialization finishes');
+assert.equal(source.split('current=deepLinkedProblem()||problems.find(').length-1,2,
+ 'Both pre-sync and post-sync account restoration must respect the linked problem');
+
 const choose=source.slice(source.indexOf('function changeProblem(id)'),source.indexOf('function nextProblem()'));
 assert.ok(choose.includes('selectedProblemUrl(location.href,id)'),'Problem changes must update the actual URL');
 assert.ok(choose.includes('renderPractice();route();'),
