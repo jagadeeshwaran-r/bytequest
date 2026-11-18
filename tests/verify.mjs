@@ -1,3 +1,4 @@
+import './manual-sync-feedback.mjs';
 import './problem-statement-rich.mjs';
 import './catalog-cold-start.mjs';
 import './compiler-security.mjs';

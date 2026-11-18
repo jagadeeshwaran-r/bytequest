@@ -600,9 +600,28 @@ async function changeAccount(user){
   if(needsSync)syncTimer=setTimeout(()=>syncCloud(),500);
 }
 async function syncCloud(){
-  clearTimeout(syncTimer);if(!cloud.user||!accountReady)return false;
-  if(syncing){syncAgain=true;return false;}
-  if(!navigator.onLine){setSyncStatus("failed","Offline · saved here");return false;}
+  clearTimeout(syncTimer);
+  if(!cloud.user){
+    setSyncStatus("failed","Sign in to sync");
+    $("authMessage").textContent="Sign in with Google before syncing. Local drafts remain on this device.";
+    return false;
+  }
+  if(!accountReady){
+    setSyncStatus("syncing","Account is still loading");
+    $("authMessage").textContent="Your account progress is still loading. Your drafts are saved locally; retry Sync now after account initialization finishes.";
+    return false;
+  }
+  if(syncing){
+    syncAgain=true;
+    setSyncStatus("syncing","Save in progress · another queued");
+    $("authMessage").textContent="A cloud save is already in progress. Another sync has been queued; your local progress remains untouched.";
+    return false;
+  }
+  if(!navigator.onLine){
+    setSyncStatus("failed","Offline · saved here");
+    $("authMessage").textContent="You appear offline. Cloud sync was not attempted; reconnect and retry. Your drafts are kept on this device.";
+    return false;
+  }
   const owner=cloud.user.id,epoch=accountEpoch,snapshot=JSON.stringify(state);syncing=true;setSyncStatus("syncing","Syncing progress");
   try{
     const merged=await cloud.syncProgress(owner,JSON.parse(snapshot),mergeProgress);if(epoch!==accountEpoch||cloud.user?.id!==owner)return;
@@ -723,7 +742,28 @@ $("studioSignIn").onclick=async()=>{
  }catch(error){cloud.loginError=error.message;$("authMessage").textContent=error.message;}
  finally{button.disabled=false;studioAuthBusy=false;route();}
 };
-$("syncNowBtn").onclick=async()=>{await syncCloud();};
+$("syncNowBtn").onclick=async()=>{
+  const button=$("syncNowBtn"),status=$("authMessage");
+  if(button.disabled)return;
+  button.disabled=true;button.textContent="Syncing…";
+  const working="Checking the cloud connection and saving your existing progress…";
+  status.textContent=working;
+  try{
+    const confirmed=await syncCloud();
+    if(confirmed){
+      const message="Progress saved to cloud at "+new Date().toLocaleTimeString()+". Check your profile for the latest recorded solves.";
+      status.textContent=message;notify("Cloud sync confirmed.");
+    }else if(status.textContent===working){
+      status.textContent="Cloud save is not yet confirmed. Keep this tab open and preserve your backup; see the sync indicator for details.";
+    }
+  }catch(error){
+    const message="Cloud sync failed: "+String(error?.message||error||"Unknown error");
+    status.textContent=message;
+    setSyncStatus("failed","Cloud sync failed");
+  }finally{
+    button.disabled=false;button.textContent="Sync now";
+  }
+};
 $("signOutBtn").onclick=async()=>{
  const button=$("signOutBtn");if(button.disabled)return;button.disabled=true;
  try{

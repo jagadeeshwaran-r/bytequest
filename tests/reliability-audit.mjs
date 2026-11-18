@@ -63,8 +63,8 @@ assert.ok(app.includes('const previous=structuredClone(state)'),'Take a rollback
 assert.ok(app.includes('state=previous;'),'Restore solve credit after a failed write');
 assert.ok(app.includes('if(!persist()){'),'Success must depend on durable progress');
 assert.ok(app.includes('return !changedWhileSaving;'),'Sync must not report success when more changes are queued');
-assert.ok(app.includes('if(syncing){syncAgain=true;return false;}'),'Active sync must not be treated as finished');
-assert.ok(app.includes('if(!navigator.onLine){setSyncStatus("failed","Offline · saved here");return false;}'));
+assert.match(app,/if\(syncing\)\{\s*syncAgain=true;[\s\S]*?return false;\s*\}/,'Active sync must not be treated as finished');
+assert.match(app,/if\(!navigator.onLine\)\{[\s\S]*?setSyncStatus\("failed","Offline · saved here"\);[\s\S]*?return false;\s*\}/,'Offline sync must be kept on this device');
 assert.ok(app.includes('if(!window.confirm(message))return;'),'Require explicit permission to sign out with unsynced changes');
 assert.ok(app.includes('notify(synced?"Signed out.'),'Never claim remote persistence after a failed sync');
 assert.ok(history.includes('const legacy=!loading&&!browser.length'),'Do not flash a fake legacy row while server history loads');
