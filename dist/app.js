@@ -37,7 +37,7 @@ const guestStorageKey="bytequest.v1";
 let storageKey=guestStorageKey;
 const blank=blankProgress;
 const validateBackup=validateProgress;
-let state=blank(),storageOK=true;
+let state=blank(),storageOK=true,accountHistoryStatus="loading";
 const storageTargets=new Map(),storageWarnings=new Map();
 function readLocal(key){
   let result;
@@ -494,10 +494,10 @@ document.addEventListener("keydown",event=>{
 function renderMap(){
   const pattern=$("patternFilter").value,technique=$("techniqueFilter").value;
   const query=$("searchInput").value.trim().toLowerCase(),topic=$("topicFilter").value,level=$("difficultyFilter").value,status=$("statusFilter").value;
-  const list=problems.filter(p=>(p.title+" "+String(problems.indexOf(p)+1)).toLowerCase().includes(query)&&(!topic||p.topic===topic)&&(!pattern||(p.pattern||p.topic)===pattern)&&(!technique||(p.techniques||[]).includes(technique))&&(!level||p.difficulty===level)&&(!status||(status==="solved"?state.solved[p.id]:status==="new"?!state.solved[p.id]:due(p.id))));
+  const list=problems.filter(p=>(p.title+" "+String(problems.indexOf(p)+1)).toLowerCase().includes(query)&&(!topic||p.topic===topic)&&(!pattern||(p.pattern||p.topic)===pattern)&&(!technique||(p.techniques||[]).includes(technique))&&(!level||p.difficulty===level)&&(!status||(status==="solved"?state.solved[p.id]:status==="new"?accountHistoryStatus==="ready"&&!state.solved[p.id]:due(p.id))));
   $("clearProblemSearch").hidden=!$("searchInput").value;
   $("visibleProblemCount").textContent=list.length===problems.length?"Showing all "+problems.length+" problems":"Showing "+list.length+" of "+problems.length+" problems";
-  $("questGrid").innerHTML=list.length?'<table class="problem-table"><thead><tr><th>No.</th><th>Title</th><th>Companies</th><th>Difficulty</th><th>Status</th></tr></thead><tbody>'+list.map(p=>'<tr><td>'+String(problems.indexOf(p)+1).padStart(2,'0')+'</td><td><button class="problem-title" data-problem="'+p.id+'">'+html(p.title)+'</button></td><td>'+(companyIcons(p.companies)||'<span class="muted">—</span>')+'</td><td><span class="difficulty '+p.difficulty.toLowerCase()+'">'+html(p.difficulty)+'</span><small class="problem-points">'+pointsFor(p.difficulty)+' pts</small></td><td>'+ problemStatusMarkup(Boolean(state.solved[p.id]))+'</td></tr>').join('')+'</tbody></table><p class="company-note">Company tags are community-reported historical associations, not employer endorsements. <a href="https://github.com/duanehutchins/leetcode-questions-by-company" target="_blank" rel="noopener">Tag source</a></p>':'<p class="empty-state">No matching problems.</p>';
+  $("questGrid").innerHTML=list.length?'<table class="problem-table"><thead><tr><th>No.</th><th>Title</th><th>Companies</th><th>Difficulty</th><th>Status</th></tr></thead><tbody>'+list.map(p=>'<tr><td>'+String(problems.indexOf(p)+1).padStart(2,'0')+'</td><td><button class="problem-title" data-problem="'+p.id+'">'+html(p.title)+'</button></td><td>'+(companyIcons(p.companies)||'<span class="muted">—</span>')+'</td><td><span class="difficulty '+p.difficulty.toLowerCase()+'">'+html(p.difficulty)+'</span><small class="problem-points">'+pointsFor(p.difficulty)+' pts</small></td><td>'+ problemStatusMarkup(Boolean(state.solved[p.id]),{complete:accountHistoryStatus==="ready",failed:accountHistoryStatus==="failed"})+'</td></tr>').join('')+'</tbody></table><p class="company-note">Company tags are community-reported historical associations, not employer endorsements. <a href="https://github.com/duanehutchins/leetcode-questions-by-company" target="_blank" rel="noopener">Tag source</a></p>':'<p class="empty-state">No matching problems.</p>';
   $("questGrid").querySelectorAll("[data-problem]").forEach(b=>b.onclick=()=>changeProblem(b.dataset.problem));
 }
 function renderProgress(){
@@ -566,13 +566,22 @@ async function restoreOwnProfileHistory(owner,epoch,ownerProfile){
     const response=await cloud.request("profile",{target:ownerProfile.username},owner);
     if(epoch!==accountEpoch||cloud.user?.id!==owner)return false;
     const recovery=recoverOwnProfileSolves(state,response,ownerProfile.public_id);
-    if(response.isOwn===true&&response.profile?.public_id===ownerProfile.public_id)
+    const own=response.isOwn===true&&response.profile?.public_id===ownerProfile.public_id;
+    if(own){
       showAccountProgress("Account @"+ownerProfile.username+" · "+Number(response.stats?.solved||0)+" cloud-recorded solves");
-    if(!recovery.restored)return false;
+      // Recent solves are capped at 25. Treat the own profile as complete only
+      // when it accounts for all server-reported solves; otherwise keep unknown
+      // problems in a non-misleading Checking state.
+      const total=Number(response.stats?.solved);
+      if(Number.isSafeInteger(total)&&total>=0&&
+         Object.keys(recovery.state.solved||{}).length>=total&&
+         (response.insights?.recentSolves?.length||0)>=Math.min(total,25)&&
+         total<=25)accountHistoryStatus="ready";
+    }
+    if(!recovery.restored){renderMap();return false;}
     state=reconcilePracticeProgress(recovery.state);
-    if(!persist()){
+    if(!persist({scheduleSync:false})){
       $("authMessage").textContent="Your older solves were found on the server but could not be backed up locally. Export a backup before leaving.";
-      return false;
     }
     pendingProfileRefresh=true;
     communityCache.clearOwner(owner);
@@ -604,6 +613,7 @@ async function refreshCloudProgress(owner=accountOwner,epoch=accountEpoch){
       const remote=await cloud.request("progress",{},owner);
       if(epoch!==accountEpoch||cloud.user?.id!==owner)return false;
       const cloudState=validateProgress(remote.payload||blank());
+      accountHistoryStatus="ready";
       showAccountProgress("Cloud history loaded · "+Object.keys(cloudState.solved).length+" saved solves");
       // Merge using the most recent in-memory edits, not a snapshot from before
       // the request. Never discard the code currently open in the editor.
@@ -645,6 +655,8 @@ async function refreshCloudProgress(owner=accountOwner,epoch=accountEpoch){
     }catch(error){
       if(epoch!==accountEpoch||cloud.user?.id!==owner)return false;
       setSyncStatus("failed","Cloud progress could not load · retrying");
+      if(accountHistoryStatus!=="ready")accountHistoryStatus="failed";
+      renderMap();
       showAccountProgress("Account progress unavailable · solved ticks may be outdated");
       $("saveStatus").textContent="Your cloud history is not loaded on this device";
       $("authMessage").textContent="Cloud progress could not load: "+String(error?.message||error)+". Your local drafts have not been deleted.";
@@ -672,6 +684,7 @@ async function changeAccount(user){
   publicProfile=null;
   pendingProfileRefresh=false;
   accountOwner=owner;
+  accountHistoryStatus=owner?"loading":"ready";
   showAccountProgress(owner?"Checking your saved solves…":"Sign in to load your solved problems");
   accountReady=false;
   progressRefreshInFlight=null;
@@ -787,6 +800,7 @@ async function syncCloud(){
   try{
     const merged=await cloud.syncProgress(owner,JSON.parse(snapshot),mergeProgress);if(epoch!==accountEpoch||cloud.user?.id!==owner)return;
     const changedWhileSaving=JSON.stringify(state)!==snapshot;state=reconcilePracticeProgress(mergeProgress(state,merged));
+    accountHistoryStatus="ready";
     try{writeLocalProgress(storageKey,state);storageOK=true;}
     catch{storageOK=false;$("saveStatus").textContent="Saved to cloud · local cache unavailable";}
     // Never overwrite or remount the active code editor when background sync
@@ -975,6 +989,7 @@ async function bootCloud(){
     await cloud.init();cloud.loginError=null;$("authMessage").textContent="";
   }catch(error){
     cloud.loginError=error.message;$("authMessage").textContent=error.message;
+    accountHistoryStatus="failed";renderMap();
     setSyncStatus("failed","Account connection paused");
   }
   // Firebase remains the source of truth for account data only.
