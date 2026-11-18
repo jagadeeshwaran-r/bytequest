@@ -69,7 +69,8 @@ const studio=new Studio({cloud,notify:message=>notify(message),onCatalogChanged:
 const submissions=mountSubmissions(cloud,{notify,getPracticeSubmissions:()=>state.practiceSubmissions||[],getSolvedAt:id=>state.solved[id]||null});
 const dashboard=new Dashboard({cloud,getState:()=>state,getCatalog:()=>problems});
 function touch(field,id){state.modified[id]??={};state.modified[id][field]=Date.now();}
-let current = problems.find(p => p.id === state.current) || problems[0];
+const deepLinkedProblem=()=>problems.find(p=>p.id===new URLSearchParams(location.search).get("problem"))||null;
+let current = deepLinkedProblem() || problems.find(p => p.id === state.current) || problems[0];
 let tab = "problem", mode = "learn", hints = 0, selectedCase = 0, customCases = [], results = null;
 let busy = false, runEpoch = 0, watchdog, toastTimer, traceTimer, traceStep = 0;
 let timerStarted = null, timerUsed = 0, timerProblem = current.id, timerTick;
@@ -511,7 +512,7 @@ async function changeAccount(user){
   const epoch=++accountEpoch;clearTimeout(communityWarmupTimer);if(previousOwner&&previousOwner!==owner)communityCache.clearOwner(previousOwner);publicProfile=null;accountOwner=owner;accountReady=false;clearTimeout(syncTimer);syncing=false;syncAgain=false;
   document.querySelectorAll('.submit-confirm[open],#successDialog[open]').forEach(d=>d.close());
   if(busy)stopRun();studio.accountChanged();dashboard.accountChanged();storageKey=owner?"bytequest.user."+owner:guestStorageKey;
-  state=readLocal(storageKey);current=problems.find(p=>p.id===state.current)||problems[0]||null;
+  state=readLocal(storageKey);current=deepLinkedProblem()||problems.find(p=>p.id===state.current)||problems[0]||null;
   renderPractice();$("codeEditor").readOnly=true;updateStats();refreshAccountUi();
   let needsSync=false;
   if(owner){
@@ -546,7 +547,7 @@ async function changeAccount(user){
     }else cloud.admin=false;
   }else{cloud.accessChecking=false;cloud.accessError=null;setSyncStatus("","On this device");}
   if(epoch!==accountEpoch)return;
-  current=problems.find(p=>p.id===state.current)||problems[0]||null;
+  current=deepLinkedProblem()||problems.find(p=>p.id===state.current)||problems[0]||null;
   persist();accountReady=true;$("codeEditor").readOnly=false;refreshAccountUi();renderPractice();updateStats();route();
   if(owner)scheduleCommunityWarmup(owner,publicProfile);
   if(needsSync)syncTimer=setTimeout(()=>syncCloud(),500);
