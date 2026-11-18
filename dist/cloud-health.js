@@ -60,11 +60,13 @@ export function createCloudHealthStore({storage=null,clock=()=>Date.now()}={}){
         if(!serious||state?.kind==='storage-failed'||state?.kind==='sync-failed')return;
         const next=status===401||signal.authTimeout?'auth':status===429?'throttled':
           action==='submission-create'&&status===503?'verification':'service';
-        state={kind:next,at,action,localSaved:signal.localSaved===true||state?.localSaved===true};
+        state={kind:next,at,action,localSaved:signal.localSaved===true||state?.localSaved===true,
+          pendingAt:state?.pendingAt??(state?.kind==='pending'?state.at:null)};
       }else if(kind==='request-ok'){
         // A successful profile/leaderboard fetch does not prove that pending
         // solves were synced. Clear only the matching transient service error.
-        if(state?.action===signal.action&&['service','auth','throttled','verification'].includes(state.kind))state=null;
+        if(state?.action===signal.action&&['service','auth','throttled','verification'].includes(state.kind))
+          state=state.pendingAt?{kind:'pending',at:state.pendingAt,localSaved:state.localSaved}:null;
         else return;
       }else return;
       save();
@@ -92,10 +94,11 @@ export function mountCloudHealthNotice(doc=globalThis.document){
   const actions=doc.createElement('div');actions.className='bq-cloud-health-actions';
   const backup=doc.createElement('button');backup.type='button';backup.textContent='Back up progress';
   const account=doc.createElement('button');account.type='button';account.textContent='Open sync settings';
-  const status=doc.createElement('a');status.href='https://status.supabase.com/';status.target='_blank';status.rel='noopener noreferrer';status.textContent='Provider status';
+  const status=doc.createElement('a');status.href='https://status.supabase.com/';status.target='_blank';status.rel='noopener noreferrer';status.textContent='Supabase status';
   backup.addEventListener('click',()=>doc.getElementById('exportBtn')?.click());
   account.addEventListener('click',()=>doc.getElementById('accountBtn')?.click());
-  actions.append(backup,account,status);
+  const firebaseStatus=doc.createElement('a');firebaseStatus.href='https://status.firebase.google.com/';firebaseStatus.target='_blank';firebaseStatus.rel='noopener noreferrer';firebaseStatus.textContent='Firebase status';
+  actions.append(backup,account,status,firebaseStatus);
   notice.append(copy,actions);
   (doc.querySelector('.minimal-header')||doc.body.firstElementChild)?.after(notice);
   const stylesheet=doc.createElement('link');stylesheet.rel='stylesheet';stylesheet.href='./cloud-health.css?v=1';doc.head?.append(stylesheet);
