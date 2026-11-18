@@ -46,7 +46,9 @@ export function createCloudHealthStore({storage=null,clock=()=>Date.now()}={}){
     },
     update(signal={}){
       const kind=signal.kind,at=clock();
-      if(!owner&&kind!=='storage-failed')return;
+      // Guests still need an outage screen when the public catalog fails.
+      // Guest warning metadata stays in memory, never in another account's storage.
+      if(!owner&&kind!=='storage-failed'&&!(kind==='request-error'&&signal.action==='public-catalog')&&!(kind==='request-ok'&&signal.action==='public-catalog'))return;
       if(kind==='synced'){state=null;save();return;}
       if(kind==='pending'){
         if(state?.kind==='sync-failed'||state?.kind==='storage-failed'||state?.kind==='auth'||state?.kind==='service'||state?.kind==='maintenance')return;
