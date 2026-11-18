@@ -5,7 +5,7 @@ import {mountEditorTools} from './editor-tools.js?v=copy-enabled-1';
 import {mountWorkspaceLayout} from './workspace-layout.js?v=workspace-1';
 import {submissionFeedback} from './submission-feedback.js?v=reliability-1';
 import {usesRemoteSubmit,browserSubmissionCases,browserSubmissionVerdict,privateJavaJudgeUnavailable} from './browser-submit.js?v=verified-java-1';
-import {createPracticeSubmission,addPracticeSubmission} from './practice-history.js?v=practice-history-1';
+import {createPracticeSubmission,addPracticeSubmission,reconcilePracticeProgress} from './practice-history.js?v=practice-history-2';
 import {shouldRunCodeShortcut} from './run-shortcut.js?v=ctrl-run-1';
 import {selectedProblemUrl} from './problem-navigation.js?v=1';
 import {readSafeProgress,writeSafeProgress} from './reliable-storage.js?v=reliability-1';
@@ -49,7 +49,7 @@ function readLocal(key){
 function writeLocalProgress(key,value){
   writeSafeProgress(localStorage,storageTargets.has(key)?storageTargets.get(key):key,value);
 }
-state=readLocal(storageKey);
+state=reconcilePracticeProgress(readLocal(storageKey));
 let publicProfile=null;
 const communityCache=createViewCache();
 let communityWarmupTimer=null;
@@ -63,7 +63,7 @@ function scheduleCommunityWarmup(owner,profile){
   },350);
 }
 
-let syncTimer,syncing=false,syncAgain=false,accountEpoch=0,accountOwner,accountReady=false,pendingProfileRefresh=false;
+let syncTimer,syncing=false,syncAgain=false,syncFailures=0,accountEpoch=0,accountOwner,accountReady=false,pendingProfileRefresh=false;
 const cloud=new Cloud(user=>changeAccount(user));shell.connect(cloud);
 const studio=new Studio({cloud,notify:message=>notify(message),onCatalogChanged:()=>refreshCatalog()});
 const submissions=mountSubmissions(cloud,{notify,getPracticeSubmissions:()=>state.practiceSubmissions||[],getSolvedAt:id=>state.solved[id]||null});
@@ -408,7 +408,7 @@ function completeQuest(p,practice=false){
     notify("Tests passed, but the solve was not saved. Export your work and retry.");
     return false;
   }
-  updateStats();if(tab==="learn"&&current.id===p.id)renderLearning();$("successDialog").showModal();celebrate();
+  updateStats();renderMap();if(tab==="learn"&&current.id===p.id)renderLearning();$("successDialog").showModal();celebrate();
   // Clear stale profile/leaderboard snapshots and flush a new accepted solve
   // immediately, rather than waiting for the debounced draft sync.
   if(accountReady&&cloud.user?.id===accountOwner){
@@ -524,7 +524,7 @@ $("importFile").onchange=async event=>{
   try{
     if(file.size>2000000)throw new Error("Choose a backup smaller than 2 MB.");
     const incoming=validateBackup(JSON.parse(await file.text()));
-    state=mergeProgress(state,incoming);
+    state=reconcilePracticeProgress(mergeProgress(state,incoming));
     persist();updateStats();renderProgress();notify("Backup merged with your progress. Newer edits kept.");
   }catch(error){notify("Could not restore: "+error.message);}event.target.value="";
 };
@@ -548,10 +548,10 @@ function refreshAccountUi(){
 async function changeAccount(user){
   const owner=user?.id||null;if(owner===accountOwner&&accountReady)return;
   const previousOwner=accountOwner;
-  const epoch=++accountEpoch;clearTimeout(communityWarmupTimer);if(previousOwner&&previousOwner!==owner)communityCache.clearOwner(previousOwner);publicProfile=null;pendingProfileRefresh=false;accountOwner=owner;accountReady=false;clearTimeout(syncTimer);syncing=false;syncAgain=false;
+  const epoch=++accountEpoch;clearTimeout(communityWarmupTimer);if(previousOwner&&previousOwner!==owner)communityCache.clearOwner(previousOwner);publicProfile=null;pendingProfileRefresh=false;accountOwner=owner;accountReady=false;clearTimeout(syncTimer);syncing=false;syncAgain=false;syncFailures=0;
   document.querySelectorAll('.submit-confirm[open],#successDialog[open]').forEach(d=>d.close());
   if(busy)stopRun();studio.accountChanged();dashboard.accountChanged();storageKey=owner?"bytequest.user."+owner:guestStorageKey;
-  state=readLocal(storageKey);current=deepLinkedProblem()||problems.find(p=>p.id===state.current)||problems[0]||null;
+  state=reconcilePracticeProgress(readLocal(storageKey));current=deepLinkedProblem()||problems.find(p=>p.id===state.current)||problems[0]||null;
   renderPractice();$("codeEditor").readOnly=false;updateStats();refreshAccountUi();
   let needsSync=false;
   if(owner){
@@ -570,20 +570,28 @@ async function changeAccount(user){
       }
       throw error;
     });
-    const loaded=await Promise.allSettled([cloud.loadProgress(owner),permissions,cloud.request("self")]);
+    // Only progress is on the critical path. A delayed profile/permissions
+    // request must not prevent accepted solves from syncing.
+    const loaded=await Promise.allSettled([cloud.loadProgress(owner)]);
     if(epoch!==accountEpoch)return;
     if(loaded[0].status==="fulfilled"){
-      const remote=loaded[0].value;state=mergeProgress(state,remote.state);needsSync=JSON.stringify(state)!==JSON.stringify(remote.state);
+      const remote=loaded[0].value;
+      state=reconcilePracticeProgress(mergeProgress(state,remote.state));
+      needsSync=JSON.stringify(state)!==JSON.stringify(remote.state);
       setSyncStatus("synced",remote.revision?"Saved to cloud":"Cloud connected");
-    }else{setSyncStatus("failed","Saved on this device");$("authMessage").textContent="Could not load cloud progress. Your account’s local work is kept. Use Sync now to retry.";}
-    if(loaded[1].status==="rejected")cloud.admin=false;
-    if(loaded[2].status==="fulfilled"){
-      // The community 'self' response is the real administrator flag.
-      // The legacy 'account' admin flag includes delegated creators.
-      cloud.admin=loaded[2].value.admin===true;
-      publicProfile=loaded[2].value.profile;
-      communityCache.saveSelf(owner,loaded[2].value);
-    }else cloud.admin=false;
+    }else{
+      setSyncStatus("failed","Saved on this device");
+      $("authMessage").textContent="Could not load cloud progress. Your account’s local work is kept. Use Sync now to retry.";
+    }
+    void permissions.catch(()=>{});
+    void cloud.request("self",{},owner).then(value=>{
+      if(epoch!==accountEpoch||cloud.user?.id!==owner)return;
+      cloud.admin=value.admin===true;
+      publicProfile=value.profile;
+      communityCache.saveSelf(owner,value);
+      refreshAccountUi();
+      if(accountReady)scheduleCommunityWarmup(owner,publicProfile);
+    }).catch(()=>{if(epoch===accountEpoch)cloud.admin=false;});
   }else{cloud.accessChecking=false;cloud.accessError=null;setSyncStatus("","On this device");}
   if(epoch!==accountEpoch)return;
   current=deepLinkedProblem()||problems.find(p=>p.id===state.current)||problems[0]||null;
@@ -598,10 +606,12 @@ async function syncCloud(){
   const owner=cloud.user.id,epoch=accountEpoch,snapshot=JSON.stringify(state);syncing=true;setSyncStatus("syncing","Syncing progress");
   try{
     const merged=await cloud.syncProgress(owner,JSON.parse(snapshot),mergeProgress);if(epoch!==accountEpoch||cloud.user?.id!==owner)return;
-    const changedWhileSaving=JSON.stringify(state)!==snapshot;state=mergeProgress(state,merged);
+    const changedWhileSaving=JSON.stringify(state)!==snapshot;state=reconcilePracticeProgress(mergeProgress(state,merged));
     try{writeLocalProgress(storageKey,state);storageOK=true;}
     catch{storageOK=false;$("saveStatus").textContent="Saved to cloud · local cache unavailable";}
-    if(current&&document.activeElement!==$("codeEditor")){loadEditor(state.drafts[draftId()]??currentStarter());updateEditor();}
+    // Never overwrite or remount the active code editor when background sync
+    // finishes. Runs and submissions deliberately use source snapshots.
+    syncFailures=0;
     updateStats();if(location.hash==="#progress")renderProgress();
     $("saveStatus").textContent=!storageOK?"Cloud synced · local cache unavailable":
       changedWhileSaving?"New edits saved here · sync queued":"Draft saved to your account";
@@ -609,7 +619,16 @@ async function syncCloud(){
     if(pendingProfileRefresh){communityCache.clearOwner(owner);pendingProfileRefresh=false;}
     if(changedWhileSaving)syncAgain=true;
     return !changedWhileSaving;
-  }catch(error){if(epoch===accountEpoch){setSyncStatus("failed","Saved here · retry sync");$("authMessage").textContent=error.message;}return false;}
+  }catch(error){if(epoch===accountEpoch){
+    syncFailures++;
+    setSyncStatus("failed","Cloud sync failed · retrying");
+    $("saveStatus").textContent="Saved on this device · cloud sync not confirmed";
+    $("authMessage").textContent=error.message;
+    if(navigator.onLine&&cloud.user?.id===owner){
+      const backoff=Math.min(60000,10000*Math.pow(2,Math.min(syncFailures-1,3)));
+      syncTimer=setTimeout(()=>{if(epoch===accountEpoch)void syncCloud();},backoff);
+    }
+  }return false;}
   finally{if(epoch===accountEpoch){syncing=false;if(syncAgain){syncAgain=false;syncTimer=setTimeout(()=>syncCloud(),1000);}}}
 }
 // Public catalog loading must never depend on Firebase sign-in or profile requests.
@@ -626,7 +645,9 @@ async function refreshCatalog({force=false}={}){
   try{
     const next=await cloud.publicCatalog({force});
     if(!Array.isArray(next)||!next.length)throw new Error("The public catalog was empty.");
-    const selected=current?.id;
+    // Before the remote catalog loads, current may be the bundled Two Sum
+    // placeholder. Prefer the deep link or saved problem rather than losing it.
+    const selected=new URLSearchParams(location.search).get('problem')||state.current||current?.id;
     problems.splice(0,problems.length,...next);
     topics=[...new Set(problems.map(p=>p.topic))];
     $("problemSelect").replaceChildren(...problems.map(p=>new Option(p.title,p.id)));
@@ -638,7 +659,10 @@ async function refreshCatalog({force=false}={}){
     const oldTopic=$("topicFilter").value;
     $("topicFilter").replaceChildren(new Option("All patterns",""),...topics.map(t=>new Option(t,t)));
     if(topics.includes(oldTopic))$("topicFilter").value=oldTopic;
-    current=problems.find(p=>p.id===selected)||problems[0]||null;
+    current=problems.find(p=>p.id===selected)||problems.find(p=>p.id===current?.id)||problems[0]||null;
+    if(current&&location.hash==='#practice'&&new URLSearchParams(location.search).get('problem')!==current.id){
+      try{history.replaceState(history.state,'',selectedProblemUrl(location.href,current.id));}catch{}
+    }
     renderPractice();updateStats();route();
     status.textContent=force?"Published catalog updated":"Problem catalog loaded";
     status.dataset.state="ready";
@@ -715,7 +739,7 @@ $("signOutBtn").onclick=async()=>{
  }catch(error){$("authMessage").textContent=error.message;}
  finally{button.disabled=false;}
 };
-$("importGuestBtn").onclick=()=>{if(!cloud.user)return;state=mergeProgress(state,readLocal(guestStorageKey));persist();renderPractice();updateStats();notify("Guest progress added to this account. Cloud sync queued.");};
+$("importGuestBtn").onclick=()=>{if(!cloud.user)return;state=reconcilePracticeProgress(mergeProgress(state,readLocal(guestStorageKey)));persist();renderPractice();updateStats();notify("Guest progress added to this account. Cloud sync queued.");};
 addEventListener("online",()=>{if(cloud.user)syncCloud();else setSyncStatus("","On this device");});
 addEventListener("offline",()=>setSyncStatus("failed",cloud.user?"Offline · saved here":"On this device"));
 async function bootCloud(){

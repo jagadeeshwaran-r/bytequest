@@ -43,6 +43,16 @@ assert.ok(source.includes('let current = deepLinkedProblem() || problems.find(')
 assert.equal(source.split('current=deepLinkedProblem()||problems.find(').length-1,2,
  'Both pre-sync and post-sync account restoration must respect the linked problem');
 
+
+const refresh=source.slice(source.indexOf('async function refreshCatalog('),source.indexOf('function revalidateCatalog('));
+assert.ok(refresh.includes("get('problem')||state.current||current?.id"),
+ 'Full catalog load should restore the saved problem instead of bundled Two Sum');
+assert.ok(refresh.includes("selectedProblemUrl(location.href,current.id)"),
+ 'A selected problem restored from cloud must be retained across refresh');
+const quest=source.slice(source.indexOf('function completeQuest('),source.indexOf('function celebrate('));
+assert.ok(quest.includes('updateStats();renderMap();'),
+ 'Accepted solutions must refresh the solved indicators without a page reload');
+
 const choose=source.slice(source.indexOf('function changeProblem(id)'),source.indexOf('function nextProblem()'));
 assert.ok(choose.includes('selectedProblemUrl(location.href,id)'),'Problem changes must update the actual URL');
 assert.ok(choose.includes('renderPractice();route();'),

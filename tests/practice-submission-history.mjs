@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {blankProgress,validateProgress,mergeProgress,MAX_PRACTICE_SUBMISSIONS,MAX_PRACTICE_SOURCE,MAX_PRACTICE_BYTES} from '../dist/progress.js';
-import {createPracticeSubmission,addPracticeSubmission,recentPracticeSubmissions} from '../dist/practice-history.js';
+import {createPracticeSubmission,addPracticeSubmission,recentPracticeSubmissions,reconcilePracticeProgress} from '../dist/practice-history.js';
 import {validateProgress as serverValidateProgress} from '../supabase/functions/bytequest-firebase/domain/progress.js';
 
 const problem={id:'even-weight-distribution',revision:2,hiddenCount:7};
@@ -36,6 +36,19 @@ assert.deepEqual(mergeProgress(remote,local).practiceSubmissions,merged.practice
   'Offline/online merge should be order independent');
 assert.equal(serverValidateProgress(merged).practiceSubmissions.length,3);
 assert.equal(merged.solved[problem.id],undefined,'Recording practice history never grants a solve');
+const savedAt=Date.now()-3600000;
+const acceptedRecently=attempt(problem,savedAt);
+const recoverable={...blankProgress(),practiceSubmissions:[acceptedRecently]};
+const recovered=reconcilePracticeProgress(recoverable);
+assert.equal(recoverable.solved[problem.id],undefined,'The original private record stays immutable');
+assert.equal(recovered.solved[problem.id],savedAt,'An interrupted accepted practice solve is restored');
+assert.ok(recovered.acceptedDays.includes(new Date(savedAt).toISOString().slice(0,10)),
+ 'Recovered accepted practice must count on the UTC solving calendar');
+assert.deepEqual(reconcilePracticeProgress(recovered),recovered,'Recovery is idempotent');
+const failedAttempt=attempt(oldProblem,savedAt,'wrong_answer');
+const notRecovered=reconcilePracticeProgress({...blankProgress(),practiceSubmissions:[failedAttempt]});
+assert.equal(notRecovered.solved[oldProblem.id],undefined,'Wrong answers never mark a problem solved');
+
 const sameRevision=attempt(problem,1800000004000);
 merged.practiceSubmissions=addPracticeSubmission(merged,sameRevision);
 assert.equal(recentPracticeSubmissions(merged,problem.id).length,3,'Repeat attempts must be stored');
@@ -85,4 +98,13 @@ assert.match(history,/renderHistory\(\[\],\{error:error\.message/,'Offline respo
 assert.match(history,/localRows\(\)/);
 assert.match(history,/Only server-verified accepted submissions are eligible/);
 assert.match(history,/function openPractice\(id\)/,'Private snapshots must open without a server submission ID');
+assert.ok(app.includes('state=reconcilePracticeProgress(readLocal(storageKey))'),
+ 'Startup restores accepted browser practice after interrupted progress writes');
+assert.ok(!app.slice(app.indexOf('async function syncCloud()'),app.indexOf('// Public catalog loading')).includes('loadEditor('),
+ 'Cloud synchronization must never remount the active code editor');
+assert.ok(app.includes('Saved on this device · cloud sync not confirmed'),
+ 'Cloud save failures must be visible rather than silently claiming sync');
+assert.ok(app.includes('Only progress is on the critical path'),
+ 'Slow social requests must not postpone progress synchronization');
+
 console.log('PASS: Java practice submissions persist privately, merge across devices, and show immediately for new problems.');
