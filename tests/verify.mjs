@@ -29,6 +29,7 @@ import "./editor-operators.mjs";
 import "./workbench.mjs";
 import "./browser-submit.mjs";
 import "./verified-submit-profile.mjs";
+import "./verification-evidence.mjs";
 import "./editor-run-recovery.mjs";
 import "./practice-submission-history.mjs";
 import "./reliability-audit.mjs";
