@@ -23,7 +23,9 @@ assert.equal((await second.publicCatalog())[0].id,row.id);
 assert.equal(calls,1,"Across-page navigation must use persisted public catalog.");
 assert.equal(store.values.size,1,"Catalog is the only persisted cache entry.");
 const contents=[...store.values.values()][0];
-assert.ok(contents.includes('"version":1'));
+assert.ok(contents.includes('"version":2'));
+assert.ok(!contents.includes('"reference"'), 'Do not store Java answers in the public catalog cache');
+assert.equal((await first.publicCatalog())[0].reference,undefined,'Public catalog never exposes an answer');
 assert.ok(!contents.includes('chat-thread')&&!contents.includes('"notifications"'));
 
 time+=PUBLIC_CATALOG_TTL_MS+1;
