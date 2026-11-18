@@ -18,7 +18,7 @@ import {mountShell} from "./shell.js?v=creator-admin-1";
 import {Dashboard} from "./dashboard.js?v=topic-directory-1";
 import {languages,starterFor,NativeJudge} from "./languages.js?v=structural-2";
 import {problems as bundledProblems} from "./problems.js";
-import {Cloud} from "./cloud.js?v=creator-admin-1";
+import {Cloud} from "./cloud.js?v=account-bootstrap-1";
 import {createViewCache,prefetchCommunityViews} from "./view-cache.js?v=avatar-1";
 import {blankProgress, validateProgress, mergeProgress, solveStreak} from "./progress.js?v=practice-history-1";
 import {Studio} from "./studio.js?v=studio-auth-1";
@@ -569,6 +569,9 @@ async function changeAccount(user){
   storageKey=owner?"bytequest.user."+owner:guestStorageKey;
   // Preserve both saved drafts and accepted practice attempts from this device.
   state=reconcilePracticeProgress(readLocal(storageKey));
+  // A recovered accepted practice record must refresh cached profile stats
+  // after the first confirmed cloud sync.
+  if(owner&&Object.keys(state.solved).length)pendingProfileRefresh=true;
   current=deepLinkedProblem()||problems.find(p=>p.id===state.current)||problems[0]||null;
   accountReady=true;
   persist();
