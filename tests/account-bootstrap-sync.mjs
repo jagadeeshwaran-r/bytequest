@@ -26,7 +26,7 @@ assert.ok(app.includes('pendingProfileRefresh=true'),
   'Recovered personal solves must refresh the stale profile cache after confirmed sync');
 assert.ok(readFileSync('dist/index.html','utf8').includes('bootstrap-sync-fix=1'),
   'GitHub Pages must load the new bootstrap bundle');
-assert.ok(app.includes('cloud.js?v=account-bootstrap-1'),
+assert.ok(app.includes('cloud.js?v=cloud-health-1'),
   'GitHub Pages must also reload the updated cloud/token module');
 
 const config={url:'https://example.supabase.co',publishableKey:'sb_publishable_abcdefghijklmnopqrstuvwxyz'};

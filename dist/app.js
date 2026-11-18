@@ -14,11 +14,11 @@ import {companyIcons} from './companies.js?v=company-tooltips-1';
 import {problemStatusMarkup} from './problem-status.js?v=solved-1';
 import {canRevealEditorialSolution,editorialSolutionGateMarkup} from './editorial-access.js?v=editorial-1';
 import {mountWorkspace} from './workspace.js';
-import {mountShell} from "./shell.js?v=creator-admin-1";
+import {mountShell} from "./shell.js?v=cloud-health-1";
 import {Dashboard} from "./dashboard.js?v=topic-directory-1";
 import {languages,starterFor,NativeJudge} from "./languages.js?v=structural-2";
 import {problems as bundledProblems} from "./problems.js";
-import {Cloud} from "./cloud.js?v=account-bootstrap-1";
+import {Cloud} from "./cloud.js?v=cloud-health-1";
 import {createViewCache,prefetchCommunityViews} from "./view-cache.js?v=avatar-1";
 import {blankProgress, validateProgress, mergeProgress, solveStreak} from "./progress.js?v=practice-history-1";
 import {Studio} from "./studio.js?v=studio-auth-1";
@@ -105,6 +105,8 @@ function persist() {
   }catch{
     storageOK=false;$("saveStatus").textContent="Not saved · storage unavailable — export a backup";
   }
+  // Surface unsynced local work on all ByteQuest pages, including Profile.
+  if(cloud.user||!storageOK)cloud.onHealth?.({kind:storageOK?'pending':'storage-failed',localSaved:storageOK});
   if(accountReady&&cloud.user){clearTimeout(syncTimer);setSyncStatus("syncing",storageOK?"Changes saved here":"Local save failed · cloud sync queued");syncTimer=setTimeout(()=>syncCloud(),1800);}
   return storageOK;
 }
@@ -654,14 +656,21 @@ async function syncCloud(){
     // Never overwrite or remount the active code editor when background sync
     // finishes. Runs and submissions deliberately use source snapshots.
     syncFailures=0;
-    updateStats();if(location.hash==="#progress")renderProgress();
+    // Cloud merges can restore accepted solves from another tab or device.
+    // Refresh the catalog's solved ticks and editorial gate without remounting
+    // the code editor or navigating away from the selected problem.
+    updateStats();renderMap();
+    if(tab==="problem"||tab==="learn")renderLearning();
+    if(location.hash==="#progress")renderProgress();
     $("saveStatus").textContent=!storageOK?"Cloud synced · local cache unavailable":
       changedWhileSaving?"New edits saved here · sync queued":"Draft saved to your account";
     setSyncStatus("synced",changedWhileSaving?"New changes queued":"Saved to cloud");$("authMessage").textContent="";
     if(pendingProfileRefresh){communityCache.clearOwner(owner);pendingProfileRefresh=false;}
     if(changedWhileSaving)syncAgain=true;
+    cloud.onHealth?.({kind:changedWhileSaving?'pending':'synced',localSaved:storageOK});
     return !changedWhileSaving;
   }catch(error){if(epoch===accountEpoch){
+    cloud.onHealth?.({kind:'sync-failed',localSaved:storageOK});
     syncFailures++;
     setSyncStatus("failed","Cloud sync failed · retrying");
     $("saveStatus").textContent="Saved on this device · cloud sync not confirmed";

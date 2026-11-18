@@ -1,3 +1,4 @@
+import './cloud-health.mjs';
 import './account-bootstrap-sync.mjs';
 import './manual-sync-feedback.mjs';
 import './problem-statement-rich.mjs';

@@ -90,7 +90,17 @@ export class Cloud {
   async request(action,body={},ownerId=this.user?.id){
     if(this.deletionPending&&action!=="account-delete")throw new Error("Account removal is in progress.");
     if(!this.enabled||!ownerId||this.user?.id!==ownerId)throw new Error("Sign in to sync your progress.");
-    return this.requests.run(action,body,ownerId,()=>this.networkRequest(action,body,ownerId));
+    try{
+      const result=await this.requests.run(action,body,ownerId,()=>this.networkRequest(action,body,ownerId));
+      if(this.user?.id===ownerId)this.onHealth?.({kind:'request-ok',action});
+      return result;
+    }catch(error){
+      if(this.user?.id===ownerId)this.onHealth?.({
+        kind:'request-error',action,status:error?.httpStatus||0,
+        authTimeout:/token timed out|sign-in expired|could not be verified/i.test(String(error?.message||''))
+      });
+      throw error;
+    }
   }
   async networkRequest(action,body={},ownerId=this.user?.id){
     if(this.deletionPending&&action!=="account-delete")throw new Error("Account removal is in progress.");
@@ -114,7 +124,11 @@ export class Cloud {
       if(this.user?.id!==ownerId)throw new Error("Your account changed. Please retry saving.");
       if(response.status===401&&attempt===0)continue;
       let result;try{result=await response.json();}catch{throw new Error("Cloud progress is unavailable. Your work is saved on this device.");}
-      if(!response.ok)throw new Error(result.error||"Cloud progress is unavailable. Your work is saved on this device.");
+      if(!response.ok){
+        const failure=new Error(result.error||"Cloud progress is unavailable. Your work is saved on this device.");
+        failure.httpStatus=response.status;
+        throw failure;
+      }
       return result;
     }
   }
