@@ -408,7 +408,7 @@ function completeQuest(p,practice=false){
     notify("Tests passed, but the solve was not saved. Export your work and retry.");
     return false;
   }
-  updateStats();if(tab==="learn"&&current.id===p.id)renderLearning();$("successDialog").showModal();celebrate();
+  updateStats();renderMap();if(tab==="learn"&&current.id===p.id)renderLearning();$("successDialog").showModal();celebrate();
   // Clear stale profile/leaderboard snapshots and flush a new accepted solve
   // immediately, rather than waiting for the debounced draft sync.
   if(accountReady&&cloud.user?.id===accountOwner){
@@ -645,7 +645,9 @@ async function refreshCatalog({force=false}={}){
   try{
     const next=await cloud.publicCatalog({force});
     if(!Array.isArray(next)||!next.length)throw new Error("The public catalog was empty.");
-    const selected=current?.id;
+    // Before the remote catalog loads, current may be the bundled Two Sum
+    // placeholder. Prefer the deep link or saved problem rather than losing it.
+    const selected=new URLSearchParams(location.search).get('problem')||state.current||current?.id;
     problems.splice(0,problems.length,...next);
     topics=[...new Set(problems.map(p=>p.topic))];
     $("problemSelect").replaceChildren(...problems.map(p=>new Option(p.title,p.id)));
@@ -657,7 +659,10 @@ async function refreshCatalog({force=false}={}){
     const oldTopic=$("topicFilter").value;
     $("topicFilter").replaceChildren(new Option("All patterns",""),...topics.map(t=>new Option(t,t)));
     if(topics.includes(oldTopic))$("topicFilter").value=oldTopic;
-    current=problems.find(p=>p.id===selected)||problems[0]||null;
+    current=problems.find(p=>p.id===selected)||problems.find(p=>p.id===current?.id)||problems[0]||null;
+    if(current&&location.hash==='#practice'&&new URLSearchParams(location.search).get('problem')!==current.id){
+      try{history.replaceState(history.state,'',selectedProblemUrl(location.href,current.id));}catch{}
+    }
     renderPractice();updateStats();route();
     status.textContent=force?"Published catalog updated":"Problem catalog loaded";
     status.dataset.state="ready";
