@@ -1,3 +1,4 @@
+import {connectionPageUrl,issueFromCloudHealth} from './system-state.js?v=1';
 // A persistent, owner-scoped connection warning shared by Problems and Profile.
 // Only server-confirmed syncs clear the unsynced warning. This is not a provider outage monitor.
 const PREFIX='bytequest.sync-health.v1.';
@@ -14,6 +15,7 @@ export function describeCloudHealth(state,{online=true,now=Date.now()}={}){
     case 'throttled':return {kind:'throttled',title:'Too many requests',message:'ByteQuest is temporarily limiting requests. Keep your draft and retry after the limit clears.'};
     case 'verification':return {kind:'verification',title:'Submission verification unavailable',message:'The server could not verify this submission. Browser practice and server-verified accepted solutions are different; hidden cases remain unverified.'};
     case 'service':return {kind:'service',title:'ByteQuest server busy or unreachable',message:'A ByteQuest cloud request failed. This does not necessarily mean Supabase or Firebase is down. '+local};
+    case 'maintenance':return {kind:'maintenance',title:'ByteQuest maintenance reported',message:'A ByteQuest service explicitly reported maintenance. Cloud updates are not confirmed. '+local};
     case 'pending':
       return Number.isFinite(state.at)&&now-state.at>=PENDING_WARNING_MS
         ?{kind:'pending',title:'Cloud sync is taking longer than expected',message:local+' You may see an older solved count on your profile.'}
@@ -38,16 +40,18 @@ export function createCloudHealthStore({storage=null,clock=()=>Date.now()}={}){
       owner=next||null;state=null;
       try{
         const raw=owner&&storage?.getItem(key());
-        if(raw){const parsed=JSON.parse(raw);if(['pending','sync-failed','storage-failed','auth','throttled','verification','service'].includes(parsed?.kind)&&
+        if(raw){const parsed=JSON.parse(raw);if(['pending','sync-failed','storage-failed','auth','throttled','verification','service','maintenance'].includes(parsed?.kind)&&
           Number.isFinite(parsed.at)&&parsed.at<=clock()&&clock()-parsed.at<7*86400000)state=parsed;}
       }catch{/* Continue with current-session status. */}
     },
     update(signal={}){
       const kind=signal.kind,at=clock();
-      if(!owner&&kind!=='storage-failed')return;
+      // Guests still need an outage screen when the public catalog fails.
+      // Guest warning metadata stays in memory, never in another account's storage.
+      if(!owner&&kind!=='storage-failed'&&!(kind==='request-error'&&signal.action==='public-catalog')&&!(kind==='request-ok'&&signal.action==='public-catalog'))return;
       if(kind==='synced'){state=null;save();return;}
       if(kind==='pending'){
-        if(state?.kind==='sync-failed'||state?.kind==='storage-failed'||state?.kind==='auth'||state?.kind==='service')return;
+        if(state?.kind==='sync-failed'||state?.kind==='storage-failed'||state?.kind==='auth'||state?.kind==='service'||state?.kind==='maintenance')return;
         state={kind:'pending',at:state?.kind==='pending'?state.at:at,localSaved:signal.localSaved===true};
       }else if(kind==='storage-failed'){
         state={kind,at,localSaved:false};
@@ -57,15 +61,17 @@ export function createCloudHealthStore({storage=null,clock=()=>Date.now()}={}){
         const status=Number(signal.status)||0,action=String(signal.action||'');
         // Expected validation/permission failures are NOT system outages.
         const serious=status===0||status===401||status===429||status>=500;
-        if(!serious||state?.kind==='storage-failed'||state?.kind==='sync-failed')return;
+        if(!serious||state?.kind==='storage-failed'||state?.kind==='sync-failed'||(state?.kind==='maintenance'&&status!==503))return;
+        const errorCode=String(signal.errorCode||'').toUpperCase();
+        const maintenance=status===503&&['MAINTENANCE','MAINTENANCE_MODE','PLANNED_MAINTENANCE'].includes(errorCode);
         const next=status===401||signal.authTimeout?'auth':status===429?'throttled':
-          action==='submission-create'&&status===503?'verification':'service';
-        state={kind:next,at,action,localSaved:signal.localSaved===true||state?.localSaved===true,
+          action==='submission-create'&&status===503?'verification':maintenance?'maintenance':'service';
+        state={kind:next,at,action,status,errorCode,localSaved:signal.localSaved===true||state?.localSaved===true,
           pendingAt:state?.pendingAt??(state?.kind==='pending'?state.at:null)};
       }else if(kind==='request-ok'){
         // A successful profile/leaderboard fetch does not prove that pending
         // solves were synced. Clear only the matching transient service error.
-        if(state?.action===signal.action&&['service','auth','throttled','verification'].includes(state.kind))
+        if(state?.action===signal.action&&['service','auth','throttled','verification','maintenance'].includes(state.kind))
           state=state.pendingAt?{kind:'pending',at:state.pendingAt,localSaved:state.localSaved}:null;
         else return;
       }else return;
@@ -98,10 +104,11 @@ export function mountCloudHealthNotice(doc=globalThis.document){
   backup.addEventListener('click',()=>doc.getElementById('exportBtn')?.click());
   account.addEventListener('click',()=>doc.getElementById('accountBtn')?.click());
   const firebaseStatus=doc.createElement('a');firebaseStatus.href='https://status.firebase.google.com/';firebaseStatus.target='_blank';firebaseStatus.rel='noopener noreferrer';firebaseStatus.textContent='Firebase status';
-  actions.append(backup,account,status,firebaseStatus);
+  const connectionScreen=doc.createElement('a');connectionScreen.textContent='Connection details';connectionScreen.className='bq-connection-details';connectionScreen.hidden=true;
+  actions.append(backup,account,connectionScreen,status,firebaseStatus);
   notice.append(copy,actions);
   (doc.querySelector('.minimal-header')||doc.body.firstElementChild)?.after(notice);
-  const stylesheet=doc.createElement('link');stylesheet.rel='stylesheet';stylesheet.href='./cloud-health.css?v=1';doc.head?.append(stylesheet);
+  const stylesheet=doc.createElement('link');stylesheet.rel='stylesheet';stylesheet.href='./cloud-health.css?v=outage-1';doc.head?.append(stylesheet);
   const view=()=>{
     const result=model.view({online:doc.defaultView?.navigator?.onLine!==false});
     notice.hidden=!result;
@@ -111,6 +118,9 @@ export function mountCloudHealthNotice(doc=globalThis.document){
     detail.textContent=result.message;
     backup.hidden=!doc.getElementById('exportBtn');
     account.hidden=!doc.getElementById('accountBtn');
+    const issue=issueFromCloudHealth(model.getState(),{online:doc.defaultView?.navigator?.onLine!==false});
+    connectionScreen.hidden=!issue;
+    if(issue)connectionScreen.href=connectionPageUrl(issue,doc.defaultView?.location?.pathname?.split('/').pop()||'index.html');
   };
   let pendingTimer;
   const update=signal=>{

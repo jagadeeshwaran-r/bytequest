@@ -25,3 +25,7 @@
   .bq-cloud-health-actions{margin-left:0;width:100%}
   .bq-cloud-health-actions button,.bq-cloud-health-actions a{font-size:10px}
 }
+
+/* Primary recovery path remains visible while user keeps working locally. */
+.bq-cloud-health-actions a.bq-connection-details{background:#dec29c;color:#211c15;border-color:transparent;font-weight:650}
+.bq-cloud-health-actions a.bq-connection-details:hover{background:#f4d5aa;color:#101410}

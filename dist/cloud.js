@@ -70,7 +70,7 @@ export class Cloud {
         const response=await this.fetch(this.config.url+"/rest/v1/bytequest_problems"+query,{
           headers:{apikey:this.config.publishableKey},signal:AbortSignal.timeout(12000)
         });
-        if(!response.ok)throw new Error("Could not load the problem library.");
+        if(!response.ok){const failure=new Error("Could not load the problem library.");failure.httpStatus=response.status;throw failure;}
         const rows=await response.json();if(!Array.isArray(rows))throw new Error("Invalid problem library response.");
         const publicRows=rows.map(row=>({...row,content:{...row.content,reference:undefined}}));
         const problems=publicRows.map(row=>({...validateProblem(row.content,{publicOnly:true}),revision:row.revision}));
@@ -78,8 +78,10 @@ export class Cloud {
           const serialized=JSON.stringify({version:CATALOG_CACHE_VERSION,savedAt:this.clock(),rows:publicRows});
           if(serialized.length<=PUBLIC_CATALOG_MAX_BYTES)this.catalogStore?.setItem(catalogKey(this.config),serialized);
         }catch{} // Storage disabled or quota full: continue with the live result.
+        this.onHealth?.({kind:"request-ok",action:"public-catalog"});
         return problems;
       }catch(error){
+        this.onHealth?.({kind:"request-error",action:"public-catalog",status:error?.httpStatus||0,errorName:error?.name||""});
         if(!force&&cached)return cached.problems; // Offline: use last valid public library for up to one day.
         throw error;
       }
@@ -97,7 +99,7 @@ export class Cloud {
       return result;
     }catch(error){
       if(this.user?.id===ownerId)this.onHealth?.({
-        kind:'request-error',action,status:error?.httpStatus||0,
+        kind:'request-error',action,status:error?.httpStatus||0,errorCode:error?.errorCode||'',errorName:error?.name||'',
         authTimeout:/token timed out|sign-in expired|could not be verified/i.test(String(error?.message||''))
       });
       throw error;
@@ -124,10 +126,11 @@ export class Cloud {
       });
       if(this.user?.id!==ownerId)throw new Error("Your account changed. Please retry saving.");
       if(response.status===401&&attempt===0)continue;
-      let result;try{result=await response.json();}catch{throw new Error("Cloud progress is unavailable. Your work is saved on this device.");}
+      let result;try{result=await response.json();}catch{const failure=new Error("Cloud service response was unreadable. Your work remains on this device.");failure.httpStatus=response.status;throw failure;}
       if(!response.ok){
         const failure=new Error(result.error||"Cloud progress is unavailable. Your work is saved on this device.");
         failure.httpStatus=response.status;
+        failure.errorCode=typeof result?.code==="string"?result.code:"";
         throw failure;
       }
       return result;
