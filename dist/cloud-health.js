@@ -60,7 +60,7 @@ export function createCloudHealthStore({storage=null,clock=()=>Date.now()}={}){
         if(!serious||state?.kind==='storage-failed'||state?.kind==='sync-failed')return;
         const next=status===401||signal.authTimeout?'auth':status===429?'throttled':
           action==='submission-create'&&status===503?'verification':'service';
-        state={kind:next,at,action,localSaved:signal.localSaved===true};
+        state={kind:next,at,action,localSaved:signal.localSaved===true||state?.localSaved===true};
       }else if(kind==='request-ok'){
         // A successful profile/leaderboard fetch does not prove that pending
         // solves were synced. Clear only the matching transient service error.
