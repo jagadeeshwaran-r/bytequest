@@ -26,7 +26,7 @@ assert.match(submission,/void run\(true,\{forceBrowser:true,sourceOverride:sourc
  'Explicit browser practice uses exactly the source attempted on the server');
 assert.ok(!submission.includes('await run(true,{forceBrowser:true,sourceOverride:source})'),
  'A failed private submit cannot silently become a counted browser-practice acceptance');
-assert.match(submission,/\$\("codeEditor"\)\.value!==source/,'Do not submit a stale editor snapshot silently');
+assert.match(submission,/\$\("codeEditor"\)\.value===source/,'Before either explicit action, require the original editor source');
 assert.match(submission,/if\(result\.accepted\)/,'Server acceptance is the only way to unlock shared submissions');
 
 const quest=app.slice(app.indexOf('function completeQuest('),app.indexOf('function celebrate('));
