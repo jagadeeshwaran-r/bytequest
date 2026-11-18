@@ -23,6 +23,9 @@ assert.match(store.view().title,/taking longer/,'Successful profile reads cannot
 store.update({kind:'request-error',action:'sync',status:503});
 assert.match(store.view().title,/server busy or unreachable/,'HTTP 503 must show server degradation, not a provider-wide outage');
 assert.match(store.view().message,/not necessarily mean Supabase or Firebase is down/,'Never claim the provider itself is down');
+store.update({kind:'request-ok',action:'sync'});
+assert.equal(store.view().kind,'pending','Recovering a request must not hide outstanding unsynced progress');
+store.update({kind:'request-error',action:'sync',status:503});
 store.update({kind:'sync-failed',localSaved:true});
 assert.equal(store.view().title,'Cloud sync failed');
 store.update({kind:'request-ok',action:'self'});
