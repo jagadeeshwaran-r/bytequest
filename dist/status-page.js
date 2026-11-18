@@ -21,6 +21,18 @@ $('statusCode').textContent=state.code;
 $('statusRetryLabel').textContent=state.retry;
 const returnHref='./'+from;
 $('statusContinue').href=returnHref;
+// Prefer back/forward cache when leaving the currently edited workspace;
+// a fresh navigation can lose unpersisted cursor/selection state.
+$('statusContinue').addEventListener('click',event=>{
+ try{
+  const previous=new URL(document.referrer);
+  const prevPage=previous.pathname.slice(previous.pathname.lastIndexOf('/')+1);
+  if(history.length>1&&previous.origin===location.origin&&safeReturnPage(prevPage)===prevPage){
+   event.preventDefault();
+   history.back();
+  }
+ }catch{} // Direct URL: follow the safe same-origin fallback link.
+});
 const feedback=$('statusFeedback'),retry=$('statusRetry');
 const online=()=>navigator.onLine!==false;
 function updateConnectivity(){
