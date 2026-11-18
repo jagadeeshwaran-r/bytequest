@@ -17,10 +17,10 @@ const cloud=new Cloud(()=>{},{
   config,storage,now:()=>now,sessionFactory:()=>({}),
   fetchImpl:async()=>{calls++;return new Response(JSON.stringify(liveRows),{status:200,headers:{"Content-Type":"application/json"}});}
 });
-assert.equal((await cloud.publicCatalog()).length,16);
-assert.equal(calls,0,"Cached rows should be available without a request.");
+assert.equal((await cloud.publicCatalog()).length,31);
+assert.equal(calls,1,"Legacy cache may contain public Java references; force a fresh sanitized catalog.");
 assert.equal((await cloud.publicCatalog({force:true})).length,31);
-assert.equal(calls,1,"Explicit revalidation must bypass the cached 16-row catalog.");
+assert.equal(calls,2,"Explicit revalidation must bypass the new sanitized cache.");
 assert.equal((await cloud.publicCatalog()).length,31);
 const app=readFileSync("dist/app.js","utf8");
 const html=readFileSync("dist/index.html","utf8");
@@ -34,4 +34,4 @@ assert.ok(app.includes("void catalogLoading.then(()=>revalidateCatalog());"),
 assert.ok(app.includes('catalogSyncStatus')&&app.includes('refreshProblemCatalog'));
 assert.ok(app.includes('document.addEventListener("visibilitychange"'));
 assert.ok(html.includes('id="refreshProblemCatalog"'));
-console.log("PASS: 16-row stale cache recovers to 31 published problems independently of Firebase.");
+console.log("PASS: legacy public-reference cache is rejected and 31 published problems load independently of Firebase.");
