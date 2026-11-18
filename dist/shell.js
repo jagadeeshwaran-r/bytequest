@@ -5,7 +5,7 @@ import {mountPresence} from './presence.js';
 import {accountCard} from './presence-model.js?v=social-1';
 import {createFriendToasts} from './friend-alerts.js?v=profile-2';
 import {escapeHtml as h} from './community-model.js';
-import {mountCloudHealthNotice} from './cloud-health.js?v=1';
+import {mountCloudHealthNotice} from './cloud-health.js?v=outage-1';
 export function mountShell(){
  const toggle=document.getElementById('profileMenuToggle'),menu=document.getElementById('profileMenu'),slot=document.getElementById('menuAccountSlot');let cloud=null,identity=null,epoch=0,timer,tracker=null,friends=null,chat=null,card=null,painted=null,notificationOwner=null;
  const toasts=createFriendToasts();
