@@ -9,7 +9,10 @@ const entrypoints=Object.freeze({
  'index.html':'./app.js',
  'community.html':'./community.js',
  'leaderboard.html':'./leaderboard.js',
- 'studio.html':'./studio-page.js'
+ 'studio.html':'./studio-page.js',
+ 'privacy.html':'./reference-motion.js',
+ 'runner.html':'./runner-core.js',
+ 'native-runner.html':'./native-runner-core.js'
 });
 const page=location.pathname.split('/').pop()||'index.html';
 const bootScript=document.querySelector('script[data-bq-app]');
