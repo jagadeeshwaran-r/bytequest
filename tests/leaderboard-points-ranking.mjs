@@ -31,8 +31,7 @@ for(const [name,sql] of [['database/leaderboard.sql',initial],['database/points-
  assert.ok(sql.includes(scoring),name+' must agree with frontend 10/25/50 point weights');
  assert.ok(sql.includes(rankRule),name+' must use 1224 RANK by points and stable alphabetical pagination order');
  assert.ok(!sql.includes('rank() over(order by solved desc)'),name+' may never revert to ranking by problem count');
- assert.ok(sql.includes('where q.id=e.key')===false || sql.includes('q.id=e.key'),
-  name+' must keep matching published problem IDs');
+ assert.ok(sql.includes('q.id=e.key'),name+' must match published problem IDs');
  assert.ok(sql.includes('q.published'),name+' must exclude unpublished problems');
  assert.ok(sql.includes('jsonb_typeof(e.value)'),name+' must validate client-progress solve timestamps');
  assert.ok(sql.includes('start_ms and end_ms'),name+' must retain period-scoped ranking');
