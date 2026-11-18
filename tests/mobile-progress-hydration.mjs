@@ -22,6 +22,13 @@ assert.ok(hydrate.includes('communityCache.clearOwner(owner)'),
   'A restored solve must invalidate the stale own-profile cache');
 assert.ok(!hydrate.includes('renderPractice()')&&!hydrate.includes('loadEditor('),
   'Background mobile hydration must not wipe the code currently being edited');
+assert.ok(hydrate.includes('!hadUnsyncedEditorDraft')&&
+  hydrate.includes('current?.id===selectedProblem&&language===selectedLanguage&&!busy')&&
+  hydrate.includes('$("codeEditor").value===editorAtRequest')&&
+  hydrate.includes('editorAtRequest===currentStarter()'),
+  'Only an untouched starter may be filled with downloaded cloud code');
+assert.ok(hydrate.includes('$("codeEditor").value=state.drafts[selectedDraftKey]'),
+  'A new mobile device must display the recovered cloud draft when it is safe');
 assert.ok(hydrate.includes('epoch!==accountEpoch||cloud.user?.id!==owner'),
   'An old account response must not write into the next signed-in account');
 assert.ok(bootstrap.includes('void refreshCloudProgress(owner,epoch)'),
