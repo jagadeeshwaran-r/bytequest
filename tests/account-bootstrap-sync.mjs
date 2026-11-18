@@ -16,8 +16,8 @@ assert.ok(init.indexOf('void cloud.checkAdmin(owner)')>ready,
   'Admin and creator checks must happen after local account readiness, without blocking it');
 assert.ok(init.indexOf('void cloud.request("self",{},owner)')>ready,
   'Social profile loading must not block personal cloud sync');
-assert.ok(init.includes('syncTimer=setTimeout(()=>{')&&init.includes('void syncCloud();'),
-  'After local readiness, startup must attempt a remote merge and sync');
+assert.ok(init.includes('syncTimer=setTimeout(()=>{')&&init.includes('void refreshCloudProgress(owner,epoch);'),
+  'After local readiness, startup must read remote progress even before uploading changes');
 assert.ok(!init.includes('await Promise.allSettled([cloud.loadProgress(owner)])'),
   'No hanging account/bootstrap request is allowed on the critical path');
 assert.ok(app.includes('cloud.syncProgress(owner,JSON.parse(snapshot),mergeProgress)'),

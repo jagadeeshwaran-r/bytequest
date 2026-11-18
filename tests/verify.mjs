@@ -1,3 +1,4 @@
+import './mobile-progress-hydration.mjs';
 import './cloud-health.mjs';
 import './account-bootstrap-sync.mjs';
 import './manual-sync-feedback.mjs';
