@@ -759,9 +759,18 @@ async function syncCloud(){
     return false;
   }
   if(!accountReady){
-    setSyncStatus("syncing","Account is still loading");
-    $("authMessage").textContent="Your account progress is still loading. Your drafts are saved locally; retry Sync now after account initialization finishes.";
-    return false;
+    // Repair a boot interrupted by a nonessential UI failure. A valid Firebase
+    // owner has enough information to restore owner-local progress immediately.
+    try{await changeAccount(cloud.user);}
+    catch(error){
+      console.error("ByteQuest: account bootstrap recovery failed",error);
+      $("authMessage").textContent="Account setup failed: "+String(error?.message||error)+". Your saved drafts are preserved; export a backup before reloading.";
+    }
+    if(!accountReady){
+      setSyncStatus("failed","Account setup could not complete");
+      if(!$("authMessage").textContent)$("authMessage").textContent="Could not initialize account progress. Your local drafts have not been removed; export a backup.";
+      return false;
+    }
   }
   if(syncing){
     syncAgain=true;
