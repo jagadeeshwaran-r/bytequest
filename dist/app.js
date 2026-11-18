@@ -105,6 +105,8 @@ function persist() {
   }catch{
     storageOK=false;$("saveStatus").textContent="Not saved · storage unavailable — export a backup";
   }
+  // Surface unsynced local work on all ByteQuest pages, including Profile.
+  if(cloud.user||!storageOK)cloud.onHealth?.({kind:storageOK?'pending':'storage-failed',localSaved:storageOK});
   if(accountReady&&cloud.user){clearTimeout(syncTimer);setSyncStatus("syncing",storageOK?"Changes saved here":"Local save failed · cloud sync queued");syncTimer=setTimeout(()=>syncCloud(),1800);}
   return storageOK;
 }
@@ -660,8 +662,10 @@ async function syncCloud(){
     setSyncStatus("synced",changedWhileSaving?"New changes queued":"Saved to cloud");$("authMessage").textContent="";
     if(pendingProfileRefresh){communityCache.clearOwner(owner);pendingProfileRefresh=false;}
     if(changedWhileSaving)syncAgain=true;
+    cloud.onHealth?.({kind:changedWhileSaving?'pending':'synced',localSaved:storageOK});
     return !changedWhileSaving;
   }catch(error){if(epoch===accountEpoch){
+    cloud.onHealth?.({kind:'sync-failed',localSaved:storageOK});
     syncFailures++;
     setSyncStatus("failed","Cloud sync failed · retrying");
     $("saveStatus").textContent="Saved on this device · cloud sync not confirmed";
