@@ -146,7 +146,7 @@ finishProfile(profile);await warmFlight;
 assert.equal(cache.profile(viewer,'fixture'),null,'An account switch must discard late profile prefetch results.');
 
 const appSource=readFileSync('dist/app.js','utf8');
-assert.ok(appSource.includes('communityCache.saveSelf(owner,loaded[2].value)'));
+assert.ok(appSource.includes('communityCache.saveSelf(owner,value)'),'Self response still warms the current account cache without holding up progress');
 assert.ok(appSource.includes('scheduleCommunityWarmup(owner,publicProfile)'));
 const communitySource=readFileSync('dist/community.js','utf8');
 assert.ok(!communitySource.includes('catalog=await cloud.publicCatalog()'),'Catalog must never block profile boot.');
