@@ -656,7 +656,12 @@ async function syncCloud(){
     // Never overwrite or remount the active code editor when background sync
     // finishes. Runs and submissions deliberately use source snapshots.
     syncFailures=0;
-    updateStats();if(location.hash==="#progress")renderProgress();
+    // Cloud merges can restore accepted solves from another tab or device.
+    // Refresh the catalog's solved ticks and editorial gate without remounting
+    // the code editor or navigating away from the selected problem.
+    updateStats();renderMap();
+    if(tab==="problem"||tab==="learn")renderLearning();
+    if(location.hash==="#progress")renderProgress();
     $("saveStatus").textContent=!storageOK?"Cloud synced · local cache unavailable":
       changedWhileSaving?"New edits saved here · sync queued":"Draft saved to your account";
     setSyncStatus("synced",changedWhileSaving?"New changes queued":"Saved to cloud");$("authMessage").textContent="";
