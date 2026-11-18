@@ -61,7 +61,7 @@ export function createCloudHealthStore({storage=null,clock=()=>Date.now()}={}){
         const status=Number(signal.status)||0,action=String(signal.action||'');
         // Expected validation/permission failures are NOT system outages.
         const serious=status===0||status===401||status===429||status>=500;
-        if(!serious||state?.kind==='storage-failed'||state?.kind==='sync-failed')return;
+        if(!serious||state?.kind==='storage-failed'||state?.kind==='sync-failed'||(state?.kind==='maintenance'&&status!==503))return;
         const errorCode=String(signal.errorCode||'').toUpperCase();
         const maintenance=status===503&&['MAINTENANCE','MAINTENANCE_MODE','PLANNED_MAINTENANCE'].includes(errorCode);
         const next=status===401||signal.authTimeout?'auth':status===429?'throttled':
