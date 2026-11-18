@@ -1,5 +1,8 @@
--- Rankings expose aggregates of discoverable profiles through the verified API only.
-create function public.bytequest_leaderboard(viewer_id text,board_scope text default 'global',ranking_period text default 'all',page_number integer default 0)
+-- Rankings expose aggregates of discoverable profiles through the authenticated API only.
+-- Practice points: Easy=10, Medium=25, Hard=50, one score per published solved problem.
+-- 1224 standard competition ranking: tied points share rank, then positions skip.
+-- This is practice progress, not a tamper-resistant verified-competition board.
+create or replace function public.bytequest_leaderboard(viewer_id text,board_scope text default 'global',ranking_period text default 'all',page_number integer default 0)
  returns jsonb language plpgsql stable security invoker set search_path='' as $$
 declare
  at_time timestamptz:=now();start_ms numeric:=0;end_ms numeric:=extract(epoch from now())*1000;result jsonb;
@@ -21,6 +24,7 @@ begin
  ),scored as materialized (
   select s.public_id,s.username,s.display_name,s.avatar_url,s.avatar_path,s.owner_id=viewer_id as "isYou",
    count(q.id)::integer as solved,
+   coalesce(sum(case q.content->>'difficulty' when 'Easy' then 10 when 'Medium' then 25 when 'Hard' then 50 else 0 end),0)::integer as points,
    (count(q.id) filter(where q.content->>'difficulty'='Easy'))::integer as easy,
    (count(q.id) filter(where q.content->>'difficulty'='Medium'))::integer as medium,
    (count(q.id) filter(where q.content->>'difficulty'='Hard'))::integer as hard
@@ -30,7 +34,7 @@ begin
    case when jsonb_typeof(e.value)='number' then (e.value::text)::numeric>0 and (e.value::text)::numeric between start_ms and end_ms else false end
   group by s.public_id,s.username,s.display_name,s.avatar_url,s.avatar_path,s.owner_id
  ),ranked as materialized (
-  select scored.*,rank() over(order by solved desc) as rank,row_number() over(order by solved desc,username) as position from scored
+  select scored.*,rank() over(order by points desc) as rank,row_number() over(order by points desc,username) as position from scored
  )
  select jsonb_build_object(
   'users',coalesce((select jsonb_agg(to_jsonb(t)-'position' order by t.position) from (select * from ranked order by position limit 25 offset page_number*25) t),'[]'::jsonb),
