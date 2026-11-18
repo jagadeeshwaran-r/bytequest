@@ -96,7 +96,15 @@ export class Cloud {
     if(this.deletionPending&&action!=="account-delete")throw new Error("Account removal is in progress.");
     if(!this.enabled||!ownerId||this.user?.id!==ownerId)throw new Error("Sign in to sync your progress.");
     for(let attempt=0;attempt<2;attempt++){
-      const token=await this.session.tokenFor(ownerId,attempt>0);
+      // Firebase getIdToken() has no caller-side deadline. A stuck token
+      // refresh must not leave account progress permanently "loading".
+      let tokenTimer;
+      const token=await Promise.race([
+        this.session.tokenFor(ownerId,attempt>0),
+        new Promise((_,reject)=>{
+          tokenTimer=setTimeout(()=>reject(new Error("Google sign-in token timed out. Your work is saved locally; retry Sync now.")),12000);
+        })
+      ]).finally(()=>clearTimeout(tokenTimer));
       this.lastToken={owner:ownerId,token};
       if(this.user?.id!==ownerId)throw new Error("Your account changed. Please retry saving.");
       const response=await this.fetch(this.config.url+"/functions/v1/bytequest-firebase",{
