@@ -18,8 +18,12 @@ assert.throws(()=>selectedProblemUrl(base,'two sum'));
 
 const source=readFileSync('dist/app.js','utf8');
 const busy=source.slice(source.indexOf('function setBusy(value)'),source.indexOf('function stopRun('));
-assert.ok(busy.includes('readOnly=!accountReady'),'Running tests should not disable typing');
-assert.ok(!busy.includes('readOnly=value||!accountReady'),'Running tests must not re-lock the editor');
+assert.ok(busy.includes('readOnly=false'),'Compilation must never block typing while account data loads');
+assert.ok(!busy.includes('readOnly=!accountReady')&&!busy.includes('readOnly=value||!accountReady'),'Run must not re-lock the editor');
+const account=source.slice(source.indexOf('async function changeAccount(user)'),source.indexOf('async function syncCloud()'));
+assert.ok(account.includes('renderPractice();$("codeEditor").readOnly=false;'),'Account loading must not make the editor read-only');
+assert.ok(!account.includes('readOnly=true'),'Account network requests must not strand editor input');
+assert.ok(source.includes('Run passed. This is a test run, not a recorded solve.'),'Passing Run must clearly distinguish testing from recorded Submit');
 
 const submit=source.slice(source.indexOf('async function submitOnline()'),source.indexOf('function logAttempt('));
 assert.ok(submit.indexOf('await requestSubmission(')<submit.indexOf('setBusy(true)'),
