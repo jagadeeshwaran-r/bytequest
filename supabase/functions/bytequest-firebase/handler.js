@@ -6,6 +6,7 @@ import {communityActions,validateCommunity} from "./community.js";
 import {buildTests} from "./domain/judge.js";
 import {validateProblem} from "./domain/catalog.js";
 import {validateProgress,blankProgress} from "./domain/progress.js";
+import {maintenanceState,publicMaintenanceStatus,maintenanceAdminResponse,validateMaintenanceSettings,maintenanceBlocksAction} from "./domain/maintenance.js";
 export class HttpError extends Error{constructor(status,message){super(message);this.status=status;}}
 async function readBody(req){
   if(!req.headers.get("content-type")?.toLowerCase().startsWith("application/json"))throw new HttpError(415,"Send JSON data.");
@@ -27,13 +28,37 @@ export function createHandler({projectId,allowedOrigins,verifyToken,db,privateJu
     if(origin&&!allowedOrigins.includes(origin))return reply(403,{error:"This website is not allowed."});
     if(req.method==="OPTIONS")return new Response(null,{status:204,headers});
     if(req.method==="GET"&&new URL(req.url).pathname.endsWith("/health"))return reply(200,{provider:"firebase",projectId});
+    // Public, anonymous, no-store maintenance state. Drafts are NEVER
+    // disclosed until the library administrator explicitly arms them.
+    if(req.method==="GET"&&new URL(req.url).pathname.endsWith("/maintenance")){
+      try{return reply(200,publicMaintenanceStatus(await db.maintenance()));}
+      catch{return reply(503,{error:"ByteQuest service status is temporarily unavailable.",code:"SERVICE_UNAVAILABLE"});}
+    }
     if(req.method!=="POST")return reply(405,{error:"Use POST for account requests."});
     const authorization=req.headers.get("authorization")||"";
     if(!authorization.startsWith("Bearer "))return reply(401,{error:"Sign in with Google to continue."});
     let identity;try{identity=await verifyToken(authorization.slice(7));}catch{return reply(401,{error:"Your sign-in expired or could not be verified. Please sign in again."});}
     try{
       const body=await readBody(req),action=body.action;
-      if(!["live-events","submission-create","account-delete","account","progress","sync","reference-read","studio-list","studio-save","hidden-submit","avatar-upload","native-run",...communityActions].includes(action))throw new HttpError(400,"Unknown account action.");
+      if(!["live-events","submission-create","account-delete","account","progress","sync","reference-read","maintenance-admin-get","maintenance-admin-save","studio-list","studio-save","hidden-submit","avatar-upload","native-run",...communityActions].includes(action))throw new HttpError(400,"Unknown account action.");
+      if(action==="maintenance-admin-get"||action==="maintenance-admin-save"){
+        // No privilege is taken from request JSON, a URL parameter, or a
+        // cached profile role. This reads the verified Firebase token's ID.
+        if(!await db.isLibraryAdmin(identity.id))throw new HttpError(403,"Only ByteQuest library administrators can manage maintenance.");
+        if(action==="maintenance-admin-get")return reply(200,maintenanceAdminResponse(await db.maintenance()));
+        let settings;try{settings=validateMaintenanceSettings(body.settings);}catch(error){throw new HttpError(400,error.message);}
+        return reply(200,maintenanceAdminResponse(await db.saveMaintenance(identity.id,settings)));
+      }
+      // Every non-admin write is blocked during the active window, including
+      // progress sync, Studio publishing, chats, uploads and submissions.
+      // Account/progress READS remain available to recover unsynced drafts.
+      // The server clock determines automatic start/end; no cron required.
+      const row=typeof db.maintenance==="function"?await db.maintenance():null;
+      if(row){
+        const window=maintenanceState(row);
+        if(window.active&&maintenanceBlocksAction(action)&&!await db.isLibraryAdmin(identity.id))
+          return reply(503,{error:"ByteQuest is under scheduled maintenance. Your existing browser drafts have not been cleared. Retry after the expected end time.",code:"MAINTENANCE",endsAt:window.endsAt,startsAt:window.startsAt});
+      }
       if(action==="account-delete"){
         if(body.confirmation!=="DELETE")throw new HttpError(400,"Type DELETE to confirm account removal.");
         if(!deleteFirebaseAccount)throw new HttpError(503,"Account deletion is unavailable. Try again later.");
