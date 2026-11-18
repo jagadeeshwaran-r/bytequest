@@ -66,6 +66,10 @@ assert.ok(!fallback.includes('renderPractice()')&&!fallback.includes('loadEditor
   'Profile-based solve recovery must never reset the code editor');
 assert.ok(app.includes('void restoreOwnProfileHistory(owner,epoch,value.profile)'),
   'A successful self response must run independent authenticated solve recovery');
+assert.ok(app.includes('showAccountProgress("Account @"+ownerProfile.username'),
+  'Problems library must report which authenticated account supplied the solved history');
+assert.ok(app.includes('Account progress unavailable · solved ticks may be outdated'),
+  'Public catalog success cannot masquerade as authenticated progress success');
 const html=readFileSync('dist/index.html','utf8');
 assert.ok(html.includes('own-profile-solve-recovery=1'),
   'Deploy must invalidate the stale Problems entrypoint');
