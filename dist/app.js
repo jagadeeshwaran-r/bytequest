@@ -349,9 +349,14 @@ async function submitOnline(){
   watchdog=setTimeout(()=>stopRun('The submission is taking longer than expected. Your code is saved. Check My submissions before retrying.'),lang==='cpp'?105000:70000);
   const result=await cloud.request('submission-create',{...options,problemId:p.id,revision:p.revision,source,language:lang},user);
   if(epoch!==runEpoch||account!==accountEpoch||cloud.user?.id!==user)return;
+  if(lang==="java"&&result.status==="unavailable"){
+   browserFallback=true;
+   $("resultOutput").textContent="Server-side Java verification is temporarily unavailable. Running public browser practice instead. This will not unlock shared solutions.";
+  }else{
   if(result.status!=='unavailable')logAttempt(p,result.passed||0,result.total||p.tests.length);
   const output=$("resultOutput"),feedback=submissionFeedback(result);output.innerHTML=feedback.html;notify(feedback.announcement);output.tabIndex=-1;output.focus({preventScroll:true});output.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
   if(result.accepted){const header=output.querySelector('.submission-verdict>header');const metrics=document.createElement('div');metrics.className='verdict-metrics';const runtime=document.createElement('span');runtime.textContent=runtimeLabel(result.runtimeMs??result.submission?.runtime_ms);const memory=document.createElement('span');memory.textContent=memoryLabel(result.memoryBytes??result.submission?.memory_bytes);metrics.append(runtime,memory);const link=document.createElement('button');link.className='verdict-link';link.textContent='View submissions';link.onclick=()=>{tab='submissions';renderLearning();};(header||output).append(metrics,link);completeQuest(p);if(tab==='submissions')submissions.refresh();}
+  }
  }catch(e){
   if(epoch===runEpoch&&account===accountEpoch&&cloud.user?.id===user){
    if(lang==="java"&&privateJavaJudgeUnavailable(e)){
@@ -372,7 +377,7 @@ async function submitOnline(){
    notify("Your code changed during server verification. Submit it again to save a practice result.");
    return;
   }
-  notify("Private judge unavailable. Saving a browser-only practice result instead.");
+  notify("Server verification unavailable. Saving a browser-only practice result instead.");
   await run(true,{forceBrowser:true,sourceOverride:source});
  }
 }
