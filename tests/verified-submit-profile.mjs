@@ -20,8 +20,12 @@ assert.match(submission,/if\(lang==="java"&&result\.status==="unavailable"\)/,
  'Only an explicit unavailable verdict can trigger a practice fallback');
 assert.match(submission,/lang==="java"&&privateJavaJudgeUnavailable\(e\)/,
  'Only known configuration errors can trigger a practice fallback');
-assert.match(submission,/await run\(true,\{forceBrowser:true,sourceOverride:source\}\)/,
- 'Fallback keeps the exact source used for server verification');
+assert.match(submission,/practice\.onclick=\(\)=>\{/,
+ 'A failed private-judge request must offer public practice only after explicit click');
+assert.match(submission,/void run\(true,\{forceBrowser:true,sourceOverride:source\}\)/,
+ 'Explicit browser practice uses exactly the source attempted on the server');
+assert.ok(!submission.includes('await run(true,{forceBrowser:true,sourceOverride:source})'),
+ 'A failed private submit cannot silently become a counted browser-practice acceptance');
 assert.match(submission,/\$\("codeEditor"\)\.value!==source/,'Do not submit a stale editor snapshot silently');
 assert.match(submission,/if\(result\.accepted\)/,'Server acceptance is the only way to unlock shared submissions');
 
@@ -34,8 +38,11 @@ assert.match(sync,/if\(pendingProfileRefresh\)\{communityCache\.clearOwner\(owne
  'Refresh profile cache only after cloud sync succeeds');
 
 const submissionUi=readFileSync('dist/submissions.js','utf8');
-assert.ok(submissionUi.includes('Practice passed · verification required'));
-assert.ok(submissionUi.includes('Submit while signed in for server verification to unlock shared solutions'));
+assert.ok(submissionUi.includes('practiceVerificationSummary(problem,attempt)'));
+assert.ok(submissionUi.includes('summary.hidden')||submissionUi.includes('evidence.hidden'));
+assert.ok(submissionUi.includes('Try server verification'));
+assert.ok(submission.includes('privateJudgeUnavailableSummary(p)'));
+assert.ok(submission.includes('No hidden-test acceptance was recorded'));
 assert.ok(submissionUi.includes('if(!response.unlocked)'),'Never bypass server submission authorization');
 assert.ok(!submissionUi.includes('response.unlocked||localRows()'), 'Browser practice must never bypass server locking');
 console.log('PASS: server-first Java acceptance, strict fallback, immediate profile sync and honest unlock messaging.');
