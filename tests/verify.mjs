@@ -43,6 +43,7 @@ import "./upgrades.mjs";
 import "./presence.mjs";
 import "./social.mjs";
 import "./leaderboard.mjs";
+import "./leaderboard-points-ranking.mjs";
 import "./online.mjs";
 import "./firebase-auth.mjs";
 import "./community.mjs";
