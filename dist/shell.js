@@ -10,10 +10,18 @@ export function mountShell(){
  const toggle=document.getElementById('profileMenuToggle'),menu=document.getElementById('profileMenu'),slot=document.getElementById('menuAccountSlot');let cloud=null,identity=null,epoch=0,timer,tracker=null,friends=null,chat=null,card=null,painted=null,notificationOwner=null;
  const toasts=createFriendToasts();
  const cloudHealth=mountCloudHealthNotice(document);
+ // All site pages share this navigation; only a server-verified library
+ // admin role makes the link visible. The API checks that role again.
+ const maintenanceLink=document.createElement('a');
+ maintenanceLink.href='./maintenance.html';
+ maintenanceLink.textContent='Site maintenance';
+ maintenanceLink.dataset.adminLink='';
+ maintenanceLink.hidden=true;
+ menu.querySelector('a[href="./studio.html"]')?.after(maintenanceLink);
  // A narrowly scoped cache makes the recovery page available after a
  // connection drops; normal account/catalog/editor requests are never cached.
  if(typeof navigator!=='undefined'&&navigator.serviceWorker&&window.isSecureContext){
-  navigator.serviceWorker.register('./runtime-sw.js?v=outage-1',{scope:'./'}).catch(()=>{});
+  navigator.serviceWorker.register('./runtime-sw.js?v=maintenance-1',{scope:'./'}).catch(()=>{});
  }
  // Administrator controls are hidden until authorization is confirmed by the server.
  function setAdmin(authorized){
