@@ -33,7 +33,7 @@ export function createHandler({projectId,allowedOrigins,verifyToken,db,privateJu
     let identity;try{identity=await verifyToken(authorization.slice(7));}catch{return reply(401,{error:"Your sign-in expired or could not be verified. Please sign in again."});}
     try{
       const body=await readBody(req),action=body.action;
-      if(!["live-events","submission-create","account-delete","account","progress","sync","studio-list","studio-save","hidden-submit","avatar-upload","native-run",...communityActions].includes(action))throw new HttpError(400,"Unknown account action.");
+      if(!["live-events","submission-create","account-delete","account","progress","sync","reference-read","studio-list","studio-save","hidden-submit","avatar-upload","native-run",...communityActions].includes(action))throw new HttpError(400,"Unknown account action.");
       if(action==="account-delete"){
         if(body.confirmation!=="DELETE")throw new HttpError(400,"Type DELETE to confirm account removal.");
         if(!deleteFirebaseAccount)throw new HttpError(503,"Account deletion is unavailable. Try again later.");
@@ -76,6 +76,12 @@ export function createHandler({projectId,allowedOrigins,verifyToken,db,privateJu
       if(action==="account"){
         const [progress,admin]=await Promise.all([db.progress(identity.id),db.isEditor(identity.id)]);
         return reply(200,{user:{id:identity.id,email:identity.email},admin,canCreate:true,progress:progress||{payload:blankProgress(),revision:0}});
+      }
+      if(action==="reference-read"){
+        if(typeof body.problemId!=="string"||!/^[a-z][a-z0-9-]{1,63}$/.test(body.problemId)||
+           !integer(body.revision)||body.revision===0)
+          throw new HttpError(400,"Choose a valid problem and revision.");
+        return reply(200,await db.reference(identity.id,body.problemId,body.revision));
       }
       if(action==="progress")return reply(200,await db.progress(identity.id)||{payload:blankProgress(),revision:0});
       if(action==="sync"){
