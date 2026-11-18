@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./system-state.css?v=1">
-<script type="module" src="./status-page.js?v=1"></script>
+<script type="module" src="./status-page.js?v=maintenance-1"></script>
 </head>
 <body class="bq-status-page" data-issue="unreachable">
 <div class="status-background" aria-hidden="true"></div>
@@ -25,6 +25,7 @@
       <div class="status-eyebrow"><span class="status-dash"></span><span id="statusEyebrow">SERVICE CONNECTION</span></div>
       <h1 id="statusTitle">The route went <em>quiet.</em></h1>
       <p class="status-lead" id="statusIntro">ByteQuest could not reach one of the services it needs.</p>
+      <div class="status-window" id="statusWindow" hidden><span id="statusWindowLabel">MAINTENANCE WINDOW · IST</span><strong id="statusWindowTime"></strong><span id="statusWindowEnds"></span></div>
       <div class="status-divider"></div>
       <div class="status-safety"><span class="status-safety-icon" aria-hidden="true">◈</span><div><strong>YOUR WORK COMES FIRST</strong><p id="statusDetail">Existing drafts are not removed. Cloud changes still require a confirmed sync.</p></div></div>
       <div class="status-actions">
@@ -32,6 +33,7 @@
         <a class="status-action-secondary" id="statusContinue" href="./index.html">Continue to ByteQuest <span aria-hidden="true">↗</span></a>
       </div>
       <p class="status-feedback" id="statusFeedback" role="status" aria-live="polite"></p>
+      <a id="statusAdminLink" class="status-admin-link" href="./maintenance.html" hidden>Library administrator? Manage maintenance ↗</a>
     </div>
     <div class="status-illustration" aria-hidden="true">
       <div class="status-visual-frame">
