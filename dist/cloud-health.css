@@ -1,0 +1,27 @@
+/* Non-blocking system-health bar shared by Problems, Profile, and Leaderboard. */
+.bq-cloud-health[hidden]{display:none!important}
+.bq-cloud-health{
+  position:sticky;top:73px;z-index:49;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  gap:14px 24px;padding:13px max(28px,calc((100vw - 1210px)/2));
+  background:#211d17;color:#f2e5ce;border-bottom:1px solid rgba(251,191,88,.28);
+  font:13px/1.5 Inter,system-ui,sans-serif;box-shadow:0 8px 24px #0002;
+}
+.bq-cloud-health[data-kind="storage-failed"]{background:#2c171b;border-color:#a74f5c}
+.bq-cloud-health strong{display:block;color:inherit;font-weight:650;font-size:13px}
+.bq-cloud-health p{font-size:12px;margin:3px 0 0;color:#e1cdb0;max-width:760px;line-height:1.55}
+.bq-cloud-health[data-kind="storage-failed"] p{color:#f0c6c6}
+.bq-cloud-health-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
+.bq-cloud-health-actions button,.bq-cloud-health-actions a{
+  font:inherit;font-size:11px;min-height:32px;border-radius:9px;
+  padding:6px 10px;color:#fae6c6;border:1px solid #e2ac653e;
+  background:#ffffff0b;text-decoration:none;cursor:pointer;white-space:nowrap;
+}
+.bq-cloud-health-actions button:first-child{background:#dec29c;color:#221b15;border-color:transparent}
+.bq-cloud-health-actions button:hover,.bq-cloud-health-actions a:hover{border-color:#e2b36d}
+.bq-cloud-health-actions [hidden]{display:none!important}
+@media(max-width:750px){
+  .bq-cloud-health{top:62px;padding:12px 16px;align-items:flex-start}
+  .bq-cloud-health-actions{margin-left:0;width:100%}
+  .bq-cloud-health-actions button,.bq-cloud-health-actions a{font-size:10px}
+}
