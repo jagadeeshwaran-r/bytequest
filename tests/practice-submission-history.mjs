@@ -104,7 +104,7 @@ assert.ok(!app.slice(app.indexOf('async function syncCloud()'),app.indexOf('// P
  'Cloud synchronization must never remount the active code editor');
 assert.ok(app.includes('Saved on this device · cloud sync not confirmed'),
  'Cloud save failures must be visible rather than silently claiming sync');
-assert.ok(app.includes('Only progress is on the critical path'),
+assert.ok(app.includes('Remote account/profile/permissions requests must NEVER gate synchronization.'),
  'Slow social requests must not postpone progress synchronization');
 
 console.log('PASS: Java practice submissions persist privately, merge across devices, and show immediately for new problems.');
