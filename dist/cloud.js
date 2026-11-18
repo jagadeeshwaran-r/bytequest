@@ -2,7 +2,7 @@ import {cloudConfig} from "./config.js";
 import {firebaseConfig} from "./firebase-config.js";
 import {FirebaseSession} from "./firebase-session.js?v=upgrade-2";
 import {createRequestCoordinator} from "./request-coordinator.js?v=profile-speed-1";
-import {validateProblem} from "./catalog.js?v=presence-1";
+import {validateProblem} from "./catalog.js?v=private-reference-1";
 import {blankProgress,validateProgress} from "./progress.js?v=next-1";
 export function validPublicConfig(config){
   try{
@@ -16,8 +16,8 @@ export function validPublicConfig(config){
 export const PUBLIC_CATALOG_TTL_MS=5*60*1000;
 const PUBLIC_CATALOG_OFFLINE_MAX_MS=24*60*60*1000;
 const PUBLIC_CATALOG_MAX_BYTES=4000000;
-const CATALOG_CACHE_VERSION=1;
-function catalogKey(config){return "bytequest.public-catalog.v1:"+new URL(config.url).hostname;}
+const CATALOG_CACHE_VERSION=2;
+function catalogKey(config){return "bytequest.public-catalog.v2:"+new URL(config.url).hostname;}
 function catalogStorage(fallback){
   if(fallback!==undefined)return fallback;
   try{return globalThis.localStorage||null;}catch{return null;}
@@ -52,7 +52,7 @@ export class Cloud {
       const entry=JSON.parse(raw),age=this.clock()-entry.savedAt;
       if(entry.version!==CATALOG_CACHE_VERSION||!Array.isArray(entry.rows)||
         !Number.isFinite(age)||age<0||age>=PUBLIC_CATALOG_OFFLINE_MAX_MS)return null;
-      const problems=entry.rows.map(row=>({...validateProblem(row.content),revision:row.revision}));
+      const problems=entry.rows.map(row=>({...validateProblem(row.content,{publicOnly:true}),revision:row.revision}));
       return {age,problems};
     }catch{return null;}
   }
@@ -72,9 +72,10 @@ export class Cloud {
         });
         if(!response.ok)throw new Error("Could not load the problem library.");
         const rows=await response.json();if(!Array.isArray(rows))throw new Error("Invalid problem library response.");
-        const problems=rows.map(row=>({...validateProblem(row.content),revision:row.revision}));
+        const publicRows=rows.map(row=>({...row,content:{...row.content,reference:undefined}}));
+        const problems=publicRows.map(row=>({...validateProblem(row.content,{publicOnly:true}),revision:row.revision}));
         try{
-          const serialized=JSON.stringify({version:CATALOG_CACHE_VERSION,savedAt:this.clock(),rows});
+          const serialized=JSON.stringify({version:CATALOG_CACHE_VERSION,savedAt:this.clock(),rows:publicRows});
           if(serialized.length<=PUBLIC_CATALOG_MAX_BYTES)this.catalogStore?.setItem(catalogKey(this.config),serialized);
         }catch{} // Storage disabled or quota full: continue with the live result.
         return problems;
