@@ -7,6 +7,7 @@ import {submissionFeedback} from './submission-feedback.js?v=reliability-1';
 import {usesRemoteSubmit,browserSubmissionCases,browserSubmissionVerdict} from './browser-submit.js?v=local-java-1';
 import {createPracticeSubmission,addPracticeSubmission} from './practice-history.js?v=practice-history-1';
 import {shouldRunCodeShortcut} from './run-shortcut.js?v=ctrl-run-1';
+import {selectedProblemUrl} from './problem-navigation.js?v=1';
 import {readSafeProgress,writeSafeProgress} from './reliable-storage.js?v=reliability-1';
 import {pointsFor,totalPoints} from './rewards.js?v=upgrade-2';
 import {companyIcons} from './companies.js?v=company-tooltips-1';
@@ -68,7 +69,8 @@ const studio=new Studio({cloud,notify:message=>notify(message),onCatalogChanged:
 const submissions=mountSubmissions(cloud,{notify,getPracticeSubmissions:()=>state.practiceSubmissions||[],getSolvedAt:id=>state.solved[id]||null});
 const dashboard=new Dashboard({cloud,getState:()=>state,getCatalog:()=>problems});
 function touch(field,id){state.modified[id]??={};state.modified[id][field]=Date.now();}
-let current = problems.find(p => p.id === state.current) || problems[0];
+const deepLinkedProblem=()=>problems.find(p=>p.id===new URLSearchParams(location.search).get("problem"))||null;
+let current = deepLinkedProblem() || problems.find(p => p.id === state.current) || problems[0];
 let tab = "problem", mode = "learn", hints = 0, selectedCase = 0, customCases = [], results = null;
 let busy = false, runEpoch = 0, watchdog, toastTimer, traceTimer, traceStep = 0;
 let timerStarted = null, timerUsed = 0, timerProblem = current.id, timerTick;
@@ -253,7 +255,15 @@ function updateTimer(){
 }
 $("learnMode").onclick=()=>{mode="learn";if(timerStarted){timerUsed+=Date.now()-timerStarted;timerStarted=null;}renderLearning();$("learnMode").classList.add("active");$("challengeMode").classList.remove("active");};
 $("challengeMode").onclick=()=>{mode="challenge";renderLearning();$("challengeMode").classList.add("active");$("learnMode").classList.remove("active");};
-function setBusy(value){busy=value;$("runBtn").disabled=value;$("submitBtn").disabled=value;$("customBtn").disabled=value;$("stopBtn").hidden=!value;$("problemSelect").disabled=value;$("codeEditor").readOnly=value||!accountReady;document.body.classList.toggle("busy",value);}
+function setBusy(value){
+ busy=value;
+ $("runBtn").disabled=value;$("submitBtn").disabled=value;$("customBtn").disabled=value;
+ $("stopBtn").hidden=!value;$("problemSelect").disabled=value;
+ // Compilation uses a captured source snapshot. Keep the editor editable while
+ // tests run; never leave it locked after a compile error or failed test.
+ $("codeEditor").readOnly=!accountReady;
+ document.body.classList.toggle("busy",value);
+}
 function stopRun(message="Run stopped. Your draft is saved."){
   runEpoch++;clearTimeout(watchdog);judge.stop();setBusy(false);$("runStatus").textContent=languages[language].name+(language==="java"?" · browser compiler":" · online via Wandbox");$("resultOutput").textContent=message;
 }
@@ -282,9 +292,10 @@ async function run(submit){
   if(usesRemoteSubmit(language,Boolean(cloud.user),submit)){await submitOnline();return;}
   const epoch=++runEpoch,p=current,source=codeTools.prepare();
   const cases=submit?browserSubmissionCases(p,customCases):allCases();
-  setBusy(true);results=null;renderTests();$("resultOutput").textContent="Starting your code…";
-  watchdog=setTimeout(()=>stopRun(language==="java"?"Java startup timed out. Check your connection and allow cjrtnc.leaningtech.com, then try again.":"Online compilation is taking longer than expected. Your code is saved; please try again shortly."),language==="java"?120000:language==='cpp'?90000:60000);
+  setBusy(true);
   try{
+    results=null;renderTests();$("resultOutput").textContent="Starting your code…";
+    watchdog=setTimeout(()=>stopRun(language==="java"?"Java startup timed out. Check your connection and allow cjrtnc.leaningtech.com, then try again.":"Online compilation is taking longer than expected. Your code is saved; please try again shortly."),language==="java"?120000:language==='cpp'?90000:60000);
     const result=await judge.run(source,p,cases);
     if(epoch!==runEpoch)return;
     if(result.status!=="ok"){if(submit&&language==="java")rememberJavaSubmit(p,source,result.status,0,cases.length,result.elapsedMs??null,customCases.length);$("resultOutput").textContent=(result.code==="compiler_timeout"?"Compiler request timed out\n":result.status==="unavailable"?"Compiler temporarily unavailable\n":result.status==="compile_error"?"Compile error\n":"Runtime error\n")+result.message;if(submit){const feedback=submissionFeedback({...result,accepted:false});$("resultOutput").innerHTML=feedback.html;openMySubmissions($("resultOutput"));notify(feedback.announcement);}else notify(result.status==="compile_error"?"Compilation failed. Review the compiler output.":"Run failed. Review the test results.");if(result.status!=="unavailable")logAttempt(p,0,cases.length);return;}
@@ -325,12 +336,16 @@ async function run(submit){
 }
 async function submitOnline(){
  const p=current,lang=language,source=codeTools.prepare(),user=cloud.user?.id,account=accountEpoch;
+ // Choosing submission options is not a compiler run and must never lock the editor.
+ let options;
+ try{options=await requestSubmission({problem:p,language:languages[lang].name});}
+ catch(error){notify(error?.message||'Could not open the submission dialog. Please try again.');return;}
+ if(!options||current?.id!==p.id||language!==lang||cloud.user?.id!==user||account!==accountEpoch)return;
+ const epoch=++runEpoch;
  setBusy(true);
- const options=await requestSubmission({problem:p,language:languages[lang].name});
- if(!options||current.id!==p.id||language!==lang||cloud.user?.id!==user||account!==accountEpoch){setBusy(false);return;}
- const epoch=++runEpoch;results=null;renderTests();$("resultOutput").textContent='Running and measuring your solution…';
- watchdog=setTimeout(()=>stopRun('The submission is taking longer than expected. Your code is saved. Check My submissions before retrying.'),lang==='cpp'?105000:70000);
  try{
+  results=null;renderTests();$("resultOutput").textContent='Running and measuring your solution…';
+  watchdog=setTimeout(()=>stopRun('The submission is taking longer than expected. Your code is saved. Check My submissions before retrying.'),lang==='cpp'?105000:70000);
   const result=await cloud.request('submission-create',{...options,problemId:p.id,revision:p.revision,source,language:lang},user);
   if(epoch!==runEpoch||account!==accountEpoch||cloud.user?.id!==user)return;
   if(result.status!=='unavailable')logAttempt(p,result.passed||0,result.total||p.tests.length);
@@ -373,7 +388,13 @@ $("problemSelect").onchange=e=>changeProblem(e.target.value);
 function changeProblem(id){
   const target=problems.find(p=>p.id===id);if(!target)return;
   if(busy)stopRun();pauseTrace();clearInterval(timerTick);timerUsed=0;timerStarted=null;timerProblem=id;
-  current=target;state.current=id;state.currentUpdated=Date.now();customCases=[];selectedCase=0;results=null;tab="problem";referenceUsed=false;persist();renderPractice();location.hash="practice";
+  current=target;state.current=id;state.currentUpdated=Date.now();customCases=[];selectedCase=0;results=null;tab="problem";referenceUsed=false;
+  persist();
+  // replaceState alone does not fire hashchange. Update the URL and route
+  // explicitly so reload/back-to-this-page restores the same problem.
+  try{history.replaceState(history.state,"",selectedProblemUrl(location.href,id));}
+  catch{location.hash="practice";}
+  renderPractice();route();
 }
 function nextProblem(){
   if(!problems.length)return;
@@ -491,7 +512,7 @@ async function changeAccount(user){
   const epoch=++accountEpoch;clearTimeout(communityWarmupTimer);if(previousOwner&&previousOwner!==owner)communityCache.clearOwner(previousOwner);publicProfile=null;accountOwner=owner;accountReady=false;clearTimeout(syncTimer);syncing=false;syncAgain=false;
   document.querySelectorAll('.submit-confirm[open],#successDialog[open]').forEach(d=>d.close());
   if(busy)stopRun();studio.accountChanged();dashboard.accountChanged();storageKey=owner?"bytequest.user."+owner:guestStorageKey;
-  state=readLocal(storageKey);current=problems.find(p=>p.id===state.current)||problems[0]||null;
+  state=readLocal(storageKey);current=deepLinkedProblem()||problems.find(p=>p.id===state.current)||problems[0]||null;
   renderPractice();$("codeEditor").readOnly=true;updateStats();refreshAccountUi();
   let needsSync=false;
   if(owner){
@@ -526,7 +547,7 @@ async function changeAccount(user){
     }else cloud.admin=false;
   }else{cloud.accessChecking=false;cloud.accessError=null;setSyncStatus("","On this device");}
   if(epoch!==accountEpoch)return;
-  current=problems.find(p=>p.id===state.current)||problems[0]||null;
+  current=deepLinkedProblem()||problems.find(p=>p.id===state.current)||problems[0]||null;
   persist();accountReady=true;$("codeEditor").readOnly=false;refreshAccountUi();renderPractice();updateStats();route();
   if(owner)scheduleCommunityWarmup(owner,publicProfile);
   if(needsSync)syncTimer=setTimeout(()=>syncCloud(),500);
