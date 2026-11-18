@@ -108,7 +108,7 @@ export function mountCloudHealthNotice(doc=globalThis.document){
   actions.append(backup,account,connectionScreen,status,firebaseStatus);
   notice.append(copy,actions);
   (doc.querySelector('.minimal-header')||doc.body.firstElementChild)?.after(notice);
-  const stylesheet=doc.createElement('link');stylesheet.rel='stylesheet';stylesheet.href='./cloud-health.css?v=1';doc.head?.append(stylesheet);
+  const stylesheet=doc.createElement('link');stylesheet.rel='stylesheet';stylesheet.href='./cloud-health.css?v=outage-1';doc.head?.append(stylesheet);
   const view=()=>{
     const result=model.view({online:doc.defaultView?.navigator?.onLine!==false});
     notice.hidden=!result;
