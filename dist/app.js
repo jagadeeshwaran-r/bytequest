@@ -564,7 +564,9 @@ async function refreshCloudProgress(owner=accountOwner,epoch=accountEpoch){
       // the request. Never discard the code currently open in the editor.
       const recovered=reconcilePracticeProgress(mergeProgress(state,cloudState));
       const needsUpload=JSON.stringify(recovered)!==JSON.stringify(cloudState);
+      const newlyRestored=Object.keys(recovered.solved).some(id=>!state.solved[id]);
       state=recovered;
+      if(newlyRestored)communityCache.clearOwner(owner);
       try{writeLocalProgress(storageKey,state);storageOK=true;}
       catch{storageOK=false;$("saveStatus").textContent="Cloud progress loaded · local backup unavailable";}
       updateStats();renderMap();
