@@ -69,6 +69,11 @@ assert.ok(shell.includes('cloudHealth.setOwner(owner)'),'Correct account-scoped 
 assert.ok(app.includes("kind:storageOK?'pending':'storage-failed'"),'Local save status must be tracked');
 assert.ok(app.includes("kind:changedWhileSaving?'pending':'synced'"),'Only confirmed sync clears status');
 assert.ok(app.includes("kind:'sync-failed',localSaved:storageOK"),'Network errors must not conceal unsynced attempts');
+assert.ok(app.includes('updateStats();renderMap();'),
+  'Cloud merge must refresh problem-list solved ticks without requiring a page reload');
+const sync=app.slice(app.indexOf('async function syncCloud()'),app.indexOf('// Public catalog loading'));
+assert.ok(!sync.includes('loadEditor(')&&!sync.includes('renderPractice('),
+  'Cloud synchronization must never remount the user's code editor');
 const css=readFileSync('dist/cloud-health.css','utf8');
 assert.ok(css.includes('.bq-cloud-health[hidden]'),'Banner can hide cleanly after recovery');
 console.log('PASS: truthful provider-health alerts, unsynced profile warnings, account isolation and confirmed-cloud-only success.');
