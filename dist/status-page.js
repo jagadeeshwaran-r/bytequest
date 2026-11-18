@@ -1,6 +1,21 @@
 import {outagePageContent,safeReturnPage} from './system-state.js?v=1';
 
 const params=new URLSearchParams(location.search);
+// Every other connection/status variant must yield to an actively enforced
+// maintenance window. Keep the offline screen functional when the endpoint
+// cannot be reached: the recovery service worker only caches static assets.
+if(params.get('issue')!=='maintenance'){
+  try{
+    const {fetchMaintenanceStatus}=await import('./maintenance-api.js?v=1');
+    const status=await fetchMaintenanceStatus({timeoutMs:5000});
+    if(status.active===true){
+      location.replace('./status.html?issue=maintenance');
+      // A pending visibility gate prevents any flash before navigation.
+      await new Promise(()=>{});
+    }
+  }catch{} // Unreachable status is not proof of maintenance.
+  document.documentElement.removeAttribute('data-bq-status-check');
+}
 const state=outagePageContent(params.get('issue'));
 const from=safeReturnPage(params.get('from'));
 document.body.dataset.issue=state.kind;
