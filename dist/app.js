@@ -547,6 +547,59 @@ function refreshAccountUi(){
   if(!cloud.enabled)$("authMessage").textContent="Cloud accounts are being connected. You can keep practising on this device.";
   else if(!user&&!cloud.loginReady&&!$("authMessage").textContent)$("authMessage").textContent="Loading secure sign-in…";
 }
+// Read progress independently of writes. On a new phone the server may have
+// accepted solves even if this device has never saved a local account snapshot.
+// A failed upload must not hide data already successfully downloaded.
+let progressRefreshInFlight=null,lastProgressRefreshAt=0;
+async function refreshCloudProgress(owner=accountOwner,epoch=accountEpoch){
+  if(!owner||!accountReady||cloud.user?.id!==owner||epoch!==accountEpoch)return false;
+  if(progressRefreshInFlight)return progressRefreshInFlight;
+  lastProgressRefreshAt=Date.now();
+  const task=(async()=>{
+    try{
+      const remote=await cloud.request("progress",{},owner);
+      if(epoch!==accountEpoch||cloud.user?.id!==owner)return false;
+      const cloudState=validateProgress(remote.payload||blank());
+      // Merge using the most recent in-memory edits, not a snapshot from before
+      // the request. Never discard the code currently open in the editor.
+      const recovered=reconcilePracticeProgress(mergeProgress(state,cloudState));
+      const needsUpload=JSON.stringify(recovered)!==JSON.stringify(cloudState);
+      state=recovered;
+      try{writeLocalProgress(storageKey,state);storageOK=true;}
+      catch{storageOK=false;$("saveStatus").textContent="Cloud progress loaded · local backup unavailable";}
+      updateStats();renderMap();
+      if(tab==="problem"||tab==="learn")renderLearning();
+      if(location.hash==="#progress")renderProgress();
+      if(needsUpload){
+        setSyncStatus("syncing","Cloud progress loaded · saving local changes");
+        $("saveStatus").textContent=storageOK?"Cloud history restored · local changes awaiting sync":"Cloud history restored · local backup unavailable";
+        clearTimeout(syncTimer);
+        syncTimer=setTimeout(()=>{
+          if(epoch===accountEpoch&&cloud.user?.id===owner)void syncCloud();
+        },100);
+      }else{
+        setSyncStatus("synced","Cloud progress loaded");
+        $("saveStatus").textContent=storageOK?"Cloud progress loaded on this device":"Cloud progress loaded · local backup unavailable";
+        if(storageOK)cloud.onHealth?.({kind:"synced"});
+      }
+      return true;
+    }catch(error){
+      if(epoch!==accountEpoch||cloud.user?.id!==owner)return false;
+      setSyncStatus("failed","Cloud progress could not load · retrying");
+      $("saveStatus").textContent="Your cloud history is not loaded on this device";
+      $("authMessage").textContent="Cloud progress could not load: "+String(error?.message||error)+". Your local drafts have not been deleted.";
+      cloud.onHealth?.({kind:"sync-failed",localSaved:storageOK});
+      // A later save or foreground refresh retries without erasing local work.
+      clearTimeout(syncTimer);
+      syncTimer=setTimeout(()=>{
+        if(epoch===accountEpoch&&cloud.user?.id===owner)void syncCloud();
+      },10000);
+      return false;
+    }
+  })();
+  progressRefreshInFlight=task;
+  try{return await task;}finally{if(progressRefreshInFlight===task)progressRefreshInFlight=null;}
+}
 async function changeAccount(user){
   const owner=user?.id||null;
   // The local account is ready as soon as its owner-scoped progress is read.
@@ -616,11 +669,11 @@ async function changeAccount(user){
     refreshAccountUi();
     scheduleCommunityWarmup(owner,publicProfile);
   }).catch(()=>{if(epoch===accountEpoch)cloud.admin=false;});
-  // syncProgress reads and merges the latest remote revision before any write.
-  // It remains safe even if account() and its permissions request never settle.
+  // Read cloud progress first, independently of any upload, so previous-day
+  // solves appear on a different device even if a subsequent write is blocked.
   clearTimeout(syncTimer);
   syncTimer=setTimeout(()=>{
-    if(epoch===accountEpoch&&cloud.user?.id===owner)void syncCloud();
+    if(epoch===accountEpoch&&cloud.user?.id===owner)void refreshCloudProgress(owner,epoch);
   },100);
 }
 
@@ -812,7 +865,16 @@ $("signOutBtn").onclick=async()=>{
  finally{button.disabled=false;}
 };
 $("importGuestBtn").onclick=()=>{if(!cloud.user)return;state=reconcilePracticeProgress(mergeProgress(state,readLocal(guestStorageKey)));persist();renderPractice();updateStats();notify("Guest progress added to this account. Cloud sync queued.");};
-addEventListener("online",()=>{if(cloud.user)syncCloud();else setSyncStatus("","On this device");});
+function recheckCloudProgress(){
+  if(!accountReady||!cloud.user||busy||Date.now()-lastProgressRefreshAt<30000)return;
+  void refreshCloudProgress(cloud.user.id,accountEpoch);
+}
+addEventListener("online",()=>{
+  if(cloud.user)void refreshCloudProgress(cloud.user.id,accountEpoch);
+  else setSyncStatus("","On this device");
+});
+addEventListener("focus",recheckCloudProgress);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)recheckCloudProgress();});
 addEventListener("offline",()=>setSyncStatus("failed",cloud.user?"Offline · saved here":"On this device"));
 async function bootCloud(){
   refreshAccountUi();
