@@ -29,7 +29,7 @@ assert.ok(submit.includes('catch(error){notify('),
 assert.ok(submit.indexOf('try{\n  results=null;renderTests()')>submit.indexOf('setBusy(true)'),
  'Initialization errors must be covered by the final unlock');
 
-const run=source.slice(source.indexOf('async function run(submit)'),source.indexOf('async function submitOnline()'));
+const run=source.slice(source.indexOf('async function run(submit,'),source.indexOf('async function submitOnline()'));
 assert.ok(run.indexOf('try{\n    results=null;renderTests()')>run.indexOf('setBusy(true)'),
  'A rendering error after beginning a run must still reach finally/unlock');
 assert.ok(run.includes('finally{if(epoch===runEpoch){clearTimeout(watchdog);setBusy(false)'));
