@@ -23,8 +23,8 @@ function catalogStorage(fallback){
   try{return globalThis.localStorage||null;}catch{return null;}
 }
 export class Cloud {
-  constructor(onChange=()=>{},{config=cloudConfig,firebase=firebaseConfig,fetchImpl=(...args)=>globalThis.fetch(...args),sessionFactory=(c,cb)=>new FirebaseSession(c,cb),storage=undefined,now=()=>Date.now()}={}){
-    this.config=config;this.fetch=fetchImpl;this.catalogStore=catalogStorage(storage);this.clock=now;this.catalogInFlight=null;this.user=null;this.admin=false;this.canCreate=false;this.onChange=onChange;this.enabled=validPublicConfig(config);this.lastToken=null;this.loginReady=false;this.bootstrap=null;
+  constructor(onChange=()=>{},{config=cloudConfig,firebase=firebaseConfig,fetchImpl=(...args)=>globalThis.fetch(...args),sessionFactory=(c,cb)=>new FirebaseSession(c,cb),storage=undefined,now=()=>Date.now(),authTimeoutMs=12000}={}){
+    this.config=config;this.fetch=fetchImpl;this.catalogStore=catalogStorage(storage);this.clock=now;this.authTimeoutMs=Number.isFinite(authTimeoutMs)&&authTimeoutMs>=10?authTimeoutMs:12000;this.catalogInFlight=null;this.user=null;this.admin=false;this.canCreate=false;this.onChange=onChange;this.enabled=validPublicConfig(config);this.lastToken=null;this.loginReady=false;this.bootstrap=null;
     this.requests=createRequestCoordinator();
     this.session=sessionFactory(firebase,user=>{this.requests.clear();this.user=user;this.lastToken=null;this.admin=false;this.canCreate=false;this.bootstrap=null;this.onChange(user);});
   }
@@ -96,7 +96,15 @@ export class Cloud {
     if(this.deletionPending&&action!=="account-delete")throw new Error("Account removal is in progress.");
     if(!this.enabled||!ownerId||this.user?.id!==ownerId)throw new Error("Sign in to sync your progress.");
     for(let attempt=0;attempt<2;attempt++){
-      const token=await this.session.tokenFor(ownerId,attempt>0);
+      // Firebase getIdToken() has no caller-side deadline. A stuck token
+      // refresh must not leave account progress permanently "loading".
+      let tokenTimer;
+      const token=await Promise.race([
+        this.session.tokenFor(ownerId,attempt>0),
+        new Promise((_,reject)=>{
+          tokenTimer=setTimeout(()=>reject(new Error("Google sign-in token timed out. Your work is saved locally; retry Sync now.")),this.authTimeoutMs);
+        })
+      ]).finally(()=>clearTimeout(tokenTimer));
       this.lastToken={owner:ownerId,token};
       if(this.user?.id!==ownerId)throw new Error("Your account changed. Please retry saving.");
       const response=await this.fetch(this.config.url+"/functions/v1/bytequest-firebase",{

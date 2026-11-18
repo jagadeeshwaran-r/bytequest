@@ -18,7 +18,7 @@ import {mountShell} from "./shell.js?v=creator-admin-1";
 import {Dashboard} from "./dashboard.js?v=topic-directory-1";
 import {languages,starterFor,NativeJudge} from "./languages.js?v=structural-2";
 import {problems as bundledProblems} from "./problems.js";
-import {Cloud} from "./cloud.js?v=creator-admin-1";
+import {Cloud} from "./cloud.js?v=account-bootstrap-1";
 import {createViewCache,prefetchCommunityViews} from "./view-cache.js?v=avatar-1";
 import {blankProgress, validateProgress, mergeProgress, solveStreak} from "./progress.js?v=practice-history-1";
 import {Studio} from "./studio.js?v=studio-auth-1";
@@ -546,59 +546,82 @@ function refreshAccountUi(){
   else if(!user&&!cloud.loginReady&&!$("authMessage").textContent)$("authMessage").textContent="Loading secure sign-in…";
 }
 async function changeAccount(user){
-  const owner=user?.id||null;if(owner===accountOwner&&accountReady)return;
+  const owner=user?.id||null;
+  // The local account is ready as soon as its owner-scoped progress is read.
+  // Remote account/profile/permissions requests must NEVER gate synchronization.
+  if(owner===accountOwner&&accountReady)return;
   const previousOwner=accountOwner;
-  const epoch=++accountEpoch;clearTimeout(communityWarmupTimer);if(previousOwner&&previousOwner!==owner)communityCache.clearOwner(previousOwner);publicProfile=null;pendingProfileRefresh=false;accountOwner=owner;accountReady=false;clearTimeout(syncTimer);syncing=false;syncAgain=false;syncFailures=0;
+  const epoch=++accountEpoch;
+  clearTimeout(communityWarmupTimer);
+  if(previousOwner&&previousOwner!==owner)communityCache.clearOwner(previousOwner);
+  publicProfile=null;
+  pendingProfileRefresh=false;
+  accountOwner=owner;
+  accountReady=false;
+  clearTimeout(syncTimer);
+  syncing=false;
+  syncAgain=false;
+  syncFailures=0;
   document.querySelectorAll('.submit-confirm[open],#successDialog[open]').forEach(d=>d.close());
-  if(busy)stopRun();studio.accountChanged();dashboard.accountChanged();storageKey=owner?"bytequest.user."+owner:guestStorageKey;
-  state=reconcilePracticeProgress(readLocal(storageKey));current=deepLinkedProblem()||problems.find(p=>p.id===state.current)||problems[0]||null;
-  renderPractice();$("codeEditor").readOnly=false;updateStats();refreshAccountUi();
-  let needsSync=false;
-  if(owner){
-    cloud.accessChecking=true;cloud.accessError=null;
-    setSyncStatus("syncing","Loading your progress");
-    // Confirm publishing access separately from progress/profile: Studio must not
-    // wait for slow unrelated account requests before recognizing a signed-in user.
-    const permissions=cloud.checkAdmin(owner).then(()=>{
-      if(epoch!==accountEpoch||cloud.user?.id!==owner)return;
-      cloud.accessChecking=false;cloud.accessError=null;refreshAccountUi();
-      if(document.body.dataset.page==="studio")route();
-    }).catch(error=>{
-      if(epoch===accountEpoch&&cloud.user?.id===owner){
-        cloud.accessChecking=false;cloud.accessError=error.message;cloud.admin=false;cloud.canCreate=false;
-        refreshAccountUi();if(document.body.dataset.page==="studio")route();
-      }
-      throw error;
-    });
-    // Only progress is on the critical path. A delayed profile/permissions
-    // request must not prevent accepted solves from syncing.
-    const loaded=await Promise.allSettled([cloud.loadProgress(owner)]);
-    if(epoch!==accountEpoch)return;
-    if(loaded[0].status==="fulfilled"){
-      const remote=loaded[0].value;
-      state=reconcilePracticeProgress(mergeProgress(state,remote.state));
-      needsSync=JSON.stringify(state)!==JSON.stringify(remote.state);
-      setSyncStatus("synced",remote.revision?"Saved to cloud":"Cloud connected");
-    }else{
-      setSyncStatus("failed","Saved on this device");
-      $("authMessage").textContent="Could not load cloud progress. Your account’s local work is kept. Use Sync now to retry.";
-    }
-    void permissions.catch(()=>{});
-    void cloud.request("self",{},owner).then(value=>{
-      if(epoch!==accountEpoch||cloud.user?.id!==owner)return;
-      cloud.admin=value.admin===true;
-      publicProfile=value.profile;
-      communityCache.saveSelf(owner,value);
-      refreshAccountUi();
-      if(accountReady)scheduleCommunityWarmup(owner,publicProfile);
-    }).catch(()=>{if(epoch===accountEpoch)cloud.admin=false;});
-  }else{cloud.accessChecking=false;cloud.accessError=null;setSyncStatus("","On this device");}
-  if(epoch!==accountEpoch)return;
+  if(busy)stopRun();
+  studio.accountChanged();
+  dashboard.accountChanged();
+  storageKey=owner?"bytequest.user."+owner:guestStorageKey;
+  // Preserve both saved drafts and accepted practice attempts from this device.
+  state=reconcilePracticeProgress(readLocal(storageKey));
+  // A recovered accepted practice record must refresh cached profile stats
+  // after the first confirmed cloud sync.
+  if(owner&&Object.keys(state.solved).length)pendingProfileRefresh=true;
   current=deepLinkedProblem()||problems.find(p=>p.id===state.current)||problems[0]||null;
-  persist();accountReady=true;$("codeEditor").readOnly=false;refreshAccountUi();renderPractice();updateStats();route();
-  if(owner)scheduleCommunityWarmup(owner,publicProfile);
-  if(needsSync)syncTimer=setTimeout(()=>syncCloud(),500);
+  accountReady=true;
+  persist();
+  renderPractice();
+  $("codeEditor").readOnly=false;
+  updateStats();
+  refreshAccountUi();
+  route();
+
+  if(!owner){
+    cloud.accessChecking=false;
+    cloud.accessError=null;
+    setSyncStatus("","On this device");
+    return;
+  }
+  cloud.accessChecking=true;
+  cloud.accessError=null;
+  setSyncStatus("syncing","Preparing cloud sync");
+  // Account metadata and creator permissions are optional, non-blocking UI.
+  void cloud.checkAdmin(owner).then(()=>{
+    if(epoch!==accountEpoch||cloud.user?.id!==owner)return;
+    cloud.accessChecking=false;
+    cloud.accessError=null;
+    refreshAccountUi();
+    if(document.body.dataset.page==="studio")route();
+  }).catch(error=>{
+    if(epoch!==accountEpoch||cloud.user?.id!==owner)return;
+    cloud.accessChecking=false;
+    cloud.accessError=error.message;
+    cloud.admin=false;
+    cloud.canCreate=false;
+    refreshAccountUi();
+    if(document.body.dataset.page==="studio")route();
+  });
+  void cloud.request("self",{},owner).then(value=>{
+    if(epoch!==accountEpoch||cloud.user?.id!==owner)return;
+    cloud.admin=value.admin===true;
+    publicProfile=value.profile;
+    communityCache.saveSelf(owner,value);
+    refreshAccountUi();
+    scheduleCommunityWarmup(owner,publicProfile);
+  }).catch(()=>{if(epoch===accountEpoch)cloud.admin=false;});
+  // syncProgress reads and merges the latest remote revision before any write.
+  // It remains safe even if account() and its permissions request never settle.
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(()=>{
+    if(epoch===accountEpoch&&cloud.user?.id===owner)void syncCloud();
+  },100);
 }
+
 async function syncCloud(){
   clearTimeout(syncTimer);
   if(!cloud.user){
