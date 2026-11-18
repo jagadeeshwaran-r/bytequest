@@ -176,4 +176,16 @@ for(const page of ['privacy','runner','native-runner']){
    page+' direct URL must also run a maintenance preflight');
  assert.ok(html.includes('data-bq-app='),page+' runtime code must be deferred until maintenance permits it');
 }
+const unknownRoute=readFileSync('dist/404.html','utf8');
+assert.ok(unknownRoute.includes("result.active===true")&&
+ unknownRoute.includes("location.replace(dest('maintenance'))"),
+ 'Unknown GitHub Pages URLs must route to maintenance when active');
+assert.ok(unknownRoute.includes('await fetchMaintenanceStatus'),
+ '404 page must verify server maintenance status rather than trusting a URL param');
+const javaEntry=readFileSync('dist/runner-core.js','utf8');
+const nativeEntry=readFileSync('dist/native-runner-core.js','utf8');
+assert.ok(javaEntry.includes('cheerpjInit')&&javaEntry.includes('await new Promise'),
+ 'Java runner must defer third-party JVM loading until after server preflight');
+assert.ok(nativeEntry.includes('headlessRunCode')&&nativeEntry.includes("crossOriginIsolated"),
+ 'Native runner must retain cross-origin isolation and sandbox behavior');
 console.log('PASS: disabled initial IST draft, server-clock start/end, admin-only bypass and saves, writes blocked with 503, auth and safe recovery.');
