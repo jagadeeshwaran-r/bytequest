@@ -21,7 +21,7 @@ const busy=source.slice(source.indexOf('function setBusy(value)'),source.indexOf
 assert.ok(busy.includes('readOnly=false'),'Compilation must never block typing while account data loads');
 assert.ok(!busy.includes('readOnly=!accountReady')&&!busy.includes('readOnly=value||!accountReady'),'Run must not re-lock the editor');
 const account=source.slice(source.indexOf('async function changeAccount(user)'),source.indexOf('async function syncCloud()'));
-assert.ok(account.includes('renderPractice();$("codeEditor").readOnly=false;'),'Account loading must not make the editor read-only');
+assert.match(account,/renderPractice\(\);\s*\$\("codeEditor"\)\.readOnly=false;/,'Account loading must not make the editor read-only');
 assert.ok(!account.includes('readOnly=true'),'Account network requests must not strand editor input');
 assert.ok(source.includes('Run passed. This is a test run, not a recorded solve.'),'Passing Run must clearly distinguish testing from recorded Submit');
 
