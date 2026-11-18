@@ -17,8 +17,8 @@ import {mountWorkspace} from './workspace.js';
 import {mountShell} from "./shell.js?v=cloud-health-1";
 import {Dashboard} from "./dashboard.js?v=topic-directory-1";
 import {languages,starterFor,NativeJudge} from "./languages.js?v=structural-2";
-import {problems as bundledProblems} from "./problems.js";
-import {Cloud} from "./cloud.js?v=cloud-health-1";
+import {problems as bundledProblems} from "./problems.js?v=private-reference-1";
+import {Cloud} from "./cloud.js?v=private-reference-1";
 import {createViewCache,prefetchCommunityViews} from "./view-cache.js?v=avatar-1";
 import {blankProgress, validateProgress, mergeProgress, solveStreak} from "./progress.js?v=practice-history-1";
 import {recoverOwnProfileSolves} from "./profile-solve-recovery.js?v=1";
@@ -191,12 +191,27 @@ function renderLearning(){
   $("learningContent").innerHTML=content;
   if(tab==="problem")loadCredits(current,creditEpoch);
   if($("timerButton")){$("timerButton").onclick=toggleTimer;updateTimer();}
-  if($("referenceBtn"))$("referenceBtn").onclick=()=>{
-    // The code is never inserted until the current problem is solved.
-    if(!canRevealEditorialSolution(state,current.id))return;
-    referenceUsed=true;
-    $("referenceContent").innerHTML='<p class="reference-reveal-note">Trace the idea, then close this and try it yourself.</p><pre class="reference-code">'+html(current.reference)+'</pre>';
-    $("referenceBtn").hidden=true;
+  if($("referenceBtn"))$("referenceBtn").onclick=async()=>{
+    // A locally stored practice solve is only a UI hint. The verified
+    // Firebase identity and accepted-submission row control actual access.
+    if(!canRevealEditorialSolution(state,current.id)||!cloud.user)return;
+    const selected=current,owner=cloud.user.id,ticket=creditEpoch;
+    const button=$("referenceBtn"),output=$("referenceContent");
+    button.disabled=true;button.textContent="Checking verified access…";
+    output.textContent="Loading the private Java reference…";
+    try{
+      const result=await cloud.request("reference-read",{problemId:selected.id,revision:selected.revision},owner);
+      if(current!==selected||creditEpoch!==ticket||tab!=="learn"||cloud.user?.id!==owner)return;
+      if(typeof result.reference!=="string"||!result.reference||result.revision!==selected.revision)
+        throw new Error("The private reference response is invalid.");
+      referenceUsed=true;
+      output.innerHTML='<p class="reference-reveal-note">Compare your verified solution with this reference.</p><pre class="reference-code">'+html(result.reference)+'</pre>';
+      button.hidden=true;
+    }catch(error){
+      if(current!==selected||creditEpoch!==ticket||tab!=="learn"||cloud.user?.id!==owner)return;
+      output.textContent=error?.message||"Reference unavailable. Retry after a verified accepted submission.";
+      button.disabled=false;button.textContent="Retry verified reference";
+    }
   };
   if(tab==="visual"){
     traceStep=0;renderTrace();

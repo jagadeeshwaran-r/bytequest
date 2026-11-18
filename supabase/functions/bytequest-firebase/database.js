@@ -42,11 +42,29 @@ export function createDatabase(url,serviceKey,{fetchImpl=fetch}={}){
       return enrich(result);
     },
     async sync(owner,payload,revision){const rows=checked(await client.rpc("sync_bytequest_firebase_progress",{owner_id:owner,new_payload:payload,expected_revision:revision}));if(!rows?.[0])throw new Error("Missing progress result");return rows[0];},
+    // Reference source is never fetched from a public catalog row. The owner
+    // comes from a verified Firebase token, not a request parameter.
+    async reference(owner,id,revision){
+      const row=checked(await client.from("bytequest_problems").select("id,revision,published").eq("id",id).eq("published",true).maybeSingle());
+      if(!row)throw new HttpError(404,"Problem not found.");
+      if(revision!==row.revision)throw new HttpError(409,"This problem changed. Reload before opening its reference.");
+      const [accepted,author,admin]=await Promise.all([
+        client.from("bytequest_submissions").select("id").eq("owner_id",owner).eq("problem_id",id).eq("problem_revision",revision).limit(1),
+        client.from("bytequest_problem_authors").select("problem_id").eq("user_id",owner).eq("problem_id",id).limit(1),
+        client.from("bytequest_library_admins").select("user_id").eq("user_id",owner).limit(1)
+      ]);
+      if(!checked(accepted).length&&!checked(author).length&&!checked(admin).length)
+        throw new HttpError(403,"Submit a server-verified accepted solution to unlock the reference. Browser practice does not unlock it.");
+      const secret=checked(await client.from("bytequest_problem_references").select("revision,reference").eq("problem_id",id).maybeSingle());
+      if(!secret||secret.revision!==revision)throw new HttpError(503,"The private reference is unavailable for this revision. Try again later.");
+      return {reference:secret.reference,revision};
+    },
     async publicProblem(id){return checked(await client.from("bytequest_problems").select("content,revision").eq("id",id).eq("published",true).maybeSingle());},
     async claimOnlineRun(owner){return checked(await client.rpc("bytequest_claim_online_run",{owner_id:owner}));},
     async claimJudge(owner){return checked(await client.rpc("bytequest_claim_judge",{owner_id:owner}));},
     async privateProblem(id){const row=checked(await client.from("bytequest_problems").select("content,revision").eq("id",id).eq("published",true).maybeSingle());if(!row)return null;const suite=checked(await client.from("bytequest_problem_private").select("hidden_tests").eq("problem_id",id).maybeSingle());return {...row,hidden:suite?.hidden_tests||[]};},
-    async problems(owner,all=false){let ids=null;if(!all){ids=checked(await client.from("bytequest_problem_authors").select("problem_id").eq("user_id",owner).limit(1000)).map(r=>r.problem_id);if(!ids.length)return [];}let q=client.from("bytequest_problems").select("*").order("position").order("id").limit(1000);if(ids)q=q.in("id",ids);const rows=checked(await q);if(!rows.length)return [];const hidden=checked(await client.from("bytequest_problem_private").select("problem_id,hidden_tests").in("problem_id",rows.map(r=>r.id)));return rows.map(r=>({...r,hiddenTests:hidden.find(h=>h.problem_id===r.id)?.hidden_tests||[]}));},
+    async problems(owner,all=false){let ids=null;if(!all){ids=checked(await client.from("bytequest_problem_authors").select("problem_id").eq("user_id",owner).limit(1000)).map(r=>r.problem_id);if(!ids.length)return [];}let q=client.from("bytequest_problems").select("*").order("position").order("id").limit(1000);if(ids)q=q.in("id",ids);const rows=checked(await q);if(!rows.length)return [];const hidden=checked(await client.from("bytequest_problem_private").select("problem_id,hidden_tests").in("problem_id",rows.map(r=>r.id)));const refs=checked(await client.from("bytequest_problem_references").select("problem_id,revision,reference").in("problem_id",rows.map(r=>r.id)));
+      return rows.map(r=>({...r,content:{...r.content,reference:refs.find(x=>x.problem_id===r.id&&x.revision===r.revision)?.reference||""},hiddenTests:hidden.find(h=>h.problem_id===r.id)?.hidden_tests||[]}));},
     async saveProblem(problem,{owner,published,position,revision,hidden,correction}){
       const {data,error}=await client.rpc("bytequest_save_problem",{owner_id:owner,problem,hidden_cases:hidden,publish:published,position_number:position,expected_revision:revision,correction});rpcError(error);return data;
     }

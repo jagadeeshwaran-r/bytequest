@@ -1,3 +1,5 @@
+import './fixtures/reference-solutions.mjs';
+import './reference-security.mjs';
 import './problems-account-initialization.mjs';
 import './profile-solve-recovery.mjs';
 import './mobile-progress-hydration.mjs';

@@ -16,7 +16,7 @@ function exampleExplanations(value){
 export const problemId = /^[a-z][a-z0-9-]{1,63}$/;
 const identifier = value => typeof value === "string" && /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(value) && !reserved.has(value);
 function text(value,name,max=10000){if(typeof value!=="string"||!value.trim()||value.length>max)throw new Error(name+" is required (up to "+max+" characters).");return value.trim();}
-export function validateProblem(input) {
+export function validateProblem(input,{publicOnly=false}={}) {
   if(!input||typeof input!=="object"||Array.isArray(input))throw new Error("Provide a problem object.");
   if(!problemId.test(input.id))throw new Error("Use a lowercase problem ID, for example array-sum.");
   if(!identifier(input.method))throw new Error("Use a valid Java method name.");
@@ -41,7 +41,7 @@ export function validateProblem(input) {
     hiddenCount:Number.isInteger(input.hiddenCount)&&input.hiddenCount>=0&&input.hiddenCount<=100?input.hiddenCount:0,
     method:input.method,returns:input.returns,params,difficulty:input.difficulty,
     description:text(input.description,"Description",10000),constraints:text(input.constraints,"Constraints",5000),
-    starter:text(input.starter,"Java starter",60000),reference:text(input.reference,"Reference solution",60000),
+    starter:text(input.starter,"Java starter",60000),...(publicOnly?{}:{reference:text(input.reference,"Reference solution",60000)}),
     idea:text(input.idea,"Pattern explanation",10000),invariant:text(input.invariant,"Invariant",5000),
     complexity:{time:text(input.complexity?.time,"Time complexity",100),space:text(input.complexity?.space,"Space complexity",100),tradeoff:text(input.complexity?.tradeoff,"Trade-off",3000)},
     hints:(Array.isArray(input.hints)?input.hints:[]).slice(0,8).map(h=>text(h,"Hint",2000)),
@@ -67,6 +67,6 @@ export function validateProblem(input) {
 
 export function mergeCatalog(base,remote) {
   const map=new Map(base.map(p=>[p.id,p]));
-  for(const p of remote)map.set(p.id,validateProblem(p));
+  for(const p of remote)map.set(p.id,validateProblem(p,{publicOnly:true}));
   return [...map.values()];
 }

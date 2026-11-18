@@ -1,7 +1,7 @@
 // Standalone Studio entrypoint. Do NOT initialize the Problems workbench here:
 // that workbench expects editor/catalog DOM nodes absent from studio.html and
 // previously crashed before Firebase could restore an existing session.
-import {Cloud} from './cloud.js?v=cloud-health-1';
+import {Cloud} from './cloud.js?v=private-reference-1';
 import {Studio} from './studio.js?v=studio-auth-1&feature=rich-statements-1&auth-ready=1';
 import {mountShell} from './shell.js?v=cloud-health-1';
 

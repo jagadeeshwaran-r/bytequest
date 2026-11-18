@@ -16,11 +16,11 @@ assert.equal(canRevealEditorialSolution({solved:{[problemId]:Date.now()}},''),fa
 const locked=editorialSolutionGateMarkup(false);
 const unlocked=editorialSolutionGateMarkup(true);
 assert.match(locked,/Java solution locked/);
-assert.match(locked,/Submit an accepted solution/);
+assert.match(locked,/Submit a server-verified accepted solution/);
 assert.ok(!locked.includes('id="referenceBtn"'),'Unsolved problems must not render a reveal control');
 assert.ok(!locked.includes('<pre'),'Unsolved problems must not render reference source');
 assert.ok(locked.includes('id="referenceContent"'),'Keep editor tab mounting consistent');
-assert.match(unlocked,/Java solution unlocked/);
+assert.match(unlocked,/Java reference access/);
 assert.ok(unlocked.includes('id="referenceBtn"'));
 assert.ok(!unlocked.includes('<pre'),'Reveal still requires an explicit click');
 
@@ -33,7 +33,8 @@ assert.ok(html.includes('id="visibleProblemCount"'));
 assert.ok(html.includes('<h2>Problem library</h2>'));
 assert.ok(html.includes('role="search"'));
 assert.ok(app.includes('editorialSolutionGateMarkup(canRevealEditorialSolution(state,current.id))'));
-assert.ok(app.includes('if(!canRevealEditorialSolution(state,current.id))return;'));
+assert.ok(app.includes('cloud.request("reference-read",{problemId:selected.id,revision:selected.revision},owner)'), 'Reference source must be fetched through authenticated API');
+assert.ok(!app.includes('html(current.reference)'), 'No local reference solution may render from public data');
 assert.ok(app.includes('if(tab==="learn"&&current.id===p.id)renderLearning();'),
   'Immediately show unlocked editorial state on accepted solve');
 assert.ok(app.includes('if(event.key!=="/"'),'Slash shortcut should only operate in catalog');
@@ -44,4 +45,4 @@ assert.ok(css.includes('#mapView .catalog-search-wrap'));
 assert.ok(css.includes('#practiceView :is(.reference-lock,.reference-unlocked)'));
 assert.ok(css.includes('@media(max-width:620px)'));
 assert.ok(css.includes('prefers-reduced-motion'));
-console.log('PASS: Editorial spoiler lock, accepted unlock, catalog search and responsive presentation.');
+console.log('PASS: Editorial frontend gate, authenticated reference fetch, catalog search and responsive presentation.');
