@@ -532,6 +532,13 @@ $("importFile").onchange=async event=>{
   }catch(error){notify("Could not restore: "+error.message);}event.target.value="";
 };
 function setSyncStatus(kind,label){$("syncBadge").className="sync-badge "+kind;$("syncLabel").textContent=label;}
+const progressAccountLabel=document.createElement("span");
+progressAccountLabel.className="muted";
+progressAccountLabel.id="catalogAccountProgress";
+progressAccountLabel.setAttribute("role","status");
+progressAccountLabel.setAttribute("aria-live","polite");
+$("catalogSyncStatus").after(progressAccountLabel);
+function showAccountProgress(label){progressAccountLabel.textContent=label;}
 function refreshAccountUi(){
   shell.setAccount(cloud.user,publicProfile);
   shell.setAdmin(cloud.admin);
@@ -559,6 +566,8 @@ async function restoreOwnProfileHistory(owner,epoch,ownerProfile){
     const response=await cloud.request("profile",{target:ownerProfile.username},owner);
     if(epoch!==accountEpoch||cloud.user?.id!==owner)return false;
     const recovery=recoverOwnProfileSolves(state,response,ownerProfile.public_id);
+    if(response.isOwn===true&&response.profile?.public_id===ownerProfile.public_id)
+      showAccountProgress("Account @"+ownerProfile.username+" · "+Number(response.stats?.solved||0)+" cloud-recorded solves");
     if(!recovery.restored)return false;
     state=reconcilePracticeProgress(recovery.state);
     if(!persist()){
@@ -595,6 +604,7 @@ async function refreshCloudProgress(owner=accountOwner,epoch=accountEpoch){
       const remote=await cloud.request("progress",{},owner);
       if(epoch!==accountEpoch||cloud.user?.id!==owner)return false;
       const cloudState=validateProgress(remote.payload||blank());
+      showAccountProgress("Cloud history loaded · "+Object.keys(cloudState.solved).length+" saved solves");
       // Merge using the most recent in-memory edits, not a snapshot from before
       // the request. Never discard the code currently open in the editor.
       const recovered=reconcilePracticeProgress(mergeProgress(state,cloudState));
@@ -635,6 +645,7 @@ async function refreshCloudProgress(owner=accountOwner,epoch=accountEpoch){
     }catch(error){
       if(epoch!==accountEpoch||cloud.user?.id!==owner)return false;
       setSyncStatus("failed","Cloud progress could not load · retrying");
+      showAccountProgress("Account progress unavailable · solved ticks may be outdated");
       $("saveStatus").textContent="Your cloud history is not loaded on this device";
       $("authMessage").textContent="Cloud progress could not load: "+String(error?.message||error)+". Your local drafts have not been deleted.";
       cloud.onHealth?.({kind:"sync-failed",localSaved:storageOK});
@@ -661,6 +672,7 @@ async function changeAccount(user){
   publicProfile=null;
   pendingProfileRefresh=false;
   accountOwner=owner;
+  showAccountProgress(owner?"Checking your saved solves…":"Sign in to load your solved problems");
   accountReady=false;
   progressRefreshInFlight=null;
   lastProgressRefreshAt=0;
