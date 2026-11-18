@@ -137,4 +137,28 @@ for(const page of ['index','leaderboard','community','studio']){
  assert.ok(readFileSync('dist/'+page+'.html','utf8').includes('maintenance-gate.js?v=1'),
   page+' must load preflight status before application startup');
 }
+// Maintenance visitor experience must not advertise a way around an active
+// scheduled window, including briefly before the ES module finishes loading.
+const maintenanceMarkup=readFileSync('dist/status.html','utf8');
+const maintenanceScript=readFileSync('dist/status-page.js','utf8');
+const maintenanceStyles=readFileSync('dist/system-state.css','utf8');
+const outageWorker=readFileSync('dist/runtime-sw.js','utf8');
+assert.ok(maintenanceMarkup.includes("document.documentElement.dataset.maintenancePage='true'"),
+ 'Maintenance page must hide actions before asynchronous scripts load');
+assert.ok(maintenanceScript.includes("if(state.kind==='maintenance'){")&&
+ maintenanceScript.includes("  $('statusRetry').hidden=true;")&&
+ maintenanceScript.includes("  $('statusContinue').hidden=true;"),
+ 'Maintenance-specific controller must hide retry and continue actions');
+assert.ok(maintenanceStyles.includes('html[data-maintenance-page="true"] .status-actions')&&
+ maintenanceStyles.includes('body[data-issue="maintenance"] .status-actions'),
+ 'Maintenance recovery controls must be hidden even when CSS renders before JS');
+assert.ok(!maintenanceStyles.includes('body[data-issue="offline"] .status-actions{display:none'),
+ 'Offline practice recovery buttons must remain available');
+assert.ok(maintenanceMarkup.includes('id="statusAdminLink"'),
+ 'Admin maintenance recovery must remain accessible');
+assert.ok(outageWorker.includes("bytequest-connection-page-v3")&&
+ outageWorker.includes("./status-page.js?v=maintenance-controls-1"),
+ 'Offline cache must refresh the maintenance recovery page JavaScript');
+assert.ok(maintenanceMarkup.includes("./status-page.js?v=maintenance-controls-1"),
+ 'Status HTML must load the updated controller');
 console.log('PASS: disabled initial IST draft, server-clock start/end, admin-only bypass and saves, writes blocked with 503, auth and safe recovery.');
