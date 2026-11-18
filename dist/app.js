@@ -570,20 +570,28 @@ async function changeAccount(user){
       }
       throw error;
     });
-    const loaded=await Promise.allSettled([cloud.loadProgress(owner),permissions,cloud.request("self")]);
+    // Only progress is on the critical path. A delayed profile/permissions
+    // request must not prevent accepted solves from syncing.
+    const loaded=await Promise.allSettled([cloud.loadProgress(owner)]);
     if(epoch!==accountEpoch)return;
     if(loaded[0].status==="fulfilled"){
-      const remote=loaded[0].value;state=reconcilePracticeProgress(mergeProgress(state,remote.state));needsSync=JSON.stringify(state)!==JSON.stringify(remote.state);
+      const remote=loaded[0].value;
+      state=reconcilePracticeProgress(mergeProgress(state,remote.state));
+      needsSync=JSON.stringify(state)!==JSON.stringify(remote.state);
       setSyncStatus("synced",remote.revision?"Saved to cloud":"Cloud connected");
-    }else{setSyncStatus("failed","Saved on this device");$("authMessage").textContent="Could not load cloud progress. Your account’s local work is kept. Use Sync now to retry.";}
-    if(loaded[1].status==="rejected")cloud.admin=false;
-    if(loaded[2].status==="fulfilled"){
-      // The community 'self' response is the real administrator flag.
-      // The legacy 'account' admin flag includes delegated creators.
-      cloud.admin=loaded[2].value.admin===true;
-      publicProfile=loaded[2].value.profile;
-      communityCache.saveSelf(owner,loaded[2].value);
-    }else cloud.admin=false;
+    }else{
+      setSyncStatus("failed","Saved on this device");
+      $("authMessage").textContent="Could not load cloud progress. Your account’s local work is kept. Use Sync now to retry.";
+    }
+    void permissions.catch(()=>{});
+    void cloud.request("self",{},owner).then(value=>{
+      if(epoch!==accountEpoch||cloud.user?.id!==owner)return;
+      cloud.admin=value.admin===true;
+      publicProfile=value.profile;
+      communityCache.saveSelf(owner,value);
+      refreshAccountUi();
+      if(accountReady)scheduleCommunityWarmup(owner,publicProfile);
+    }).catch(()=>{if(epoch===accountEpoch)cloud.admin=false;});
   }else{cloud.accessChecking=false;cloud.accessError=null;setSyncStatus("","On this device");}
   if(epoch!==accountEpoch)return;
   current=deepLinkedProblem()||problems.find(p=>p.id===state.current)||problems[0]||null;
