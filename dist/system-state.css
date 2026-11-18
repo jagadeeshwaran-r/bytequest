@@ -57,3 +57,12 @@ body[data-issue="maintenance"]{--accent:#b6a0fa;--accent-dim:rgba(182,160,250,.1
 @media(max-width:600px){.status-top{padding:24px}.status-top-meta{font-size:9px;gap:8px}.status-main{padding:48px 24px}.status-shell{gap:34px}.status-copy h1{font-size:clamp(44px,11vw,60px)}.status-lead{font-size:15px}.status-divider{margin:30px 0 23px}.status-actions{margin-top:30px}.status-action-primary,.status-action-secondary{width:100%}.status-visual-frame{border-radius:20px;aspect-ratio:1/.77}.visual-overline{top:16px;left:18px;font-size:9px}.visual-footnote{bottom:14px;left:18px;right:18px;font-size:9px}.status-footer{padding:24px;gap:12px}.status-provider-links{gap:18px}.status-network{height:97%;inset:1% 0 2%}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 @media(forced-colors:active){.status-action-primary{color:ButtonText;background:ButtonFace}.status-network{color:CanvasText}}
+
+
+/* Server-authenticated maintenance window; never populated from URL params. */
+.status-window[hidden],.status-admin-link[hidden]{display:none!important}
+.status-window{display:flex;flex-direction:column;align-items:flex-start;gap:7px;margin-top:27px;padding:17px 20px;border:1px solid var(--accent-line);background:var(--accent-dim);border-radius:13px}
+.status-window>span:first-child{font:10px/1.5 "JetBrains Mono",monospace;letter-spacing:.1em;color:var(--accent)}
+.status-window strong{font-size:20px;line-height:1.4;letter-spacing:-.02em}
+.status-window>span:last-child{font-size:12px;color:var(--muted)}
+.status-admin-link{display:inline-block;margin-top:12px;font-size:12px;color:var(--accent);text-decoration:underline;text-underline-offset:4px}
