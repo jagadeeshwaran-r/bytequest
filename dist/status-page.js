@@ -53,3 +53,44 @@ retry.onclick=()=>{
  location.assign(returnHref);
 };
 updateConnectivity();
+
+if(state.kind==='maintenance'){
+  $('statusAdminLink').hidden=false;
+  const timing=$('statusWindow'),feedbackArea=$('statusFeedback');
+  async function readSchedule(){
+    try{
+      // Dynamic import keeps offline/busy pages functional without the backend.
+      const [{fetchMaintenanceStatus},{istDisplay}]=await Promise.all([
+        import('./maintenance-api.js?v=1'),
+        import('./maintenance-model.js?v=1')
+      ]);
+      const status=await fetchMaintenanceStatus();
+      if(status.active||status.upcoming){
+        $('statusIntro').textContent=status.message||'ByteQuest is being upgraded.';
+        $('statusDetail').textContent='Existing local drafts remain on your device. Cloud writes and verified submissions are paused only during the active maintenance window.';
+        timing.hidden=false;
+        $('statusWindowLabel').textContent=status.active?'EXPECTED RETURN · IST':'PLANNED WINDOW · IST';
+        $('statusWindowTime').textContent=status.active?
+          istDisplay(status.endsAt):istDisplay(status.startsAt);
+        $('statusWindowEnds').textContent=status.active?
+          'Maintenance is in progress. Backend submissions and sync are unavailable.':
+          'Expected return: '+istDisplay(status.endsAt);
+        if(!status.active)feedbackArea.textContent='Maintenance is scheduled but has not started.';
+        else feedbackArea.textContent='The schedule is based on server time, not your device clock.';
+      }else{
+        timing.hidden=true;
+        $('statusIntro').textContent='ByteQuest is not currently in maintenance mode.';
+        $('statusDetail').textContent='This is the maintenance page preview. The service has not reported an active or upcoming enabled window.';
+        $('statusRetryLabel').textContent='Return to ByteQuest';
+        feedbackArea.textContent='No maintenance window is active. You can return to your workspace.';
+      }
+    }catch{
+      timing.hidden=true;
+      feedbackArea.textContent='Cannot confirm maintenance status. This screen may be a preview; retry when services are reachable.';
+    }
+  }
+  void readSchedule();
+  const scheduleTimer=setInterval(()=>{if(!document.hidden)void readSchedule();},45000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)void readSchedule();});
+  window.addEventListener('pagehide',()=>clearInterval(scheduleTimer),{once:true});
+}
