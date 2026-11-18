@@ -104,6 +104,8 @@ if(!approved){
   // memory without re-evaluating its modules. Re-lock before rechecking.
   window.addEventListener('pageshow',event=>{
     if(!event.persisted)return;
+    clearInterval(timer);
+    timer=setInterval(()=>{if(!document.hidden)void check();},pollInterval);
     document.documentElement.dataset.bqMaintenanceCheck='pending';
     void check().finally(()=>{
       if(!stopped)document.documentElement.removeAttribute('data-bq-maintenance-check');
