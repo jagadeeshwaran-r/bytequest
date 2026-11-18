@@ -102,8 +102,12 @@ export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=
  function renderCommunity(response){
   let content=heading();
   if(!response.unlocked){
-   root.innerHTML=content+'<div class="submission-locked"><strong>Solve it to unlock it.</strong>'+
-    '<p>Only a server-verified accepted submission unlocks shared solutions and benchmarks. Java browser practice solves do not unlock this view.</p></div>';
+   const practiced=localRows().some(row=>row.status==='practice_accepted');
+   root.innerHTML=content+'<div class="submission-locked"><strong>'+
+    (practiced?'Practice passed · verification required':'Solve it to unlock it.')+'</strong>'+
+    '<p>'+(practiced
+      ?'Your Java solution passed the browser practice tests, but hidden cases were not verified. Submit while signed in for server verification to unlock shared solutions. Your practice solve still counts toward your personal progress once synced.'
+      :'Submit an accepted solution through the server to unlock shared solutions and benchmarks. Browser-only practice does not verify hidden cases or grant access to other people’s code.')+'</p></div>';
    bindSwitch();return;
   }
   content+='<div class="submission-filters"><label>Language<select data-sub-language>'+

@@ -1,10 +1,10 @@
 import {profileAvatar,publicProfileHref} from './profile-view.js?v=workbench-1';
-import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=practice-history-1';
+import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=verified-java-1';
 import {launchCelebration} from './celebration.js?v=next-1';
 import {mountEditorTools} from './editor-tools.js?v=copy-enabled-1';
 import {mountWorkspaceLayout} from './workspace-layout.js?v=workspace-1';
 import {submissionFeedback} from './submission-feedback.js?v=reliability-1';
-import {usesRemoteSubmit,browserSubmissionCases,browserSubmissionVerdict} from './browser-submit.js?v=local-java-1';
+import {usesRemoteSubmit,browserSubmissionCases,browserSubmissionVerdict,privateJavaJudgeUnavailable} from './browser-submit.js?v=verified-java-1';
 import {createPracticeSubmission,addPracticeSubmission} from './practice-history.js?v=practice-history-1';
 import {shouldRunCodeShortcut} from './run-shortcut.js?v=ctrl-run-1';
 import {selectedProblemUrl} from './problem-navigation.js?v=1';
@@ -63,7 +63,7 @@ function scheduleCommunityWarmup(owner,profile){
   },350);
 }
 
-let syncTimer,syncing=false,syncAgain=false,accountEpoch=0,accountOwner,accountReady=false;
+let syncTimer,syncing=false,syncAgain=false,accountEpoch=0,accountOwner,accountReady=false,pendingProfileRefresh=false;
 const cloud=new Cloud(user=>changeAccount(user));shell.connect(cloud);
 const studio=new Studio({cloud,notify:message=>notify(message),onCatalogChanged:()=>refreshCatalog()});
 const submissions=mountSubmissions(cloud,{notify,getPracticeSubmissions:()=>state.practiceSubmissions||[],getSolvedAt:id=>state.solved[id]||null});
@@ -146,7 +146,7 @@ function renderPractice() {
   for(const option of $("languageSelect").options)option.disabled=javaOnlyProblem(current)&&option.value!=="java";
   warmJavaSoon();
   pauseTrace();
-  $("submitBtn").title=language==="java"?"Submit through your browser: public and custom cases only; records practice progress, not a server-verified submission.":"Submit to the online judge for a verified result.";$("languageSelect").value=language;$("languageSelect").disabled=busy;$("codeFilename").textContent=languages[language].file;$("editorProblemNumber").textContent="#"+String(problems.indexOf(current)+1).padStart(2,"0");$("runStatus").textContent=languages[language].name+(language==="java"?" · browser compiler":" · online via Wandbox");
+  $("submitBtn").title=language==="java"?"Sign in to submit for server verification and unlock community solutions. Without private judging, browser practice is saved separately.":"Submit to the online judge for a verified result.";$("languageSelect").value=language;$("languageSelect").disabled=busy;$("codeFilename").textContent=languages[language].file;$("editorProblemNumber").textContent="#"+String(problems.indexOf(current)+1).padStart(2,"0");$("runStatus").textContent=languages[language].name+(language==="java"?" · browser compiler":" · online via Wandbox");
   $("practiceView").classList.toggle("empty-catalog",!current);$("catalogEmpty").hidden=!!current;
   if(!current)return;
   $("questTitle").textContent=current.title; $("questTopic").textContent=current.topic;
@@ -287,10 +287,10 @@ function openMySubmissions(output){
   button.onclick=()=>{tab="submissions";renderLearning();};
   output.append(button);
 }
-async function run(submit){
+async function run(submit,{forceBrowser=false,sourceOverride=null}={}){
   if(busy||!current)return;
-  if(usesRemoteSubmit(language,Boolean(cloud.user),submit)){await submitOnline();return;}
-  const epoch=++runEpoch,p=current,source=codeTools.prepare();
+  if(!forceBrowser&&usesRemoteSubmit(language,Boolean(cloud.user),submit)){await submitOnline();return;}
+  const epoch=++runEpoch,p=current,source=sourceOverride??codeTools.prepare();
   const cases=submit?browserSubmissionCases(p,customCases):allCases();
   setBusy(true);
   try{
@@ -342,17 +342,44 @@ async function submitOnline(){
  catch(error){notify(error?.message||'Could not open the submission dialog. Please try again.');return;}
  if(!options||current?.id!==p.id||language!==lang||cloud.user?.id!==user||account!==accountEpoch)return;
  const epoch=++runEpoch;
+ let browserFallback=false;
  setBusy(true);
  try{
   results=null;renderTests();$("resultOutput").textContent='Running and measuring your solution…';
   watchdog=setTimeout(()=>stopRun('The submission is taking longer than expected. Your code is saved. Check My submissions before retrying.'),lang==='cpp'?105000:70000);
   const result=await cloud.request('submission-create',{...options,problemId:p.id,revision:p.revision,source,language:lang},user);
   if(epoch!==runEpoch||account!==accountEpoch||cloud.user?.id!==user)return;
+  if(lang==="java"&&result.status==="unavailable"){
+   browserFallback=true;
+   $("resultOutput").textContent="Server-side Java verification is temporarily unavailable. Running public browser practice instead. This will not unlock shared solutions.";
+  }else{
   if(result.status!=='unavailable')logAttempt(p,result.passed||0,result.total||p.tests.length);
   const output=$("resultOutput"),feedback=submissionFeedback(result);output.innerHTML=feedback.html;notify(feedback.announcement);output.tabIndex=-1;output.focus({preventScroll:true});output.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
   if(result.accepted){const header=output.querySelector('.submission-verdict>header');const metrics=document.createElement('div');metrics.className='verdict-metrics';const runtime=document.createElement('span');runtime.textContent=runtimeLabel(result.runtimeMs??result.submission?.runtime_ms);const memory=document.createElement('span');memory.textContent=memoryLabel(result.memoryBytes??result.submission?.memory_bytes);metrics.append(runtime,memory);const link=document.createElement('button');link.className='verdict-link';link.textContent='View submissions';link.onclick=()=>{tab='submissions';renderLearning();};(header||output).append(metrics,link);completeQuest(p);if(tab==='submissions')submissions.refresh();}
- }catch(e){if(epoch===runEpoch&&account===accountEpoch){const text=e?.name==='TimeoutError'?'The submission request timed out. Your code is saved. Check My submissions before retrying.':e.message,feedback=submissionFeedback({status:'error',message:text});$("resultOutput").innerHTML=feedback.html;notify(feedback.announcement+': '+text);$("resultOutput").scrollIntoView({block:'nearest'});}}
- finally{if(epoch===runEpoch&&account===accountEpoch){clearTimeout(watchdog);setBusy(false);$("runStatus").textContent=languages[language].name+' · ready';persist();updateStats();}}
+  }
+ }catch(e){
+  if(epoch===runEpoch&&account===accountEpoch&&cloud.user?.id===user){
+   if(lang==="java"&&privateJavaJudgeUnavailable(e)){
+    browserFallback=true;
+    $("resultOutput").textContent="Private Java verification is not configured for this problem. Running public browser practice instead. A practice pass counts toward your personal progress after sync but cannot unlock server-verified solutions.";
+   }else{
+    const text=e?.name==='TimeoutError'?'The submission request timed out. Your code is saved. Check My submissions before retrying.':e.message;
+    const feedback=submissionFeedback({status:'error',message:text});
+    $("resultOutput").innerHTML=feedback.html;notify(feedback.announcement+': '+text);$("resultOutput").scrollIntoView({block:'nearest'});
+   }
+  }
+ }
+ finally{
+  if(epoch===runEpoch&&account===accountEpoch){clearTimeout(watchdog);setBusy(false);$("runStatus").textContent=languages[language].name+' · ready';persist();updateStats();}
+ }
+ if(browserFallback&&epoch===runEpoch&&account===accountEpoch&&cloud.user?.id===user&&current?.id===p.id&&language===lang){
+  if($("codeEditor").value!==source){
+   notify("Your code changed during server verification. Submit it again to save a practice result.");
+   return;
+  }
+  notify("Server verification unavailable. Saving a browser-only practice result instead.");
+  await run(true,{forceBrowser:true,sourceOverride:source});
+ }
 }
 function logAttempt(p,passed,total){
   state.attempts[p.id]=(state.attempts[p.id]||0)+1;
@@ -377,6 +404,13 @@ function completeQuest(p,practice=false){
     return false;
   }
   updateStats();if(tab==="learn"&&current.id===p.id)renderLearning();$("successDialog").showModal();celebrate();
+  // Clear stale profile/leaderboard snapshots and flush a new accepted solve
+  // immediately, rather than waiting for the debounced draft sync.
+  if(accountReady&&cloud.user?.id===accountOwner){
+   pendingProfileRefresh=true;
+   communityCache.clearOwner(accountOwner);
+   void syncCloud();
+  }
   return true;
 }
 function celebrate(){launchCelebration();}
@@ -509,7 +543,7 @@ function refreshAccountUi(){
 async function changeAccount(user){
   const owner=user?.id||null;if(owner===accountOwner&&accountReady)return;
   const previousOwner=accountOwner;
-  const epoch=++accountEpoch;clearTimeout(communityWarmupTimer);if(previousOwner&&previousOwner!==owner)communityCache.clearOwner(previousOwner);publicProfile=null;accountOwner=owner;accountReady=false;clearTimeout(syncTimer);syncing=false;syncAgain=false;
+  const epoch=++accountEpoch;clearTimeout(communityWarmupTimer);if(previousOwner&&previousOwner!==owner)communityCache.clearOwner(previousOwner);publicProfile=null;pendingProfileRefresh=false;accountOwner=owner;accountReady=false;clearTimeout(syncTimer);syncing=false;syncAgain=false;
   document.querySelectorAll('.submit-confirm[open],#successDialog[open]').forEach(d=>d.close());
   if(busy)stopRun();studio.accountChanged();dashboard.accountChanged();storageKey=owner?"bytequest.user."+owner:guestStorageKey;
   state=readLocal(storageKey);current=deepLinkedProblem()||problems.find(p=>p.id===state.current)||problems[0]||null;
@@ -567,6 +601,7 @@ async function syncCloud(){
     $("saveStatus").textContent=!storageOK?"Cloud synced · local cache unavailable":
       changedWhileSaving?"New edits saved here · sync queued":"Draft saved to your account";
     setSyncStatus("synced",changedWhileSaving?"New changes queued":"Saved to cloud");$("authMessage").textContent="";
+    if(pendingProfileRefresh){communityCache.clearOwner(owner);pendingProfileRefresh=false;}
     if(changedWhileSaving)syncAgain=true;
     return !changedWhileSaving;
   }catch(error){if(epoch===accountEpoch){setSyncStatus("failed","Saved here · retry sync");$("authMessage").textContent=error.message;}return false;}
