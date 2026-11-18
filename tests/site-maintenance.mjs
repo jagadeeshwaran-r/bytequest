@@ -126,16 +126,20 @@ const adapter=readFileSync('supabase/functions/bytequest-firebase/database.js','
 assert.ok(adapter.includes(".eq('user_id',owner)"),'Only verified server role checks can access admin config');
 assert.ok(adapter.includes(".eq('revision',settings.revision)"),'Admin writes require optimistic concurrency');
 const gate=readFileSync('dist/maintenance-gate.js','utf8');
-assert.ok(gate.includes("access.request('maintenance-admin-get'"),'Admin bypass must be checked with authenticated backend');
-assert.ok(gate.includes('location.replace'),'Cold visitor navigation reaches the maintenance screen');
-assert.ok(gate.includes('showBanner(status)'),'Open coding workspaces are not forcibly redirected');
+assert.ok(gate.includes('await fetchMaintenanceStatus'),'All pages must preflight a server-verified maintenance state');
+assert.ok(gate.includes('await import(appSource)'),'Application bundles must load only after status approval');
+assert.ok(gate.includes("if(status.active===true){blockAndRedirect('maintenance')"),'Active maintenance must force redirect');
+assert.ok(gate.includes('document.documentElement.dataset.bqMaintenanceCheck=\'pending\''),'Open workspaces must be hidden before redirect');
+assert.ok(!gate.includes("access.request('maintenance-admin-get'"),'No general application admin bypass is permitted');
 const adminPage=readFileSync('dist/maintenance-admin.js','utf8');
 assert.ok(adminPage.includes('confirm('),'Enabling must require explicit administrator confirmation');
 assert.ok(adminPage.includes("mode==='on'"),'Immediate mode supported');
 assert.ok(adminPage.includes("cloud.request('maintenance-admin-save'"),'Settings persist through authenticated Edge endpoint');
 for(const page of ['index','leaderboard','community','studio']){
- assert.ok(readFileSync('dist/'+page+'.html','utf8').includes('maintenance-gate.js?v=1'),
-  page+' must load preflight status before application startup');
+ const html=readFileSync('dist/'+page+'.html','utf8');
+ assert.ok(html.includes('maintenance-gate.js?v=strict-1'),page+' must load strict preflight');
+ assert.ok(html.includes('data-bq-app='),page+' must defer its application bundle');
+ assert.ok(html.includes('dataset.bqMaintenanceCheck="pending"'),page+' must prevent preflight content flashes');
 }
 // Maintenance visitor experience must not advertise a way around an active
 // scheduled window, including briefly before the ES module finishes loading.
@@ -156,9 +160,20 @@ assert.ok(!maintenanceStyles.includes('body[data-issue="offline"] .status-action
  'Offline practice recovery buttons must remain available');
 assert.ok(maintenanceMarkup.includes('id="statusAdminLink"'),
  'Admin maintenance recovery must remain accessible');
-assert.ok(outageWorker.includes("bytequest-connection-page-v3")&&
- outageWorker.includes("./status-page.js?v=maintenance-controls-1"),
- 'Offline cache must refresh the maintenance recovery page JavaScript');
-assert.ok(maintenanceMarkup.includes("./status-page.js?v=maintenance-controls-1"),
+assert.ok(outageWorker.includes("bytequest-connection-page-v4")&&
+ outageWorker.includes("./status-page.js?v=strict-1"),
+ 'Offline cache must refresh the strict maintenance recovery page JavaScript');
+assert.ok(maintenanceMarkup.includes("./status-page.js?v=strict-1"),
  'Status HTML must load the updated controller');
+assert.ok(maintenanceScript.includes("status.active===true")&&
+ maintenanceScript.includes("location.replace('./status.html?issue=maintenance')"),
+ 'Even manually opened offline/busy/unreachable status pages must yield to active maintenance');
+assert.ok(!readFileSync('dist/maintenance.html','utf8').includes('maintenanceAdmin=1'),
+ 'Administrator console cannot link to the ordinary site during maintenance');
+for(const page of ['privacy','runner','native-runner']){
+ const html=readFileSync('dist/'+page+'.html','utf8');
+ assert.ok(html.includes('maintenance-gate.js?v=strict-1'),
+   page+' direct URL must also run a maintenance preflight');
+ assert.ok(html.includes('data-bq-app='),page+' runtime code must be deferred until maintenance permits it');
+}
 console.log('PASS: disabled initial IST draft, server-clock start/end, admin-only bypass and saves, writes blocked with 503, auth and safe recovery.');
