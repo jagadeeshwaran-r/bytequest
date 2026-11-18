@@ -555,6 +555,9 @@ async function refreshCloudProgress(owner=accountOwner,epoch=accountEpoch){
   if(!owner||!accountReady||cloud.user?.id!==owner||epoch!==accountEpoch)return false;
   if(progressRefreshInFlight)return progressRefreshInFlight;
   lastProgressRefreshAt=Date.now();
+  const selectedProblem=current?.id,selectedLanguage=language;
+  const selectedDraftKey=current?draftId():null;
+  const editorAtRequest=$("codeEditor").value;
   const task=(async()=>{
     try{
       const remote=await cloud.request("progress",{},owner);
@@ -565,7 +568,19 @@ async function refreshCloudProgress(owner=accountOwner,epoch=accountEpoch){
       const recovered=reconcilePracticeProgress(mergeProgress(state,cloudState));
       const needsUpload=JSON.stringify(recovered)!==JSON.stringify(cloudState);
       const newlyRestored=Object.keys(recovered.solved).some(id=>!state.solved[id]);
+      const hadUnsyncedEditorDraft=selectedDraftKey&&Object.hasOwn(state.drafts,selectedDraftKey);
       state=recovered;
+      // An untouched starter on a new phone may receive the saved cloud code.
+      // Never overwrite current code if the learner typed or switched problems
+      // while the cloud request was in flight.
+      if(selectedDraftKey&&!hadUnsyncedEditorDraft&&
+         current?.id===selectedProblem&&language===selectedLanguage&&!busy&&
+         $("codeEditor").value===editorAtRequest&&
+         editorAtRequest===currentStarter()&&
+         typeof state.drafts[selectedDraftKey]==="string"){
+        $("codeEditor").value=state.drafts[selectedDraftKey];
+        updateEditor();
+      }
       if(newlyRestored)communityCache.clearOwner(owner);
       try{writeLocalProgress(storageKey,state);storageOK=true;}
       catch{storageOK=false;$("saveStatus").textContent="Cloud progress loaded · local backup unavailable";}
