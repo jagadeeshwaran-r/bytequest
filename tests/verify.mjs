@@ -1,3 +1,4 @@
+import './profile-solve-recovery.mjs';
 import './mobile-progress-hydration.mjs';
 import './cloud-health.mjs';
 import './account-bootstrap-sync.mjs';
