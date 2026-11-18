@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {usesRemoteSubmit,browserSubmissionCases,browserSubmissionVerdict} from '../dist/browser-submit.js';
+import {usesRemoteSubmit,browserSubmissionCases,browserSubmissionVerdict,privateJavaJudgeUnavailable} from '../dist/browser-submit.js';
 import {blocksEditorClipboardEvent,blocksEditorShortcut,blocksEditorBeforeInput} from '../dist/editor-clipboard.js';
 import {submissionFeedback} from '../dist/submission-feedback.js';
 
@@ -10,10 +10,19 @@ const publicCases=[
 ];
 const lower={id:'lower-bound',method:'lowerBound',tests:publicCases,hiddenCount:0};
 const palindrome={id:'linked-list-palindrome',method:'isPalindrome',tests:[{args:[[1,2,1]],expected:true}],hiddenCount:11};
-assert.equal(usesRemoteSubmit('java',true,true),false,'Signed-in Java Submit must use Java Run');
+assert.equal(usesRemoteSubmit('java',true,true),true,'Signed-in Java Submit must request server verification for shared-solution unlock');
 assert.equal(usesRemoteSubmit('java',false,true),false,'Guest Java Submit must use Java Run');
 assert.equal(usesRemoteSubmit('java',true,false),false,'Run must never use remote Submit');
 for(const language of ['python','c','cpp'])assert.equal(usesRemoteSubmit(language,true,true),true,'Keep remote verified submits for '+language);
+assert.equal(usesRemoteSubmit('python',false,true),false,'Guest users cannot submit unverified remote attempts');
+assert.equal(usesRemoteSubmit('java',true,false),false,'Java Run remains in browser');
+for(const message of [
+ 'This problem requires a configured private Java judge. Hidden cases remain private by default.',
+ 'Private Java judging is not connected yet.',
+ 'The private suite is unavailable.'
+])assert.equal(privateJavaJudgeUnavailable(new Error(message)),true,'Only known private-judge configuration errors fall back to Java practice');
+for(const message of ['Wrong answer','Java could not compile','The submission request timed out','You do not have access to this action','This problem changed'])
+ assert.equal(privateJavaJudgeUnavailable(new Error(message)),false,'Never convert a substantive rejection to a practice pass');
 const custom=[{args:[[2,3,4],1],expected:0}];
 const cases=browserSubmissionCases(lower,custom);
 assert.deepEqual(cases,[...publicCases,...custom]);
