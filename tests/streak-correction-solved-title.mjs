@@ -26,6 +26,9 @@ const html=readFileSync('dist/index.html','utf8');
 assert.ok(app.includes('class="problem-title\'+(state.solved[p.id]?\' is-solved\':\'\')+\'"'),
  'Only solved problems get the highlighted title class');
 assert.match(css,/#mapView \.problem-table \.problem-title\.is-solved/);
+assert.ok(app.includes(`class="'+(state.solved[current.id]?'is-solved':'')+'"`),
+ 'Opened solved problem heading uses the same lettering treatment as the catalog');
+assert.match(css,/#practiceView \.problem-title-row h3\.is-solved/,'Green highlight also covers an opened solved challenge');
 assert.match(css,/color:var\(--accent\)/,'Use the active ByteQuest theme color rather than a hard-coded one');
 assert.match(css,/text-decoration-color:color-mix/,'Mark individual title letters, not a distracting colored row');
 assert.match(html,/catalog-refined\.css\?v=catalog-1&amp;quiet=2&amp;solved-title=1/,'Refresh cached solved-title styles');
