@@ -22,7 +22,7 @@ assert.equal(practiceVerificationSummary(problem,{passed:200,total:30}).tests,
  '30/30 browser practice cases passed','Defensive test counts must not exceed total');
 
 const app=readFileSync('dist/app.js','utf8');
-const block=app.slice(app.indexOf('async function submitOnline()'),app.indexOf('function logAttempt('));
+const block=app.slice(app.indexOf('async function submitOnline('),app.indexOf('function logAttempt('));
 assert.ok(block.includes("await cloud.request('submission-create'"),'Signed-in Submit requests a real server verdict');
 assert.ok(block.includes('privateJavaJudgeUnavailable(e)'),'Private judge 503 gets an explicit notice');
 assert.ok(block.includes('privateJudgeUnavailableSummary(p)'),'Unavailable private judge must show unambiguous test status');
