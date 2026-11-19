@@ -8,6 +8,7 @@ const problem={id:'battery-full-arrivals',title:'Battery Full Arrivals',revision
 assert.equal(defaultSubmissionScope({problem,language:'Java 17',allowPublicPractice:true}),'public');
 assert.equal(defaultSubmissionScope({problem:{...problem,hiddenCount:0},language:'Java 17',allowPublicPractice:true}),'complete',
  'Without hidden cases there is no reason to force unranked public-only mode.');
+assert.equal(defaultSubmissionScope({problem,language:'Python 3.11',allowPublicPractice:true}),'complete','Only Java can select public Java verification');
 assert.equal(defaultSubmissionScope({problem,language:'C++',allowPublicPractice:false}),'complete',
  'Non-Java submissions retain their existing behavior.');
 
