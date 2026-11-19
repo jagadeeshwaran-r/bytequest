@@ -365,12 +365,11 @@ async function submitOnline(){
  try{options=await requestSubmission({problem:p,language:languages[lang].name,allowPublicPractice:lang==='java'});}
  catch(error){notify(error?.message||'Could not open the submission dialog. Please try again.');return;}
  if(!options||current?.id!==p.id||language!==lang||cloud.user?.id!==user||account!==accountEpoch)return;
- if(options.mode==='public-practice'){
-  // This is a user-chosen browser-only submission; never send private tests,
-  // claim server verification, or unlock shared solutions.
-  if(lang!=='java'||$('codeEditor').value!==source){notify('Your code changed. Submit the new version instead.');return;}
-  await run(true,{forceBrowser:true,sourceOverride:source});
-  return;
+ // Explicit server-verified public-suite request, never hidden-test acceptance.
+ const publicOnly=options.mode==='public-practice';
+ if(publicOnly){
+  if(lang!=='java'||codeTools.prepare()!==source){notify('Your code changed. Submit the new version instead.');return;}
+  options={scope:'public',nonce:crypto.randomUUID(),shared:false,approach:'',timeComplexity:'',spaceComplexity:''};
  }
  const epoch=++runEpoch;
  let browserFallback=false,verificationFailure="";
@@ -386,13 +385,13 @@ async function submitOnline(){
   }else{
   if(result.status!=='unavailable')logAttempt(p,result.passed||0,result.total||p.tests.length);
   const output=$("resultOutput"),feedback=submissionFeedback(result);output.innerHTML=feedback.html;notify(feedback.announcement);output.tabIndex=-1;output.focus({preventScroll:true});output.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
-  if(result.accepted){const header=output.querySelector('.submission-verdict>header');const metrics=document.createElement('div');metrics.className='verdict-metrics';const runtime=document.createElement('span');runtime.textContent=runtimeLabel(result.runtimeMs??result.submission?.runtime_ms);const memory=document.createElement('span');memory.textContent=memoryLabel(result.memoryBytes??result.submission?.memory_bytes);metrics.append(runtime,memory);const link=document.createElement('button');link.className='verdict-link';link.textContent='View submissions';link.onclick=()=>{tab='submissions';renderLearning();};(header||output).append(metrics,link);completeQuest(p);if(tab==='submissions')submissions.refresh();}
+  if(result.accepted){const header=output.querySelector('.submission-verdict>header');const metrics=document.createElement('div');metrics.className='verdict-metrics';const runtime=document.createElement('span');runtime.textContent=runtimeLabel(result.runtimeMs??result.submission?.runtime_ms);const memory=document.createElement('span');memory.textContent=memoryLabel(result.memoryBytes??result.submission?.memory_bytes);metrics.append(runtime,memory);const link=document.createElement('button');link.className='verdict-link';link.textContent='View submissions';link.onclick=()=>{tab='submissions';renderLearning();};(header||output).append(metrics,link);completeQuest(p,result.verificationScope==='public'&&Number(p.hiddenCount)>0?'public':false);if(tab==='submissions')submissions.refresh();}
   }
  }catch(e){
   if(epoch===runEpoch&&account===accountEpoch&&cloud.user?.id===user){
-   if(lang==="java"&&privateJavaJudgeUnavailable(e)){
+   if(lang==="java"&&(privateJavaJudgeUnavailable(e)||(publicOnly&&/unavailable|not connected|temporarily|timed out|network|failed to fetch/i.test(String(e?.message||''))))){
     browserFallback=true;
-    verificationFailure=String(e?.message||"The private Java judge is not configured for this problem.");
+    verificationFailure=String(e?.message||(publicOnly?"Public server verification could not complete.":"The private Java judge is not configured for this problem."));
    }else{
     const text=e?.name==='TimeoutError'?'The submission request timed out. Your code is saved. Check My submissions before retrying.':e.message;
     const feedback=submissionFeedback({status:'error',message:text});
@@ -409,15 +408,15 @@ async function submitOnline(){
   // successful execution of 70 private hidden cases.
   const summary=privateJudgeUnavailableSummary(p),output=$("resultOutput");
   const notice=document.createElement("section");notice.className="submission-verification-unavailable";
-  const title=document.createElement("strong");title.textContent=summary.title;
+  const title=document.createElement("strong");title.textContent=publicOnly?"Public server verification unavailable":summary.title;
   const counts=document.createElement("p");counts.textContent=summary.hidden;
-  const detail=document.createElement("p");detail.textContent=summary.explanation;
+  const detail=document.createElement("p");detail.textContent=publicOnly?"No server-accepted public submission was recorded. Browser practice remains available but cannot unlock community solutions.":summary.explanation;
   const cause=document.createElement("p");cause.textContent=verificationFailure;
   const actions=document.createElement("div");actions.className="submission-verification-actions";
   const practice=document.createElement("button");practice.type="button";
   practice.className="button secondary";practice.textContent="Run public practice (not verified)";
   const retry=document.createElement("button");retry.type="button";
-  retry.className="button secondary";retry.textContent="Retry server verification";
+  retry.className="button secondary";retry.textContent=publicOnly?"Retry public verification":"Retry server verification";
   const unchanged=()=>current?.id===p.id&&language===lang&&accountEpoch===account&&
     cloud.user?.id===user&&$("codeEditor").value===source;
   practice.onclick=()=>{
@@ -431,7 +430,7 @@ async function submitOnline(){
   actions.append(practice,retry);
   notice.append(title,counts,detail,cause,actions);
   output.replaceChildren(notice);
-  notify("Server verification unavailable. Your code is saved. No hidden-test acceptance was recorded.");
+  notify(publicOnly?"Public verification unavailable. You can choose browser practice.":"Server verification unavailable. Your code is saved. No hidden-test acceptance was recorded.");
  }
 }
 function logAttempt(p,passed,total){
@@ -447,7 +446,7 @@ function completeQuest(p,practice=false){
   else if(isReview){state.reviews[p.id].step++;}
   if(first||isReview)state.activity.push({id:p.id,at:Date.now(),type:first?"solved":"review",passed:p.tests.length,total:p.tests.length});
   $("successTitle").textContent=first?"Aha! Quest complete.":isReview?"That pattern is sticking.":"Another good repetition.";
-  $("successCopy").textContent=(first?"+"+pointsFor(p.difficulty)+" points! ":isReview?"Review complete! ":"")+p.title+(practice?" passed the browser practice cases. No server submission was recorded.":" passed the problem test suite.")+" "+(first?"Your first review is in 2 days.":isReview?"Review progress saved.":"Try explaining why your approach works.");
+  $("successCopy").textContent=(first?"+"+pointsFor(p.difficulty)+" points! ":isReview?"Review complete! ":"")+p.title+(practice==='public'?" passed published public cases on the server. Hidden cases were NOT checked.":practice?" passed the browser practice cases. No server submission was recorded.":" passed the problem test suite.")+" "+(first?"Your first review is in 2 days.":isReview?"Review progress saved.":"Try explaining why your approach works.");
   $("successNote").value=state.notes[p.id]||"";
   document.querySelectorAll("[data-confidence]").forEach(b=>b.classList.toggle("selected",Number(b.dataset.confidence)===state.confidence[p.id]));
   if(!persist()){
