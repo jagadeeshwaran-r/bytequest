@@ -1,5 +1,5 @@
 import {profileAvatar,publicProfileHref} from './profile-view.js?v=workbench-1';
-import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=verification-evidence-1&public-unlock=2&public-default=1&community=1';
+import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=verification-evidence-1&public-unlock=2&public-default=1&community=1&showcase=1';
 import {launchCelebration} from './celebration.js?v=next-1';
 import {mountEditorTools} from './editor-tools.js?v=copy-enabled-1';
 import {mountWorkspaceLayout} from './workspace-layout.js?v=workspace-1';
@@ -377,7 +377,7 @@ async function submitOnline(resume=null){
   notify('Your code changed. Submit the new version instead.');return;
  }
  if(publicOnly&&options.mode==='public-practice'){
-  options={...options,scope:'public',nonce:options.nonce||crypto.randomUUID(),shared:false};
+  options={...options,scope:'public',nonce:options.nonce||crypto.randomUUID(),shared:true,showcase:true};
   delete options.mode;
  }
  const epoch=++runEpoch;
@@ -394,7 +394,7 @@ async function submitOnline(resume=null){
   }else{
   if(result.status!=='unavailable')logAttempt(p,result.passed||0,result.total||p.tests.length);
   const output=$("resultOutput"),feedback=submissionFeedback(result);output.innerHTML=feedback.html;notify(feedback.announcement);output.tabIndex=-1;output.focus({preventScroll:true});output.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
-  if(result.accepted){const header=output.querySelector('.submission-verdict>header');const metrics=document.createElement('div');metrics.className='verdict-metrics';const runtime=document.createElement('span');runtime.textContent=runtimeLabel(result.runtimeMs??result.submission?.runtime_ms);const memory=document.createElement('span');memory.textContent=memoryLabel(result.memoryBytes??result.submission?.memory_bytes);metrics.append(runtime,memory);const link=document.createElement('button');link.className='verdict-link';link.textContent=result.verificationScope==='public'?'My submissions · join public board':'View submissions';link.onclick=()=>{tab='submissions';renderLearning();};(header||output).append(metrics,link);
+  if(result.accepted){const header=output.querySelector('.submission-verdict>header');const metrics=document.createElement('div');metrics.className='verdict-metrics';const runtime=document.createElement('span');runtime.textContent=runtimeLabel(result.runtimeMs??result.submission?.runtime_ms);const memory=document.createElement('span');memory.textContent=memoryLabel(result.memoryBytes??result.submission?.memory_bytes);metrics.append(runtime,memory);const link=document.createElement('button');link.className='verdict-link';link.textContent=result.verificationScope==='public'?'View public showcase':'View community rankings';link.onclick=()=>{tab='submissions';renderLearning();document.querySelector('[data-history]')?.click();};(header||output).append(metrics,link);
    serverAcceptedRevisions.add(user+':'+p.id+':'+p.revision);
    completeQuest(p,result.verificationScope==='public'&&Number(p.hiddenCount)>0?'public':false);
    if(tab==='submissions')submissions.refresh();
@@ -453,7 +453,7 @@ async function submitOnline(resume=null){
     publicSubmit.onclick=()=>{
       if(!unchanged()){notify("Your code or account changed. Submit the new version instead.");return;}
       void submitOnline({problemId:p.id,revision:p.revision,lang,user,account,source,
-        options:{...options,scope:"public",shared:false,nonce:crypto.randomUUID()}});
+        options:{...options,scope:"public",shared:true,showcase:true,nonce:crypto.randomUUID()}});
     };
     actions.append(publicSubmit);
   }
