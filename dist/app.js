@@ -362,9 +362,16 @@ async function submitOnline(){
  const p=current,lang=language,source=codeTools.prepare(),user=cloud.user?.id,account=accountEpoch;
  // Choosing submission options is not a compiler run and must never lock the editor.
  let options;
- try{options=await requestSubmission({problem:p,language:languages[lang].name});}
+ try{options=await requestSubmission({problem:p,language:languages[lang].name,allowPublicPractice:lang==='java'});}
  catch(error){notify(error?.message||'Could not open the submission dialog. Please try again.');return;}
  if(!options||current?.id!==p.id||language!==lang||cloud.user?.id!==user||account!==accountEpoch)return;
+ if(options.mode==='public-practice'){
+  // This is a user-chosen browser-only submission; never send private tests,
+  // claim server verification, or unlock shared solutions.
+  if(lang!=='java'||$('codeEditor').value!==source){notify('Your code changed. Submit the new version instead.');return;}
+  await run(true,{forceBrowser:true,sourceOverride:source});
+  return;
+ }
  const epoch=++runEpoch;
  let browserFallback=false,verificationFailure="";
  setBusy(true);
