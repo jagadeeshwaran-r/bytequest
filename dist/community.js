@@ -9,7 +9,7 @@ import {rankCup} from './rewards.js?v=upgrade-2';
 import {receivedPresence,presenceOnline,relativeTime,profilePreferences} from './presence-model.js?v=social-1';
 import {Dashboard} from './dashboard.js?v=topic-directory-1';
 import {analyticsMarkup} from './profile-analytics.js?v=topic-directory-1';
-import {mountShell} from './shell.js?v=quiet-2';
+import {mountShell} from './shell.js?v=quiet-2&online-alerts=1';
 import {prepareAvatar} from './avatar-upload.js';
 import {Cloud} from './cloud.js?v=outage-1';
 import {createViewCache} from './view-cache.js?v=avatar-1';
