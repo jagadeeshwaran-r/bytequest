@@ -1,4 +1,4 @@
-import {profileMetrics,recentSolvesMarkup} from './profile-extras.js?v=profile-compact-1&rewards=4';
+import {profileMetrics,recentSolvesMarkup} from './profile-extras.js?v=profile-compact-1&rewards=4&streak-correction=1';
 import {earnedStreakBadgesMarkup} from './streak-awards.js?v=lifetime-1';
 import {escapeHtml as h} from './community-model.js';
 import {rankRibbonBadge} from './rewards.js?v=ribbon-1';
