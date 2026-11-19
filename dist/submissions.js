@@ -173,9 +173,11 @@ export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=
   refresh(){if(root?.isConnected&&cloud.user?.id===owner)load();}
  };
 }
+export const defaultSubmissionScope=({problem,language,allowPublicPractice=false})=>
+ allowPublicPractice&&Number(problem?.hiddenCount)>0?'public':'complete';
 export function requestSubmission({problem,language,allowPublicPractice=false}){
  return new Promise(resolve=>{
-  const publicDefault=allowPublicPractice&&Number(problem?.hiddenCount)>0;
+  const publicDefault=defaultSubmissionScope({problem,language,allowPublicPractice})==='public';
   const dialog=document.createElement('dialog');
   dialog.className='submission-dialog submit-confirm';dialog.setAttribute('aria-labelledby','submitTitle');
   const explanation=publicDefault?
