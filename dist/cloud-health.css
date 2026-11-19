@@ -1,31 +1,41 @@
-/* Non-blocking system-health bar shared by Problems, Profile, and Leaderboard. */
-.bq-cloud-health[hidden]{display:none!important}
+/* Inline, user-opened sync information. No sticky banner, toast, or layout shift. */
+.bq-cloud-health[hidden],.bq-cloud-health-actions [hidden]{display:none!important}
 .bq-cloud-health{
-  position:sticky;top:73px;z-index:49;
-  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
-  gap:14px 24px;padding:13px max(28px,calc((100vw - 1210px)/2));
-  background:#211d17;color:#f2e5ce;border-bottom:1px solid rgba(251,191,88,.28);
-  font:13px/1.5 Inter,system-ui,sans-serif;box-shadow:0 8px 24px #0002;
+  position:relative;flex:0 0 auto;align-self:center;z-index:81;
+  color:var(--muted);font:500 11px/1.4 Inter,system-ui,sans-serif;
 }
-.bq-cloud-health[data-kind="storage-failed"]{background:#2c171b;border-color:#a74f5c}
-.bq-cloud-health strong{display:block;color:inherit;font-weight:650;font-size:13px}
-.bq-cloud-health p{font-size:12px;margin:3px 0 0;color:#e1cdb0;max-width:760px;line-height:1.55}
-.bq-cloud-health[data-kind="storage-failed"] p{color:#f0c6c6}
-.bq-cloud-health-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
+.bq-cloud-health summary{
+  display:inline-flex;align-items:center;gap:7px;cursor:pointer;
+  list-style:none;white-space:nowrap;min-height:30px;
+  padding:5px 9px;border:1px solid var(--border);
+  border-radius:999px;background:var(--surface);color:var(--muted);
+}
+.bq-cloud-health summary::-webkit-details-marker{display:none}
+.bq-cloud-health summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.bq-cloud-health-dot{
+  width:6px;height:6px;border-radius:50%;background:#c69b5d;
+  flex:none;
+}
+.bq-cloud-health[data-kind="storage-failed"] .bq-cloud-health-dot{background:#c76a6a}
+.bq-cloud-health-headline{font-size:10px;letter-spacing:.01em}
+.bq-cloud-health-panel{
+  position:absolute;right:0;top:calc(100% + 9px);width:min(330px,85vw);
+  padding:15px;border:1px solid var(--border);border-radius:13px;
+  background:var(--surface);color:var(--text);box-shadow:0 15px 40px #0002;
+  z-index:99;
+}
+.bq-cloud-health-panel p{margin:0 0 12px;font:400 12px/1.6 Inter,system-ui,sans-serif;color:var(--muted)}
+.bq-cloud-health-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .bq-cloud-health-actions button,.bq-cloud-health-actions a{
-  font:inherit;font-size:11px;min-height:32px;border-radius:9px;
-  padding:6px 10px;color:#fae6c6;border:1px solid #e2ac653e;
-  background:#ffffff0b;text-decoration:none;cursor:pointer;white-space:nowrap;
+  font:500 11px/1.4 Inter,system-ui,sans-serif;border:1px solid var(--border);
+  background:var(--surface-2);color:var(--text);border-radius:7px;
+  min-height:30px;padding:6px 9px;text-decoration:none;cursor:pointer;
 }
-.bq-cloud-health-actions button:first-child{background:#dec29c;color:#221b15;border-color:transparent}
-.bq-cloud-health-actions button:hover,.bq-cloud-health-actions a:hover{border-color:#e2b36d}
-.bq-cloud-health-actions [hidden]{display:none!important}
-@media(max-width:750px){
-  .bq-cloud-health{top:62px;padding:12px 16px;align-items:flex-start}
-  .bq-cloud-health-actions{margin-left:0;width:100%}
-  .bq-cloud-health-actions button,.bq-cloud-health-actions a{font-size:10px}
+.bq-cloud-health-actions button:hover,.bq-cloud-health-actions a:hover{border-color:var(--accent)}
+@media(max-width:900px){
+ .bq-cloud-health{margin-left:auto}
+ .bq-cloud-health summary{min-height:30px;padding:5px 8px}
+ .bq-cloud-health-headline{font-size:9px}
+ .bq-cloud-health-panel{right:0}
 }
-
-/* Primary recovery path remains visible while user keeps working locally. */
-.bq-cloud-health-actions a.bq-connection-details{background:#dec29c;color:#211c15;border-color:transparent;font-weight:650}
-.bq-cloud-health-actions a.bq-connection-details:hover{background:#f4d5aa;color:#101410}
+@media(max-width:620px){.bq-cloud-health-headline{max-width:83px;overflow:hidden;text-overflow:ellipsis}}

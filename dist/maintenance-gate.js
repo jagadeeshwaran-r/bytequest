@@ -22,7 +22,7 @@ const approved=Boolean(expected&&appSource.startsWith(expected+'?'));
 const maintenanceUrl='./status.html?issue=maintenance';
 const connectionUrl='./status.html?issue=';
 let launched=false,checking=false,timer=null,scheduledTimer=null,stopped=false,banner=null;
-let lastStatus=null;
+let lastStatus=null,knownScheduledStart=0,knownScheduledEnd=0;
 const pollInterval=15000;
 
 function showAdvanceNotice(status){
@@ -73,6 +73,14 @@ async function check(force=false){
   try{
     const status=await fetchMaintenanceStatus({timeoutMs:5000});
     lastStatus=status;
+    // An armed schedule is the one exception to non-blocking recovery:
+    // retain server-relative bounds so a network failure at its start cannot
+    // silently bypass a previously confirmed maintenance window.
+    const start=Date.parse(status.startsAt),end=Date.parse(status.endsAt),server=Date.parse(status.serverTime);
+    if(status.upcoming&&[start,end,server].every(Number.isFinite)){
+      knownScheduledStart=Date.now()+start-server;
+      knownScheduledEnd=Date.now()+end-server;
+    }else{knownScheduledStart=0;knownScheduledEnd=0;}
     if(status.active===true){blockAndRedirect('maintenance');return;}
     // If a window is upcoming, re-check at its exact server-relative start.
     scheduleExactStart(status);
@@ -81,13 +89,18 @@ async function check(force=false){
     showAdvanceNotice(status);
   }catch{
     if(!launched){
-      // Fail closed on first visit: an unreachable status service must not
-      // grant access when we cannot determine whether maintenance is active.
+      // First entry still requires an authoritative status check.
       blockAndRedirect(navigator.onLine===false?'offline':'unreachable');
+    }else if(knownScheduledStart&&Date.now()>=knownScheduledStart&&Date.now()<knownScheduledEnd){
+      // We already received a verified future maintenance window. Keep the
+      // strict lock if the status endpoint happens to fail at its start.
+      blockAndRedirect('maintenance');
     }else{
-      // Do not mislabel a network failure as scheduled maintenance; block the
-      // workspace until a fresh authoritative check confirms availability.
-      blockAndRedirect(navigator.onLine===false?'offline':'unreachable');
+      // An already-open editor is not a network diagnostic. Transient errors,
+      // tab switches and laptop wakeups must never replace the workspace with
+      // the full-page connection screen. Server-side maintenance still blocks
+      // protected requests; keep the local draft usable and retry next poll.
+      console.info('ByteQuest maintenance heartbeat unavailable; editor remains usable.');
     }
   }finally{checking=false;}
 }
@@ -100,16 +113,13 @@ if(!approved){
   void check();
   timer=setInterval(()=>{if(!document.hidden)void check();},pollInterval);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)void check();});
-  // Back/forward navigation may restore an already-running app from browser
-  // memory without re-evaluating its modules. Re-lock before rechecking.
+  // BFCache restore rechecks maintenance without hiding a working editor.
+  // Confirmed active maintenance still causes an immediate hard redirect.
   window.addEventListener('pageshow',event=>{
     if(!event.persisted)return;
     clearInterval(timer);
     timer=setInterval(()=>{if(!document.hidden)void check();},pollInterval);
-    document.documentElement.dataset.bqMaintenanceCheck='pending';
-    void check().finally(()=>{
-      if(!stopped)document.documentElement.removeAttribute('data-bq-maintenance-check');
-    });
+    void check();
   });
   window.addEventListener('online',()=>void check());
   window.addEventListener('pagehide',()=>{clearInterval(timer);clearTimeout(scheduledTimer);});

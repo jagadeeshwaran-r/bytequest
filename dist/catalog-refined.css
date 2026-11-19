@@ -125,48 +125,32 @@
 #mapView .problem-table .company-logo,
 #mapView .problem-table .company-overflow{vertical-align:middle}
 #mapView .company-note{font-size:10px;line-height:1.6}
-/* Java reference: explanatory editorial remains visible, code unlocks on solve. */
+/* Compact Java answer affordance, never a distracting reference-access card. */
 #practiceView :is(.reference-lock,.reference-unlocked){
-  display:flex;align-items:center;gap:12px;
-  padding:16px;margin:16px 0 9px;
-  border:1px solid var(--border);border-radius:10px;
-  background:var(--surface-2);color:var(--text);
+  display:flex;align-items:center;gap:8px;
+  padding:0;margin:15px 0 7px;
+  border:0!important;border-radius:0!important;
+  background:transparent!important;color:var(--muted);
 }
-#practiceView .reference-gate-icon{
-  width:35px;height:35px;flex:0 0 35px;
-  display:grid;place-items:center;border-radius:9px;
-  color:var(--muted);background:var(--surface);
-  border:1px solid var(--border);
+#practiceView .reference-gate-copy{
+  font:500 11px/1.5 var(--font-sans);color:var(--muted);
 }
-#practiceView .reference-gate-icon svg{
-  width:17px;height:17px;
-  fill:none;stroke:currentColor;stroke-width:1.8;
-  stroke-linecap:round;stroke-linejoin:round;
-}
-#practiceView .reference-unlocked .reference-gate-icon{
-  color:var(--accent);background:var(--blue-soft);
-}
-#practiceView .reference-gate-copy{flex:1;min-width:0}
-#practiceView .reference-gate-copy strong{
-  display:block;margin:0 0 4px;
-  font:600 12px/1.5 var(--font-sans);
-}
-#practiceView .reference-gate-copy p{
-  margin:0;color:var(--muted);
-  font:400 10px/1.65 var(--font-sans);
-}
-#practiceView .reference-lock-status{
-  padding:5px 8px;flex:0 0 auto;
-  border:1px solid var(--border);border-radius:6px;
-  color:var(--muted);font:500 10px var(--font-sans);
+#practiceView .reference-inline-note{
+  font-size:10px;font-weight:400;color:var(--muted);
 }
 #practiceView .reference-unlocked #referenceBtn{
-  margin:0;white-space:nowrap;flex-shrink:0;
-  border:1px solid var(--border);border-radius:7px;
-  color:var(--accent);background:var(--surface);
-  padding:8px 10px;font:600 10px var(--font-sans);
+  margin:0;padding:6px 0;min-height:29px;white-space:nowrap;
+  color:var(--accent);background:transparent!important;
+  border:0!important;border-bottom:1px solid transparent!important;
+  border-radius:0!important;font:600 11px/1.4 var(--font-sans);
 }
-#practiceView .reference-unlocked #referenceBtn:hover{border-color:var(--accent)}
+#practiceView .reference-unlocked #referenceBtn:hover{
+  border-bottom-color:var(--accent)!important;
+}
+#practiceView #referenceContent:not(:empty){margin-top:10px}
+#practiceView #referenceContent .reference-code{
+  max-height:400px;overflow:auto;border:1px solid var(--border);
+}
 @media(max-width:900px){
   #mapView .section-heading{gap:10px}
   #mapView .filters{flex-wrap:wrap}
@@ -185,9 +169,7 @@
   #mapView .section-heading .soft-pill{min-height:28px}
   #mapView .catalog-meta-hint{display:none}
   #mapView .filters select:not([hidden]){min-width:120px}
-  #practiceView :is(.reference-lock,.reference-unlocked){align-items:flex-start;flex-wrap:wrap;padding:13px}
-  #practiceView .reference-unlocked #referenceBtn{margin-left:47px}
-  #practiceView .reference-lock-status{margin-left:47px}
+  #practiceView :is(.reference-lock,.reference-unlocked){flex-wrap:wrap}
 }
 @media(prefers-reduced-motion:reduce){
   #mapView .problem-table tbody tr td,

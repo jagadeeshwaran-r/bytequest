@@ -5,11 +5,10 @@ import {mountPresence} from './presence.js';
 import {accountCard} from './presence-model.js?v=social-1';
 import {createFriendToasts} from './friend-alerts.js?v=profile-2';
 import {escapeHtml as h} from './community-model.js';
-import {mountCloudHealthNotice} from './cloud-health.js?v=outage-1';
+import {mountCloudHealthNotice} from './cloud-health.js?v=quiet-2';
 export function mountShell(){
  const toggle=document.getElementById('profileMenuToggle'),menu=document.getElementById('profileMenu'),slot=document.getElementById('menuAccountSlot');let cloud=null,identity=null,epoch=0,timer,tracker=null,friends=null,chat=null,card=null,painted=null,notificationOwner=null;
  const toasts=createFriendToasts();
- const cloudHealth=mountCloudHealthNotice(document);
  // All site pages share this navigation; only a server-verified library
  // admin role makes the link visible. The API checks that role again.
  const maintenanceLink=document.createElement('a');
@@ -40,6 +39,7 @@ export function mountShell(){
  document.documentElement.removeAttribute('data-account-pending');
  const tools=document.createElement('div');tools.className='header-tools';tools.innerHTML='<div class="friend-search"><input id="headerPeople" aria-label="Find friends by username or ID" placeholder="Find friends…" autocomplete="off" maxlength="50" aria-controls="headerResults" aria-expanded="false"><div id="headerResults" class="header-popover" hidden></div></div>';
  toggle.closest('.profile-dropdown').before(tools);
+ const cloudHealth=mountCloudHealthNotice(document,tools);
  const $=id=>document.getElementById(id),search=$('headerPeople'),results=$('headerResults');
  function close(){menu.hidden=true;toggle.setAttribute('aria-expanded','false');}
  function hidePanels(){results.hidden=true;search.setAttribute('aria-expanded','false');}
