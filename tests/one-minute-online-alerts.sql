@@ -14,9 +14,9 @@ begin
        (viewer_id,'fixture','arrival-viewer','arrival-viewer@example.invalid'),
        (offline_id,'fixture','arrival-offline','arrival-offline@example.invalid');
  insert into public.bytequest_social_profiles(owner_id,username,display_name,discoverable,show_presence)
- values(actor_id,'zz_arrival_actor_fixture','Actor fixture',true,true),
-       (viewer_id,'zz_arrival_viewer_fixture','Viewer fixture',true,true),
-       (offline_id,'zz_arrival_offline_fixture','Offline fixture',true,true);
+ values(actor_id,'zz_arrival_actor','Actor fixture',true,true),
+       (viewer_id,'zz_arrival_viewer','Viewer fixture',true,true),
+       (offline_id,'zz_arrival_offline','Offline fixture',true,true);
  select public_id into actor from public.bytequest_social_profiles where owner_id=actor_id;
  select public_id into viewer from public.bytequest_social_profiles where owner_id=viewer_id;
  select public_id into other from public.bytequest_social_profiles where owner_id=offline_id;
