@@ -3,6 +3,7 @@ import {readFileSync} from 'node:fs';
 import {submitSolution,validateSubmission} from '../supabase/functions/bytequest-firebase/submissions.js';
 
 const problem={id:'battery-full-arrivals',revision:4,hiddenCount:70,
+ method:'countFullArrivals',params:[{name:'capacity',type:'int'},{name:'changes',type:'int[]'}],returns:'int',
  tests:[{args:[5,[3,4,0,-2,5,-6,6]],expected:3,label:'Published case'}]};
 const hidden=[{args:[1,[1]],expected:1,label:'DO_NOT_SEND_PRIVATE_TEST'}];
 const source='class Solution { public int countFullArrivals(int c,int[] a) {return 3;} }';
