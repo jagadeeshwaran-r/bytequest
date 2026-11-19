@@ -62,6 +62,7 @@ import "./problem-status.mjs";
 import "./workspace-layout.mjs";
 import "./submission-visibility.mjs";
 import './public-java-unlock.mjs';
+import './public-default-submit.mjs';
 import "./editorial-catalog.mjs";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";

@@ -173,18 +173,48 @@ export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=
   refresh(){if(root?.isConnected&&cloud.user?.id===owner)load();}
  };
 }
+export const defaultSubmissionScope=({problem,language,allowPublicPractice=false})=>
+ allowPublicPractice&&/^java\b/i.test(String(language))&&Number(problem?.hiddenCount)>0?'public':'complete';
 export function requestSubmission({problem,language,allowPublicPractice=false}){
- return new Promise(resolve=>{const dialog=document.createElement('dialog');dialog.className='submission-dialog submit-confirm';dialog.setAttribute('aria-labelledby','submitTitle');dialog.innerHTML='<button class="dialog-close" type="button" aria-label="Cancel submission">×</button><span class="eyebrow">READY TO SUBMIT</span><h2 id="submitTitle">'+h(problem.title)+'</h2><p class="body-copy">Your '+h(languageNames[language]||language)+' solution will request server verification. Hidden cases require an available private judge; if it is unavailable, no server acceptance will be recorded.</p><form><label>Explain your approach <small>optional</small><textarea name="approach" rows="3" maxlength="5000" placeholder="What idea makes your solution work?"></textarea></label><div class="submission-complexity"><label>Time complexity<input name="time" maxlength="80" placeholder="e.g. O(n)"></label><label>Extra space complexity<input name="space" maxlength="80" placeholder="e.g. O(n)"></label></div><label class="share-solution"><input name="shared" type="checkbox" checked><span>Share my accepted solution<small>Selected by default. Other learners who solve this revision can view your code and explanation. Uncheck to keep it private.</small></span></label><p class="benchmark-note">A full server submission checks private tests when configured. Public-only Java verification checks published cases; browser practice remains separate and cannot unlock protected answers. Complexity notes are author-stated.</p><div class="submission-actions"><button type="button" class="button secondary" data-cancel>Cancel</button><button class="button primary" type="submit">Submit solution →</button></div></form>';document.body.append(dialog);let result=null;
- if(allowPublicPractice){
-  const actions=dialog.querySelector('.submission-actions');
-  const practice=document.createElement('button');practice.type='button';practice.className='button secondary';
-  practice.textContent='Submit public tests (unlock answer)';
-  practice.title='Verify every published public case with the server. Accepted results unlock the Java answer and shared community solutions. Hidden cases are not checked or ranked.';
-  actions.insertBefore(practice,actions.querySelector('[type="submit"]'));
-  practice.onclick=()=>{result={mode:'public-practice'};dialog.close();};
-  const note=document.createElement('p');note.className='benchmark-note';
-  note.textContent='Public-only Java verification runs all published tests on the server and unlocks the Java reference and shared solutions when accepted. Hidden tests remain unchecked and public-only attempts are not shared or ranked. If the server is unavailable, browser practice is offered separately.';
-  actions.before(note);
- }
- dialog.querySelector('form').onsubmit=e=>{e.preventDefault();const f=new FormData(e.target);result={approach:f.get('approach'),timeComplexity:f.get('time'),spaceComplexity:f.get('space'),shared:f.get('shared')==='on',nonce:crypto.randomUUID()};dialog.close();};dialog.querySelector('[data-cancel]').onclick=()=>dialog.close();dialog.querySelector('.dialog-close').onclick=()=>dialog.close();dialog.addEventListener('close',()=>{dialog.remove();resolve(result);},{once:true});dialog.showModal();});
+ return new Promise(resolve=>{
+  const publicDefault=defaultSubmissionScope({problem,language,allowPublicPractice})==='public';
+  const dialog=document.createElement('dialog');
+  dialog.className='submission-dialog submit-confirm';dialog.setAttribute('aria-labelledby','submitTitle');
+  const explanation=publicDefault?
+   'Public Java verification checks the published cases on the server. If they all pass, your solution is saved and the Java answer unlocks. The '+Number(problem.hiddenCount)+' hidden cases are NOT checked.':
+   'Your '+h(languageNames[language]||language)+' solution will request server verification.';
+  dialog.innerHTML='<button class="dialog-close" type="button" aria-label="Cancel submission">×</button>'+
+   '<span class="eyebrow">READY TO SUBMIT</span><h2 id="submitTitle">'+h(problem.title)+'</h2>'+
+   '<p class="body-copy">'+explanation+'</p>'+
+   '<form><label>Explain your approach <small>optional</small><textarea name="approach" rows="3" maxlength="5000" placeholder="What idea makes your solution work?"></textarea></label>'+
+   '<div class="submission-complexity"><label>Time complexity<input name="time" maxlength="80" placeholder="e.g. O(n)"></label>'+
+   '<label>Extra space complexity<input name="space" maxlength="80" placeholder="e.g. O(n)"></label></div>'+
+   '<label class="share-solution" '+(publicDefault?'hidden':'')+'><input name="shared" type="checkbox" checked><span>Share my accepted solution'+
+   '<small>Only full-suite accepted solutions can be shared and ranked. Public-only submissions stay private.</small></span></label>'+
+   '<p class="benchmark-note">'+(publicDefault?
+    'Full private-suite verification is a separate option. It needs a configured private judge and may be unavailable. Public-only acceptance does not earn hidden-suite rankings.':
+    'Runtime comparisons are meaningful only for matching benchmark versions. Complexity notes are author-stated.')+'</p>'+
+   '<div class="submission-actions"><button type="button" class="button secondary" data-cancel>Cancel</button>'+
+   (publicDefault?'<button type="button" class="button secondary" data-full-verify>Try private suite</button>':'')+
+   '<button class="button primary" type="submit">'+(publicDefault?'Submit public tests →':'Submit solution →')+'</button></div></form>';
+  document.body.append(dialog);
+  let result=null;
+  const collect=scope=>{
+    const fields=new FormData(dialog.querySelector('form'));
+    return{approach:fields.get('approach'),timeComplexity:fields.get('time'),
+     spaceComplexity:fields.get('space'),shared:scope==='complete'&&fields.get('shared')==='on',
+     scope,nonce:crypto.randomUUID()};
+  };
+  dialog.querySelector('form').onsubmit=e=>{
+    e.preventDefault();
+    result=collect(publicDefault?'public':'complete');
+    dialog.close();
+  };
+  const full=dialog.querySelector('[data-full-verify]');
+  if(full)full.onclick=()=>{result=collect('complete');dialog.close();};
+  dialog.querySelector('[data-cancel]').onclick=()=>dialog.close();
+  dialog.querySelector('.dialog-close').onclick=()=>dialog.close();
+  dialog.addEventListener('close',()=>{dialog.remove();resolve(result);},{once:true});
+  dialog.showModal();
+ });
 }
