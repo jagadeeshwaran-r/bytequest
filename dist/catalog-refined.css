@@ -108,6 +108,18 @@
   color:var(--text);text-align:left;
 }
 #mapView .problem-table .problem-title:hover{color:var(--accent)}
+/* Quiet green lettering for solved challenges, without painting whole rows. */
+#mapView .problem-table .problem-title.is-solved{
+  color:var(--accent);
+  font-weight:700;
+  text-decoration:underline;
+  text-decoration-color:color-mix(in srgb,var(--accent) 30%,transparent);
+  text-underline-offset:4px;
+  text-decoration-thickness:1px;
+}
+#mapView .problem-table .problem-title.is-solved:hover{
+  text-decoration-color:var(--accent);
+}
 #mapView .problem-table .problem-title:focus-visible,
 #mapView :is(.filters select,#clearProblemSearch):focus-visible{
   outline:2px solid var(--accent);outline-offset:2px;
