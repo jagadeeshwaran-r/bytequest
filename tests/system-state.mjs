@@ -43,15 +43,15 @@ assert.equal(connectionPageUrl('bogus','javascript:alert(1)'),'./status.html?iss
 const store=createCloudHealthStore({clock:()=>1795000000000});
 store.setOwner(null);
 store.update({kind:'request-error',action:'public-catalog',status:503});
-assert.equal(issueFromCloudHealth(store.getState()),'busy',
- 'Guests see a recovery screen when even public catalog is unavailable');
+assert.equal(store.getState(),null,
+ 'A failed background catalog request must not open a service-connection screen while editing');
 store.update({kind:'request-ok',action:'public-catalog'});
-assert.equal(store.getState(),null,'Successful public catalog recovery clears transient guest warning');
+assert.equal(store.getState(),null,'Read-only catalog success cannot claim an account sync');
 store.update({kind:'request-error',action:'public-catalog',status:503,errorCode:'MAINTENANCE'});
-assert.equal(issueFromCloudHealth(store.getState()),'maintenance');
+assert.equal(store.getState(),null,
+ 'The dedicated maintenance gate handles authoritative status; a catalog error never redirects the editor');
 store.update({kind:'request-error',action:'public-catalog',status:401});
-assert.equal(store.getState().kind,'maintenance',
- 'An authorization failure must not replace an explicit maintenance incident');
+assert.equal(store.getState(),null,'An authorization error never creates an outage popup');
 assert.equal(issueFromCloudHealth(null,{online:false}),'offline');
 
 const config={url:'https://example.supabase.co',publishableKey:'sb_publishable_fixture'};
@@ -79,8 +79,8 @@ assert.ok(!pageScript.includes('localStorage.clear(')&&!pageScript.includes('ses
  'Outage display must NEVER erase drafts or auth state');
 assert.ok(styles.includes('prefers-reduced-motion'),'Animation must honor reduced-motion preference');
 assert.ok(styles.includes('@media(max-width:600px)'),'Full page must work on mobile');
-assert.ok(shell.includes('cloud-health.js?v=outage-1'),'Shell must use current health warning');
-assert.ok(banner.includes('connectionPageUrl(issue'),'Health warning must link to the appropriate full-page mode');
+assert.ok(shell.includes('cloud-health.js?v=quiet-2'),'Shell must load the quiet sync indicator');
+assert.ok(banner.includes('connectionPageUrl(issue'),'The opt-in sync details may link to the explicit recovery page');
 for(const html of ['index.html','leaderboard.html','community.html','studio.html']){
  assert.ok(readFileSync('dist/'+html,'utf8').includes('outage-page=1')||
   readFileSync('dist/'+html,'utf8').includes('outage-page-1'),
