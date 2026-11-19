@@ -68,7 +68,7 @@ const backend=readFileSync('supabase/functions/bytequest-firebase/database.js','
 assert.match(app,/scope:'public',nonce:crypto.randomUUID\(\),shared:false/,'Explicit public mode must reach authenticated server');
 assert.ok(!app.includes("await run(true,{forceBrowser:true,sourceOverride:source})"),'Never silently treat browser practice as verified unlock');
 assert.ok(dialog.includes('Submit public tests (unlock answer)'));
-assert.ok(gate.includes('Pass all published tests through Submit public tests'));
+assert.ok(gate.includes('Unlock after an accepted public submission'),'The small Java-answer hint must preserve the acceptance requirement');
 assert.ok(backend.includes('bytequest_submissions'),'Server-managed accepted receipt is the reference unlock authority');
 assert.ok(sql.includes("s.benchmark_version in ('bq-v1','bq-v2-single-pass','bq-private-v1')"),
  'Public-only hidden-suite submissions must not be eligible for full-suite rankings');
