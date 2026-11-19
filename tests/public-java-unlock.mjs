@@ -65,7 +65,7 @@ const dialog=readFileSync('dist/submissions.js','utf8');
 const gate=readFileSync('dist/editorial-access.js','utf8');
 const sql=readFileSync('database/submissions-bq-v2-visibility.sql','utf8');
 const backend=readFileSync('supabase/functions/bytequest-firebase/database.js','utf8');
-assert.match(app,/scope:'public',nonce:options.nonce\|\|crypto.randomUUID\(\),shared:false/,'Explicit public mode preserves nonce and uses server judge');
+assert.match(app,/scope:'public',nonce:options.nonce\|\|crypto.randomUUID\(\),shared:true,showcase:true/,'New public mode joins showcase; legacy request remains private when not marked');
 assert.ok(!app.includes("await run(true,{forceBrowser:true,sourceOverride:source})"),'Never silently treat browser practice as verified unlock');
 assert.ok(dialog.includes('Submit public tests →'));
 assert.ok(dialog.includes("result=collect(publicDefault?'public':'complete')"),'Primary submit must not silently request hidden cases');
