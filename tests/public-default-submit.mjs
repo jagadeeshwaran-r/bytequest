@@ -64,7 +64,8 @@ try{
  }[name]??null;}};
  const pub=await useDialog({problem,language:'Java 17',allowPublicPractice:true},'public');
  assert.equal(pub.scope,'public');
- assert.equal(pub.shared,false,'Public verification cannot publish unverified hidden-suite code');
+ assert.equal(pub.shared,true,'Accepted public-suite solutions are showcased by default without claiming hidden-suite acceptance');
+ assert.equal(pub.showcase,true,'The public-showcase policy is explicitly sent to the server');
  assert.equal(pub.approach,'Use a set and return early',"Public mode must retain the user's approach");
  assert.equal(pub.timeComplexity,'O(n)');
  assert.equal(pub.spaceComplexity,'O(n)');
@@ -72,7 +73,7 @@ try{
 
  const full=await useDialog({problem,language:'Java 17',allowPublicPractice:true},'full');
  assert.equal(full.scope,'complete','Hidden case verification must be an explicit decision');
- assert.equal(full.shared,true,'Full-suite sharing preference remains unchanged');
+ assert.equal(full.shared,true,'Full-suite accepted solutions are also public showcase by default');
  assert.notEqual(full.nonce,pub.nonce,'Public and full suites must have separate idempotency keys');
 
  const noHidden=await useDialog({problem:{...problem,hiddenCount:0},language:'Java 17',allowPublicPractice:true},'regular');
@@ -85,7 +86,7 @@ try{
  globalThis.FormData=originalFormData;
 }
 const app=readFileSync('dist/app.js','utf8');
-assert.match(app,/options:\{\.\.\.options,scope:"public",shared:false,nonce:crypto\.randomUUID\(\)\}/,
+assert.match(app,/options:\{\.\.\.options,scope:"public",shared:true,showcase:true,nonce:crypto\.randomUUID\(\)\}/,
  'A failed private request must provide a direct, safe public-mode recovery action');
 assert.match(app,/const publicOnly=options\.mode==='public-practice'\|\|options\.scope==='public'/,
  'The actual submission request must honor the default public scope');
