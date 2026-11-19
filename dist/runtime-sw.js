@@ -1,9 +1,9 @@
 // Keep ByteQuest's native Java-runner isolation headers intact, and cache
 // ONLY the standalone connection recovery page. Never cache account progress,
 // private judge responses, source code, or authenticated API traffic.
-const RECOVERY_CACHE='bytequest-connection-page-v3';
+const RECOVERY_CACHE='bytequest-connection-page-v4';
 const RECOVERY_ASSETS=[
- './status.html','./system-state.css?v=maintenance-controls-1','./status-page.js?v=maintenance-controls-1',
+ './status.html','./system-state.css?v=maintenance-controls-1','./status-page.js?v=strict-1',
  './system-state.js?v=1','./theme-mode.js'
 ];
 const recoverable=new Set(['status.html','system-state.css','status-page.js','system-state.js','theme-mode.js']);

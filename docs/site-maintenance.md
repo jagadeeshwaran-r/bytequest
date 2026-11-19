@@ -85,11 +85,33 @@ No update should touch user progress, previous submissions, drafts, or rankings.
 - Signed-in library admins can bypass frontend maintenance only when the
   backend itself verifies `bytequest_library_admins`; `maintenanceAdmin=1`
   is a request for verification, **not** an admin grant.
-- Existing, already-open code editors are *not forcibly redirected*. They show
-  a non-blocking notice. Ordinary new navigations show the recovery page.
-- GitHub Pages is static hosting: static HTML and public catalog GET requests
-  cannot be made confidential or unreachable through an Edge Function gate.
-  This feature protects authenticated ByteQuest write APIs, not GitHub CDN assets.
+- Active maintenance is a **strict client-side site gate**: new navigations
+  check the authoritative server schedule before importing application code,
+  and active sessions are redirected to the maintenance page on polling or
+  the scheduled UTC cutoff. Users cannot open the normal UI via a direct HTML
+  path, copied problem link, profile URL, runner page, or a different status
+  preview while the server reports active maintenance.
+- The protected admin console at `maintenance.html` remains the only admin
+  control route to turn maintenance off. A URL parameter is not a general
+  site bypass. New app pages start only after a successful status check.
+- **Tradeoff:** if the public status API cannot be reached, the main pages
+  fail closed to the offline/unreachable recovery page rather than guessing
+  that maintenance is inactive. Do not rely on ByteQuest local practice to
+  work during a status API outage in this strict mode.
+- An already-open editor is redirected once maintenance becomes active;
+  the existing local draft storage is not cleared, but unconfirmed cloud
+  saves remain unconfirmed. Users should save/export beforehand.
+- **Important hosting limit:** GitHub Pages is static hosting. Browser gates
+  prevent ordinary visitors from *using* other pages, but they **cannot**
+  return HTTP 503 for direct requests to an HTML or JavaScript asset. A visitor
+  with JavaScript disabled, a custom HTTP client, or a direct GitHub Pages
+  asset URL can still retrieve public files. Supabase authenticated write APIs
+  are independently protected by the Edge Function. For genuine network-level
+  enforcement of only the maintenance page, put the whole site behind a
+  controlled edge proxy/custom domain (for example Cloudflare Workers or
+  Cloudflare Pages Functions), configure that proxy to serve the maintenance
+  HTML and return HTTP 503 for every other HTML route during the active
+  server-side window, and stop exposing the unprotected GitHub Pages origin.
 - **Important backend drift:** the older deployed Edge Function had different
   external hidden-judge defaults from GitHub. Deploying the reviewed GitHub
   source may change private-judge availability. Verify that separately before
@@ -102,9 +124,18 @@ No update should touch user progress, previous submissions, drafts, or rankings.
 3. Active window: a non-admin `sync`, `studio-save` or `submission-create`
    gets HTTP 503; local draft remains. Confirm no new verified submission is counted.
 4. Library admin signed in: `maintenance-admin-get/save` succeed; ordinary users
-   get 403 even if `admin:true` is supplied in request JSON.
-5. At the exact UTC cutoff, public status switches to inactive and ordinary
+   get 403 even if `admin:true` is supplied in request JSON. The standalone
+   admin control panel remains accessible; `?maintenanceAdmin=1` on Problems
+   does not bypass the maintenance screen.
+5. Visit direct problem, profile, leaderboard, Studio, privacy, Java runner and
+   native runner URLs during maintenance. Confirm each is redirected without
+   booting its app or compiler runtime. Repeat with `?issue=offline` and
+   `?issue=busy` on the status page; both must yield to maintenance.
+6. Keep a coding editor tab open when an enabled scheduled window begins.
+   Confirm the redirect occurs at the server-time cutoff or next status check,
+   rather than leaving the editor accessible.
+7. At the exact UTC end cutoff, public status switches to inactive and ordinary
    requests work again; no manual cron or job is required.
-6. Revoke admin role and verify the bypass stops working.
-7. After reconnecting, use the normal ByteQuest sync flow and confirm actual
+8. Revoke admin role and verify the maintenance-control console cannot be used.
+9. After reconnecting, use the normal ByteQuest sync flow and confirm actual
    cloud progress. A redirected page alone is not confirmation of a cloud save.

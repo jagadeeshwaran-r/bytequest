@@ -1,86 +1,116 @@
 import {fetchMaintenanceStatus} from './maintenance-api.js?v=1';
 import {istDisplay} from './maintenance-model.js?v=1';
 
+// Application modules are NOT referenced as executable script tags in HTML.
+// They are imported only after a server status check confirms that the site
+// is available. This prevents an active maintenance window from booting the
+// editor, social UI, background sync, or other user-facing applications.
+const entrypoints=Object.freeze({
+ 'index.html':'./app.js',
+ 'community.html':'./community.js',
+ 'leaderboard.html':'./leaderboard.js',
+ 'studio.html':'./studio-page.js',
+ 'privacy.html':'./reference-motion.js',
+ 'runner.html':'./runner-core.js',
+ 'native-runner.html':'./native-runner-core.js'
+});
 const page=location.pathname.split('/').pop()||'index.html';
-const allowed=new Set(['index.html','community.html','leaderboard.html','studio.html']);
-if(allowed.has(page)){
-  let firstCheck=true,busy=false,adminVerified=false,adminChecking=false,last=null;
-  let banner=null,dismissed=false;
-  function ensureBanner(){
-    if(banner)return banner;
-    banner=document.createElement('aside');
-    banner.className='bq-maintenance-alert';
-    banner.setAttribute('role','status');
-    banner.setAttribute('aria-live','polite');
-    banner.hidden=true;
-    const text=document.createElement('p');text.className='bq-maintenance-alert-text';
-    const details=document.createElement('a');details.textContent='Maintenance details';
-    details.href='./status.html?issue=maintenance&from='+encodeURIComponent(page);
-    const dismiss=document.createElement('button');dismiss.type='button';dismiss.textContent='Dismiss';
-    dismiss.onclick=()=>{dismissed=true;banner.hidden=true;};
-    banner.append(text,details,dismiss);
-    document.body.prepend(banner);
-    const css=document.createElement('link');css.rel='stylesheet';css.href='./maintenance-gate.css?v=1';document.head.append(css);
-    return banner;
+const bootScript=document.querySelector('script[data-bq-app]');
+const appSource=bootScript?.getAttribute('data-bq-app')||'';
+const expected=entrypoints[page];
+const approved=Boolean(expected&&appSource.startsWith(expected+'?'));
+const maintenanceUrl='./status.html?issue=maintenance';
+const connectionUrl='./status.html?issue=';
+let launched=false,checking=false,timer=null,scheduledTimer=null,stopped=false,banner=null;
+let lastStatus=null;
+const pollInterval=15000;
+
+function showAdvanceNotice(status){
+  if(banner&&status.upcoming!==true){banner.remove();banner=null;return;}
+  if(!status.upcoming||banner)return;
+  banner=document.createElement('aside');
+  banner.className='bq-maintenance-alert';
+  banner.setAttribute('role','status');banner.setAttribute('aria-live','polite');
+  banner.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#211f17;color:#f7e8c0;padding:10px 20px;text-align:center;font:12px/1.5 system-ui';
+  const label=document.createElement('span');
+  label.textContent='Scheduled maintenance: '+istDisplay(status.startsAt)+' to '+istDisplay(status.endsAt)+'. '+(status.message||'');
+  const link=document.createElement('a');
+  link.href=maintenanceUrl;link.textContent=' Details';link.style.color='inherit';
+  banner.append(label,link);document.body.prepend(banner);
+}
+function blockAndRedirect(issue='maintenance'){
+  stopped=true;
+  clearInterval(timer);clearTimeout(scheduledTimer);
+  // Immediately hide the current workspace before navigation can complete.
+  // Draft persistence remains controlled by the existing editor; never clear
+  // browser storage, force sign-out, or claim server sync happened.
+  document.documentElement.dataset.bqMaintenanceCheck='pending';
+  location.replace(issue==='maintenance'?maintenanceUrl:connectionUrl+issue);
+}
+function scheduleExactStart(status){
+  clearTimeout(scheduledTimer);
+  if(!status.upcoming||!status.startsAt||!status.serverTime)return;
+  const delay=Date.parse(status.startsAt)-Date.parse(status.serverTime);
+  if(!Number.isFinite(delay))return;
+  // The periodic poll is a backup. A server-time-based scheduled timeout
+  // catches the planned start even when a user remains on an open editor.
+  scheduledTimer=setTimeout(()=>void check(true),Math.max(0,Math.min(delay+150,2147480000)));
+}
+async function launch(){
+  if(launched||stopped)return;
+  launched=true;
+  document.documentElement.removeAttribute('data-bq-maintenance-check');
+  try{
+    await import(appSource);
+  }catch(error){
+    console.error('ByteQuest application failed to load',error);
+    blockAndRedirect(navigator.onLine===false?'offline':'unreachable');
   }
-  function showBanner(status){
-    const active=status.active===true;
-    if(!active&&!status.upcoming)return;
-    if(!active&&dismissed)return;
-    const element=ensureBanner();
-    const message=status.message||'ByteQuest maintenance is scheduled.';
-    const when=active?
-      'Maintenance is active until '+istDisplay(status.endsAt)+'.':
-      'Scheduled maintenance: '+istDisplay(status.startsAt)+' to '+istDisplay(status.endsAt)+'.';
-    element.querySelector('p').textContent=when+' '+message+
-      (active?' Cloud submissions and sync are paused. Keep local drafts and back up your work.':'');
-    element.hidden=false;element.dataset.active=String(active);
-  }
-  async function verifyAdminBypass(){
-    if(adminVerified)return true;
-    if(adminChecking)return false;
-    adminChecking=true;
-    try{
-      // Auth/session restoration does not grant the bypass. The Edge Function
-      // checks ByteQuest library-admin membership using the Firebase token.
-      const {Cloud}=await import('./cloud.js?v=outage-1');
-      const access=new Cloud();
-      await access.init();
-      if(!access.user?.id)return false;
-      await access.request('maintenance-admin-get',{},access.user.id);
-      adminVerified=true;return true;
-    }catch{return false;}
-    finally{adminChecking=false;}
-  }
-  async function check(){
-    if(busy)return;
-    busy=true;
-    try{
-      const status=await fetchMaintenanceStatus();
-      last=status;
-      if(status.active){
-        const requestedBypass=new URLSearchParams(location.search).get('maintenanceAdmin')==='1';
-        if(firstCheck){
-          const authorized=requestedBypass&&await verifyAdminBypass();
-          if(!authorized){
-            // Cold navigation enters the dedicated visitor page.
-            location.replace('./status.html?issue=maintenance&from='+encodeURIComponent(page));
-            return;
-          }
-        }
-        // For already-open coding workspaces, never force a navigation that
-        // might discard unconfirmed drafts. Backend enforcement stays active.
-        showBanner(status);
-      }else if(status.upcoming)showBanner(status);
-      else if(banner)banner.hidden=true;
-    }catch{
-      // An unavailable status endpoint is NOT proof that maintenance is active.
-      // Keep existing work and let the cloud-health bar report connection errors.
-    }finally{busy=false;firstCheck=false;}
-  }
+}
+async function check(force=false){
+  if(checking||stopped)return;
+  checking=true;
+  try{
+    const status=await fetchMaintenanceStatus({timeoutMs:5000});
+    lastStatus=status;
+    if(status.active===true){blockAndRedirect('maintenance');return;}
+    // If a window is upcoming, re-check at its exact server-relative start.
+    scheduleExactStart(status);
+    if(!launched)await launch();
+    if(stopped)return;
+    showAdvanceNotice(status);
+  }catch{
+    if(!launched){
+      // Fail closed on first visit: an unreachable status service must not
+      // grant access when we cannot determine whether maintenance is active.
+      blockAndRedirect(navigator.onLine===false?'offline':'unreachable');
+    }else{
+      // Do not mislabel a network failure as scheduled maintenance; block the
+      // workspace until a fresh authoritative check confirms availability.
+      blockAndRedirect(navigator.onLine===false?'offline':'unreachable');
+    }
+  }finally{checking=false;}
+}
+
+if(!approved){
+  blockAndRedirect('unreachable');
+}else{
+  // No 'maintenanceAdmin=1' general-site bypass. The admin-only console at
+  // maintenance.html is the sole privileged operational route.
   void check();
-  const poll=setInterval(()=>{if(!document.hidden)void check();},60000);
+  timer=setInterval(()=>{if(!document.hidden)void check();},pollInterval);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)void check();});
+  // Back/forward navigation may restore an already-running app from browser
+  // memory without re-evaluating its modules. Re-lock before rechecking.
+  window.addEventListener('pageshow',event=>{
+    if(!event.persisted)return;
+    clearInterval(timer);
+    timer=setInterval(()=>{if(!document.hidden)void check();},pollInterval);
+    document.documentElement.dataset.bqMaintenanceCheck='pending';
+    void check().finally(()=>{
+      if(!stopped)document.documentElement.removeAttribute('data-bq-maintenance-check');
+    });
+  });
   window.addEventListener('online',()=>void check());
-  window.addEventListener('pagehide',()=>clearInterval(poll),{once:true});
+  window.addEventListener('pagehide',()=>{clearInterval(timer);clearTimeout(scheduledTimer);});
 }

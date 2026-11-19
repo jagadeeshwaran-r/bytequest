@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#080c0c">
+<title>Page not found · ByteQuest</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,system-ui,sans-serif}
+body{background:#080c0c;color:#e9f4eb;min-height:100svh;margin:0;display:grid;place-items:center}
+main{max-width:500px;padding:32px;line-height:1.6}
+h1{font-size:clamp(36px,7vw,62px);letter-spacing:-.06em;margin:0 0 14px}
+p{color:#a2b1a8}a{color:#7ce4a9}
+main[hidden]{display:none}
+</style>
+</head>
+<body>
+<main id="missing" hidden>
+ <p>BYTEQUEST / 404</p>
+ <h1>That route is lost.</h1>
+ <p>The page you requested doesn't exist. Return to the problem library to continue your quest.</p>
+ <a id="home" href="./index.html">Return to ByteQuest</a>
+</main>
+<script type="module">
+const path=location.pathname;
+const base=path.startsWith('/bytequest/')?'/bytequest/':'/';
+const dest=issue=>location.origin+base+'status.html?issue='+encodeURIComponent(issue);
+const home=document.getElementById('home');home.href=location.origin+base;
+try{
+ const {fetchMaintenanceStatus}=await import(location.origin+base+'maintenance-api.js?v=1');
+ const result=await fetchMaintenanceStatus({timeoutMs:5000});
+ if(result.active===true)location.replace(dest('maintenance'));
+ else document.getElementById('missing').hidden=false;
+}catch{
+ location.replace(dest(navigator.onLine===false?'offline':'unreachable'));
+}
+</script>
+</body>
+</html>

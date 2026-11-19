@@ -7,17 +7,22 @@
 <meta name="description" content="ByteQuest connection recovery and service status">
 <title>Connection status · ByteQuest</title>
 <script src="./theme-mode.js"></script>
-<script>if(new URLSearchParams(location.search).get('issue')==='maintenance')document.documentElement.dataset.maintenancePage='true';</script>
+<script>
+const statusIssue=new URLSearchParams(location.search).get('issue');
+if(statusIssue==='maintenance')document.documentElement.dataset.maintenancePage='true';
+else document.documentElement.dataset.bqStatusCheck='pending';
+</script>
+<style>html[data-bq-status-check="pending"] body{visibility:hidden!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./system-state.css?v=maintenance-controls-1">
-<script type="module" src="./status-page.js?v=maintenance-controls-1"></script>
+<script type="module" src="./status-page.js?v=strict-1"></script>
 </head>
 <body class="bq-status-page" data-issue="unreachable">
 <div class="status-background" aria-hidden="true"></div>
 <header class="status-top">
-  <a class="status-brand" href="./index.html#map" aria-label="ByteQuest home"><span>Byte</span><strong>Quest</strong></a>
+  <a class="status-brand" href="./status.html?issue=maintenance" aria-label="ByteQuest status"><span>Byte</span><strong>Quest</strong></a>
   <div class="status-top-meta"><span class="status-pulse"></span> CONNECTION CENTER <span class="status-top-rule"></span> <span id="statusCode">BQ-003</span></div>
 </header>
 <main class="status-main" id="statusMain">
