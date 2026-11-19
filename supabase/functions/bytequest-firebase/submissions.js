@@ -10,7 +10,15 @@ export function validateSubmission(body){
 }
 export async function submitSolution({owner,body,db,benchmarkJudge,privateJudge,allowExternalHiddenJudge=false}){
  const data=validateSubmission(body),existing=await db.existingSubmission(owner,data.nonce);
- if(existing){if(existing.problem_id!==data.problemId||existing.source!==data.source||existing.language!==data.language)throw new HttpError(409,'This retry does not match the original submission.');return{accepted:true,status:'accepted',submission:publicOwn(existing),message:'Your accepted submission is already saved.'};}
+ if(existing){
+  const wasPublicOnly=existing.benchmark_version==='bq-public-only-v1';
+  if(existing.problem_id!==data.problemId||existing.source!==data.source||
+     existing.language!==data.language||wasPublicOnly!==(data.scope==='public'))
+    throw new HttpError(409,'This retry does not match the original submission or verification scope.');
+  return{accepted:true,status:'accepted',submission:publicOwn(existing),
+    verificationScope:wasPublicOnly?'public':'complete',
+    message:wasPublicOnly?'Your public-test acceptance is already saved. Hidden tests were not checked.':'Your accepted submission is already saved.'};
+ }
  const row=await db.privateProblem(data.problemId);if(!row)throw new HttpError(404,'Problem not found.');if(row.revision!==data.revision)throw new HttpError(409,'This problem changed. Reload it before submitting.');
  if(requiresJavaStructures(row.content)&&data.language!=='java')throw new HttpError(400,'Linked-list and tree problems currently support Java submissions only.');
  const hasHidden=(row.hidden||[]).length>0||Number(row.content.hiddenCount)>0;
@@ -29,7 +37,7 @@ export async function submitSolution({owner,body,db,benchmarkJudge,privateJudge,
     message:'All '+row.content.tests.length+' published public cases passed on the server.'+
       (hasHidden?' Private hidden cases were NOT checked.':' No hidden cases were required.'),
     // Never mix public-only records from hidden problems into full-judge rankings.
-    benchmarkVersion:hasHidden?'bq-public-only-v1':verdict.benchmarkVersion};
+    benchmarkVersion:'bq-public-only-v1'};
  }else if(hasHidden&&privateJudge?.ready){
   const verdict=await privateJudge.run(data.source,row.content,[...row.content.tests,...row.hidden]);
   if(!verdict.accepted)return{...verdict,status:['compile_error','runtime_error','time_limit_exceeded','wrong_answer','unavailable'].includes(verdict.status)?verdict.status:'wrong_answer'};
