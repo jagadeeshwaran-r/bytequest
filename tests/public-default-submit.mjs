@@ -65,7 +65,7 @@ try{
  const pub=await useDialog({problem,language:'Java 17',allowPublicPractice:true},'public');
  assert.equal(pub.scope,'public');
  assert.equal(pub.shared,false,'Public verification cannot publish unverified hidden-suite code');
- assert.equal(pub.approach,'Use a set and return early','Public mode must retain the user's approach');
+ assert.equal(pub.approach,'Use a set and return early',"Public mode must retain the user's approach");
  assert.equal(pub.timeComplexity,'O(n)');
  assert.equal(pub.spaceComplexity,'O(n)');
  assert.match(pub.nonce,/^[0-9a-f-]{36}$/i);
