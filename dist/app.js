@@ -1,5 +1,5 @@
 import {profileAvatar,publicProfileHref} from './profile-view.js?v=workbench-1';
-import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=verification-evidence-1&public-unlock=2';
+import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=verification-evidence-1&public-unlock=2&public-default=1';
 import {launchCelebration} from './celebration.js?v=next-1';
 import {mountEditorTools} from './editor-tools.js?v=copy-enabled-1';
 import {mountWorkspaceLayout} from './workspace-layout.js?v=workspace-1';
