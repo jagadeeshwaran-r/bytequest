@@ -18,7 +18,7 @@ const submission=app.slice(start,end);
 assert.match(submission,/await cloud\.request\('submission-create'/,'Send signed-in Java to server acceptance path');
 assert.match(submission,/if\(lang==="java"&&result\.status==="unavailable"\)/,
  'Only an explicit unavailable verdict can trigger a practice fallback');
-assert.match(submission,/lang==="java"&&privateJavaJudgeUnavailable\(e\)/,
+assert.match(submission,/publicOnly&&\/unavailable\|not connected/,'Public-only server outages also offer an explicit browser practice choice');
  'Only known configuration errors can trigger a practice fallback');
 assert.match(submission,/practice\.onclick=\(\)=>\{/,
  'A failed private-judge request must offer public practice only after explicit click');
