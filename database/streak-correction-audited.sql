@@ -12,6 +12,8 @@ create table if not exists public.bytequest_streak_corrections(
 alter table public.bytequest_streak_corrections enable row level security;
 revoke all on table public.bytequest_streak_corrections from public,anon,authenticated;
 grant select on table public.bytequest_streak_corrections to service_role;
+create policy streak_corrections_service_select on public.bytequest_streak_corrections
+ for select to service_role using(true);
 
 CREATE OR REPLACE FUNCTION public.bytequest_profile_activity(viewer_id text, target text)
  RETURNS jsonb
