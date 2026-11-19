@@ -187,7 +187,7 @@ function renderLearning(){
     current.tests.slice(0,2).forEach((c,i)=>{const explanation=Array.isArray(current.exampleExplanations)?String(current.exampleExplanations[i]||"").trim():"";content+='<div class="example-card"><div class="example-label">Example '+(i+1)+'</div><code>Input: <b>'+html(formatArgs(c.args))+'</b>\nOutput: <b>'+html(JSON.stringify(c.expected))+'</b></code>'+(explanation?'<div class="example-explanation"><strong>Explanation</strong><p>'+html(explanation)+'</p></div>':(c.label&&!/^Example \d+$/.test(c.label)?'<p>'+html(c.label)+'</p>':''))+'</div>';});
     content+='<h4>Constraints</h4><div class="constraints">'+html(current.constraints)+'</div><details class="concept-hint"><summary>Reveal the key concept</summary><p>'+html(current.topic)+(current.pattern&&current.pattern!==current.topic?' · '+html(current.pattern):'')+'</p></details>';
   } else if(tab==="learn"){
-    content+='<span class="pattern-tag">EDITORIAL</span><h3>Approach</h3><p class="body-copy">'+html(current.idea)+'</p><div class="pattern-callout"><strong>Invariant</strong>'+html(current.invariant)+'</div><div class="complexity-row"><div class="complexity-box"><small>TIME</small><b>'+html(current.complexity.time)+'</b></div><div class="complexity-box"><small>EXTRA SPACE</small><b>'+html(current.complexity.space)+'</b></div></div><p class="tradeoff">'+html(current.complexity.tradeoff)+'</p>'+editorialSolutionGateMarkup(canCheckJavaReference(current))+'';
+    content+='<span class="pattern-tag">EDITORIAL</span><h3>Approach</h3><p class="body-copy">'+html(current.idea)+'</p><div class="pattern-callout"><strong>Invariant</strong>'+html(current.invariant)+'</div><div class="complexity-row"><div class="complexity-box"><small>TIME</small><b>'+html(current.complexity.time)+'</b></div><div class="complexity-box"><small>EXTRA SPACE</small><b>'+html(current.complexity.space)+'</b></div></div><p class="tradeoff">'+html(current.complexity.tradeoff)+'</p>'+editorialSolutionGateMarkup(canCheckJavaReference(current),Boolean(cloud.user))+'';
   } else {
     content+='<span class="pattern-tag">A LITTLE MOVING PICTURE</span><h3>Watch the idea click.</h3><p class="body-copy">A guided trace of the reference approach. Your code runs separately in the editor.</p><div id="traceBoard" class="trace-board"></div><p id="traceCaption" class="trace-caption"></p><div class="trace-controls"><button id="traceBack" aria-label="Previous animation step">←</button><button id="tracePlay" class="play-trace">▶ Play</button><button id="traceNext" aria-label="Next animation step">→</button><button id="traceReset" aria-label="Restart animation">↻</button><span id="traceCounter" class="trace-counter"></span></div><div class="code-note">Pause at any step. Say out loud: <i>“What do I know so far, and what changes next?”</i></div>';
   }
@@ -198,7 +198,7 @@ function renderLearning(){
   if($("referenceBtn"))$("referenceBtn").onclick=async()=>{
     // A locally stored practice solve is only a UI hint. The verified
     // Firebase identity and accepted-submission row control actual access.
-    if(!canCheckJavaReference(current)||!cloud.user)return;
+    if(!cloud.user)return;
     const selected=current,owner=cloud.user.id,ticket=creditEpoch;
     const button=$("referenceBtn"),output=$("referenceContent");
     button.disabled=true;button.textContent="Checking verified access…";
@@ -209,12 +209,12 @@ function renderLearning(){
       if(typeof result.reference!=="string"||!result.reference||result.revision!==selected.revision)
         throw new Error("The private reference response is invalid.");
       referenceUsed=true;
-      output.innerHTML='<p class="reference-reveal-note">Compare your verified solution with this reference.</p><pre class="reference-code">'+html(result.reference)+'</pre>';
+      output.innerHTML='<p class="reference-reveal-note">Compare your accepted Java solution with this reference.</p><pre class="reference-code">'+html(result.reference)+'</pre>';
       button.hidden=true;
     }catch(error){
       if(current!==selected||creditEpoch!==ticket||tab!=="learn"||cloud.user?.id!==owner)return;
       output.textContent=error?.message||"Reference unavailable. Retry after a verified accepted submission.";
-      button.disabled=false;button.textContent="Retry verified reference";
+      button.disabled=false;button.textContent="Retry Java answer";
     }
   };
   if(tab==="visual"){
