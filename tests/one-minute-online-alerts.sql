@@ -23,13 +23,13 @@ begin
  insert into public.bytequest_follows(follower,following) values(viewer,actor),(other,actor);
 
  perform public.bytequest_update_presence_live(actor_id,actor_page,1,true,0);
- assert not exists(select 1 from public.bytequest_live_events where kind='friend_online' and actor=actor),
+ assert not exists(select 1 from public.bytequest_live_events e where e.kind='friend_online' and e.actor=actor),
   'An offline follower must not have queued alerts when actor logs in';
 
  perform public.bytequest_update_presence_live(viewer_id,viewer_page,1,true,0);
  perform public.bytequest_update_presence_live(actor_id,actor_page,2,false,0);
  perform public.bytequest_update_presence_live(actor_id,actor_page,3,true,0);
- assert not exists(select 1 from public.bytequest_live_events where kind='friend_online' and actor=actor),
+ assert not exists(select 1 from public.bytequest_live_events e where e.kind='friend_online' and e.actor=actor),
   'Immediate reconnect must not alert anyone';
 
  perform public.bytequest_update_presence_live(actor_id,actor_page,4,false,0);
@@ -39,16 +39,16 @@ begin
  update public.bytequest_online_announcements set last_announced=clock_timestamp()-interval '70 seconds'
   where owner_id=actor_id;
  perform public.bytequest_update_presence_live(actor_id,actor_page,5,true,0);
- assert (select count(*) from public.bytequest_live_events where actor=actor and kind='friend_online' and owner_id=viewer_id)=1,
+ assert (select count(*) from public.bytequest_live_events e where e.actor=actor and e.kind='friend_online' and e.owner_id=viewer_id)=1,
   'After one minute offline, a currently online follower receives exactly one alert';
- assert not exists(select 1 from public.bytequest_live_events where actor=actor and kind='friend_online' and owner_id=offline_id),
+ assert not exists(select 1 from public.bytequest_live_events e where e.actor=actor and e.kind='friend_online' and e.owner_id=offline_id),
   'An offline follower must never receive online notification history';
 
  for n in 1..10 loop
   perform public.bytequest_update_presence_live(actor_id,actor_page,4+n*2,false,0);
   perform public.bytequest_update_presence_live(actor_id,actor_page,5+n*2,true,0);
  end loop;
- assert (select count(*) from public.bytequest_live_events where actor=actor and kind='friend_online' and owner_id=viewer_id)=1,
+ assert (select count(*) from public.bytequest_live_events e where e.actor=actor and e.kind='friend_online' and e.owner_id=viewer_id)=1,
   'Ten reconnects must not create ten online notifications';
 
  result:=public.bytequest_live_events_read(viewer_id,0);
@@ -57,8 +57,8 @@ begin
  result:=public.bytequest_live_events_read(viewer_id,0);
  assert jsonb_array_length(result->'events')=0,'Offline viewer receives no online toasts';
  perform public.bytequest_update_presence_live(viewer_id,viewer_page,3,true,0);
- update public.bytequest_live_events set created_at=clock_timestamp()-interval '2 minutes'
-  where actor=actor and kind='friend_online';
+ update public.bytequest_live_events as e set created_at=clock_timestamp()-interval '2 minutes'
+  where e.actor=actor and e.kind='friend_online';
  result:=public.bytequest_live_events_read(viewer_id,0);
  assert jsonb_array_length(result->'events')=0,'Old online alerts cannot reappear upon reconnect';
 
