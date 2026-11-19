@@ -66,6 +66,6 @@ assert.match(app,/const publicOnly=options\.mode==='public-practice'/,'Public-on
 assert.match(app,/options=\{scope:'public',nonce:crypto.randomUUID\(\),shared:false/,'Public-only submit uses server verification and disables sharing');
 assert.match(app,/if\(lang!=='java'\|\|codeTools\.prepare\(\)!==source\)/,'Reject stale or non-Java server public submissions');
 assert.match(submissionDialog,/allowPublicPractice=false/,'The public practice dialog action is opt-in for Java only');
-assert.match(submissionDialog,/Submit public tests \(unlock answer\)/,'Clearly label public-only verification');
-assert.match(submissionDialog,/result=\{mode:'public-practice'\}/,'Public-only intent is explicit and separate from verified submission');
+assert.match(submissionDialog,/Submit public tests →/,'Public tests are the primary Java submission action on hidden-suite problems');
+assert.match(submissionDialog,/collect\(publicDefault\?'public':'complete'\)/,'Hidden-case Java problems default to explicit public scope');
 console.log('PASS: browser Java submissions, local progress, honest verdicts, and copy-allowed/paste-blocked editor.');
