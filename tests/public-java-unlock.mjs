@@ -69,7 +69,7 @@ assert.match(app,/scope:'public',nonce:options.nonce\|\|crypto.randomUUID\(\),sh
 assert.ok(!app.includes("await run(true,{forceBrowser:true,sourceOverride:source})"),'Never silently treat browser practice as verified unlock');
 assert.ok(dialog.includes('Submit public tests →'));
 assert.ok(dialog.includes("result=collect(publicDefault?'public':'complete')"),'Primary submit must not silently request hidden cases');
-assert.ok(gate.includes('Unlock after an accepted public submission'),'The small Java-answer hint must preserve the acceptance requirement');
+assert.ok(gate.includes('Sign in and pass public tests to unlock'),'The small Java-answer hint must preserve the acceptance requirement');
 assert.ok(backend.includes('bytequest_submissions'),'Server-managed accepted receipt is the reference unlock authority');
 assert.ok(sql.includes("s.benchmark_version in ('bq-v1','bq-v2-single-pass','bq-private-v1')"),
  'Public-only hidden-suite submissions must not be eligible for full-suite rankings');
