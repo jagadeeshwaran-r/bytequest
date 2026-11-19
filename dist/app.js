@@ -153,7 +153,7 @@ function renderPractice() {
   for(const option of $("languageSelect").options)option.disabled=javaOnlyProblem(current)&&option.value!=="java";
   warmJavaSoon();
   pauseTrace();
-  $("submitBtn").title=language==="java"?"Sign in to submit for server verification and unlock community solutions. Without private judging, browser practice is saved separately.":"Submit to the online judge for a verified result.";$("languageSelect").value=language;$("languageSelect").disabled=busy;$("codeFilename").textContent=languages[language].file;$("editorProblemNumber").textContent="#"+String(problems.indexOf(current)+1).padStart(2,"0");$("runStatus").textContent=languages[language].name+(language==="java"?" · browser compiler":" · online via Wandbox");
+  $("submitBtn").title=language==="java"?"Submit published Java tests on the server and unlock the Java answer when accepted. Private hidden cases require a separate judge.":"Submit to the online judge for a verified result.";$("languageSelect").value=language;$("languageSelect").disabled=busy;$("codeFilename").textContent=languages[language].file;$("editorProblemNumber").textContent="#"+String(problems.indexOf(current)+1).padStart(2,"0");$("runStatus").textContent=languages[language].name+(language==="java"?" · browser compiler":" · online via Wandbox");
   $("practiceView").classList.toggle("empty-catalog",!current);$("catalogEmpty").hidden=!!current;
   if(!current)return;
   $("questTitle").textContent=current.title; $("questTopic").textContent=current.topic;
@@ -432,6 +432,8 @@ async function submitOnline(resume=null){
   practice.className="button secondary";practice.textContent="Run public practice (not verified)";
   const retry=document.createElement("button");retry.type="button";
   retry.className="button secondary";retry.textContent=publicOnly?"Retry public verification":"Retry server verification";
+  const publicSubmit=document.createElement("button");publicSubmit.type="button";
+  publicSubmit.className="button primary";publicSubmit.textContent="Submit public tests instead";
   const unchanged=()=>current?.id===p.id&&language===lang&&accountEpoch===account&&
     cloud.user?.id===user&&codeTools.prepare()===source;
   practice.onclick=()=>{
@@ -442,6 +444,16 @@ async function submitOnline(resume=null){
     if(!unchanged()){notify("Your code or account changed. Submit the new version instead.");return;}
     void submitOnline({problemId:p.id,revision:p.revision,lang,user,account,source,options});
   };
+  // A learner who deliberately tried the full hidden suite can recover
+  // directly without reopening the dialog or accidentally rerunning hidden cases.
+  if(!publicOnly&&lang==="java"){
+    publicSubmit.onclick=()=>{
+      if(!unchanged()){notify("Your code or account changed. Submit the new version instead.");return;}
+      void submitOnline({problemId:p.id,revision:p.revision,lang,user,account,source,
+        options:{...options,scope:"public",shared:false,nonce:crypto.randomUUID()}});
+    };
+    actions.append(publicSubmit);
+  }
   actions.append(practice,retry);
   notice.append(title,counts,detail,cause,actions);
   output.replaceChildren(notice);
