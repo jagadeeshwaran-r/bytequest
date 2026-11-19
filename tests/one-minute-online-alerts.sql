@@ -1,6 +1,7 @@
 -- Disposable fixtures; never mutate production users or persistent messages.
 begin;
 do $test$
+#variable_conflict use_variable
 declare
  actor_id text:='firebase:fixture:arrival-actor';
  viewer_id text:='firebase:fixture:arrival-viewer';
