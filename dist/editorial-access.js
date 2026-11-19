@@ -8,13 +8,13 @@ export function canRevealEditorialSolution(progress,problemId){
     solved[problemId]>0;
 }
 
-export function editorialSolutionGateMarkup(unlocked){
-  if(unlocked){
-    return '<div class="reference-unlocked" aria-label="Java answer available after verification">'+
-      '<button id="referenceBtn" class="reference-button" type="button">View Java answer</button>'+
+export function editorialSolutionGateMarkup(unlocked,canCheck=false){
+  if(unlocked||canCheck){
+    return '<div class="reference-unlocked" aria-label="Check Java answer access after server acceptance">'+
+      '<button id="referenceBtn" class="reference-button" type="button">'+(unlocked?'View Java answer':'Check Java answer access')+'</button>'+
       '</div><div id="referenceContent"></div>';
   }
   return '<div class="reference-lock" role="note" aria-label="Java answer locked">'+
-    '<span class="reference-gate-copy">Java answer <span class="reference-inline-note">· Unlock after an accepted public submission</span></span>'+
+    '<span class="reference-gate-copy">Java answer <span class="reference-inline-note">· Sign in and pass public tests to unlock</span></span>'+
     '</div><div id="referenceContent"></div>';
 }

@@ -16,7 +16,7 @@ assert.equal(canRevealEditorialSolution({solved:{[problemId]:Date.now()}},''),fa
 const locked=editorialSolutionGateMarkup(false);
 const unlocked=editorialSolutionGateMarkup(true);
 assert.match(locked,/Java answer/);
-assert.match(locked,/Unlock after an accepted public submission/);
+assert.match(locked,/Sign in and pass public tests to unlock/);
 assert.ok(!locked.includes('id="referenceBtn"'),'Unsolved problems must not render a reveal control');
 assert.ok(!locked.includes('<pre'),'Unsolved problems must not render reference source');
 assert.ok(locked.includes('id="referenceContent"'),'Keep editor tab mounting consistent');
@@ -33,7 +33,7 @@ assert.ok(html.includes('id="clearProblemSearch"'));
 assert.ok(html.includes('id="visibleProblemCount"'));
 assert.ok(html.includes('<h2>Problem library</h2>'));
 assert.ok(html.includes('role="search"'));
-assert.ok(app.includes('editorialSolutionGateMarkup(canCheckJavaReference(current))'));
+assert.ok(app.includes('editorialSolutionGateMarkup(canCheckJavaReference(current),Boolean(cloud.user))'));
 assert.ok(app.includes('cloud.request("reference-read",{problemId:selected.id,revision:selected.revision},owner)'), 'Reference source must be fetched through authenticated API');
 assert.ok(!app.includes('html(current.reference)'), 'No local reference solution may render from public data');
 assert.ok(app.includes('if(tab==="learn"&&current.id===p.id)renderLearning();'),

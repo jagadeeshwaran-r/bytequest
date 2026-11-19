@@ -50,6 +50,13 @@ export function createDatabase(url,serviceKey,{fetchImpl=fetch}={}){
       if(action==='problem-authors'){const r=await client.rpc('bytequest_problem_credits',{viewer_id:owner,problem:data.problemId});rpcError(r.error);return enrich(r.data);}
       if(action.startsWith('chat-')){const r=await client.rpc('bytequest_chat_view',{owner_id:owner,action,data});rpcError(r.error);return enrich(r.data);}
       if(action==='live-events-poll'){const r=await client.rpc('bytequest_activity_feed',{owner_id:owner,after_id:data.after,announcements_after:data.announcementsAfter});rpcError(r.error);return enrich(r.data);}
+      if(action==='submission-public-list'||action==='submission-public-share'){
+        // Only the verified token owner can opt in/out; the database function
+        // rejects stale revisions, private-suite rows and non-owner IDs.
+        const r=await client.rpc('bytequest_public_submissions',{
+          owner_id:owner,action:action==='submission-public-list'?'list':'share',data});
+        rpcError(r.error);return action==='submission-public-list'?enrich(r.data):r.data;
+      }
       if(action.startsWith('submission-')){const r=await client.rpc('bytequest_submissions',{owner_id:owner,action,data});rpcError(r.error);return enrich(r.data);}
       if(action==="friend-analytics"){const {data:result,error}=await client.rpc("bytequest_friend_analytics",{viewer_id:owner,targets:data.targets});rpcError(error);return enrich(result);}
       if(action==="leaderboard"){const {data:result,error}=await client.rpc("bytequest_leaderboard",{viewer_id:owner,board_scope:data.scope,ranking_period:data.period,page_number:data.page});rpcError(error);return enrich(result);}
@@ -79,7 +86,7 @@ export function createDatabase(url,serviceKey,{fetchImpl=fetch}={}){
         client.from("bytequest_library_admins").select("user_id").eq("user_id",owner).limit(1)
       ]);
       if(!checked(accepted).length&&!checked(author).length&&!checked(admin).length)
-        throw new HttpError(403,"Submit a server-verified accepted solution to unlock the reference. Browser practice does not unlock it.");
+        throw new HttpError(403,"Submit all published public tests on the server to unlock the Java reference. Browser-only practice does not unlock it.");
       const secret=checked(await client.from("bytequest_problem_references").select("revision,reference").eq("problem_id",id).maybeSingle());
       if(!secret||secret.revision!==revision)throw new HttpError(503,"The private reference is unavailable for this revision. Try again later.");
       return {reference:secret.reference,revision};

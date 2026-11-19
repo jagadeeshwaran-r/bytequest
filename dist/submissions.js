@@ -12,7 +12,7 @@ const practiceTitles={
  time_limit_exceeded:'Time limit exceeded',unavailable:'Compiler unavailable'
 };
 export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=>[],getSolvedAt=()=>null}={}){
- let generation=0,root=null,problem=null,language='all',sort='runtime',page=0,history=true,owner=null;
+ let generation=0,root=null,problem=null,language='all',sort='runtime',page=0,history=true,owner=null,board='full';
  const dialog=document.createElement('dialog');
  dialog.className='submission-dialog';dialog.setAttribute('aria-labelledby','submissionTitle');
  document.body.append(dialog);
@@ -58,13 +58,34 @@ export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=
   return '<div class="submission-heading"><div><span class="eyebrow">SUBMISSION HISTORY</span><h3>'+
    (history?'My submissions':'Community submissions')+'</h3>'+
    '<p class="submission-view-note">'+(history?
-   'Your latest 25 submissions for this problem. Java browser practice and server-verified solutions are labeled separately.':
-   'Shared solutions unlocked after accepted server verification of all published public cases or the full private suite.')+
+   'Your latest 25 submissions. Accepted public-only Java results can be shared explicitly to join the separate public-test board.':
+   'Public-test rankings and full-suite verified rankings are separate; only explicitly shared solutions appear.')+
    '</p></div><button class="button secondary" data-history>'+
    (history?'Community rankings':'My submissions')+'</button></div>';
  }
  function bindSwitch(){
   root.querySelector('[data-history]')?.addEventListener('click',()=>{history=!history;page=0;load();});
+ }
+ function boardTabs(){
+  return '<div class="submission-board-tabs" role="group" aria-label="Community ranking scope">'+
+   '<button type="button" class="button secondary" data-community-board="public" aria-pressed="'+(board==='public')+'">Public tests</button>'+
+   '<button type="button" class="button secondary" data-community-board="full" aria-pressed="'+(board==='full')+'">Full-suite verified</button>'+
+   '</div>';
+ }
+ function bindBoard(){
+  root.querySelectorAll('[data-community-board]').forEach(button=>button.onclick=()=>{
+    const next=button.dataset.communityBoard;
+    if(next!==board){board=next;page=0;sort='runtime';load();}
+  });
+ }
+ async function updatePublicSharing(id,shared,button){
+  const ticket=generation,user=cloud.user?.id;
+  if(!user)return;
+  button.disabled=true;
+  try{
+   await cloud.request('submission-public-share',{id,shared},user);
+   if(valid(ticket,user)&&history){notify(shared?'Your solution is now shared on the public-test board. Hidden tests remain unverified.':'Your solution was removed from the public-test board.');load();}
+  }catch(e){if(valid(ticket,user)&&history){button.disabled=false;notify('Sharing could not be updated: '+String(e.message||e));}}
  }
  function renderHistory(verified=[],{loading=false,error=null}={}){
   if(!root?.isConnected||!problem)return;
@@ -89,20 +110,57 @@ export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=
     const label=legacy?'Earlier solved progress':isLocal?(practiceTitles[row.status]||'Practice attempt'):publicOnly?'Public tests accepted · private':(row.shared?'Verified · shared':'Verified · private');
     const status=legacy?'Original submission code was not recorded':isLocal?row.passed+' / '+row.total+' public/custom tests':'Accepted';
     const metric=legacy?'Not recorded':isLocal?(row.elapsedMs===null?'Not measured':'Browser '+Math.round(row.elapsedMs)+' ms'):runtimeLabel(row.runtime_ms);
+    const optIn=!legacy&&!isLocal&&row.benchmark_version==='bq-public-only-v1'&&
+     row.suite_kind==='public'&&Number(row.problem_revision)===Number(problem.revision);
+    const sharing=optIn?
+      '<button class="button secondary public-share-action" type="button" data-public-share="'+h(row.id)+'" data-shared="'+(!row.shared)+'">'+
+      (row.shared?'Unshare public solution':'Share code & join public board')+'</button>':'';
     return '<tr><td>'+h(date)+'</td><td><div class="submission-user"><button type="button" class="submission-open" '+
-     (legacy?'disabled':(isLocal?'data-local="':'data-sub="')+h(row.id)+'"')+'><span><strong>'+h(label)+'</strong><small>'+h(status)+'</small></span></button></div></td>'+
+     (legacy?'disabled':(isLocal?'data-local="':'data-sub="')+h(row.id)+'"')+'><span><strong>'+h(label)+'</strong><small>'+h(status)+'</small></span></button></div>'+sharing+'</td>'+
      '<td><span class="submission-language">'+h(languageNames[row.language]||row.language)+'</span></td>'+
      '<td>'+h(metric)+'</td><td>'+h(legacy||isLocal?'Not measured':memoryLabel(row.memory_bytes))+'</td></tr>';
    }).join('')+'</tbody></table></div>';
   if(!rows.length&&!loading)content+='<p class="muted">No submissions recorded for this problem yet. Submit Java with the browser compiler to save a private practice attempt here.</p>';
   if(legacy.length)content+='<p class="muted">This older solve was recovered from your progress. Past submission code was never saved and cannot be reconstructed.</p>';
-  content+='<p class="benchmark-note">Accepted server-checked public suites unlock learning materials. Private-suite benchmarks remain separate; browser-only practice is personal progress and cannot unlock shared solutions.</p>';
+  content+='<p class="benchmark-note">Public-test submissions stay private until you choose “Share code & join public board”. Sharing reveals your source and profile to accepted learners. Rankings compare only the same Java compiler; hidden cases remain unverified. Browser-only practice does not unlock protected answers.</p>';
   root.innerHTML=content;bindSwitch();
   root.querySelectorAll('[data-local]').forEach(button=>button.onclick=()=>openPractice(button.dataset.local));
   root.querySelectorAll('[data-sub]').forEach(button=>button.onclick=()=>read(button.dataset.sub));
+  root.querySelectorAll('[data-public-share]').forEach(button=>button.onclick=()=>updatePublicSharing(button.dataset.publicShare,button.dataset.shared==='true',button));
+ }
+ function renderPublicCommunity(response){
+  let content=heading()+boardTabs();
+  if(!response.unlocked){
+   root.innerHTML=content+'<p class="submission-view-note">Submit an accepted server-verified public solution for this revision to view the public-test community. Browser practice alone does not qualify.</p>';
+   bindSwitch();bindBoard();return;
+  }
+  const rows=response.users||[],mine=response.yourRank;
+  content+='<p class="submission-view-note">PUBLIC TESTS ONLY · Hidden tests have not been checked. Rankings are separate for Judge0 Java 17 and Wandbox Java 21. Runtime and memory are estimates, not fair comparisons across providers.</p>';
+  content+=mine?
+   '<p class="submission-view-note"><strong>Your public-test position: #'+Number(mine.rank)+' of '+Number(mine.peers)+'</strong> · '+h(mine.compiler==='judge0-java-17'?'Judge0 Java 17':'Wandbox Java 21')+'</p>':
+   '<p class="submission-view-note">Your accepted result remains private. To participate, open My submissions and choose “Share code & join public board”.</p>';
+  content+='<div class="submission-filters"><label>Rank by<select data-sub-sort>'+
+   '<option value="runtime" '+(sort==='runtime'?'selected':'')+'>Runtime</option>'+
+   '<option value="memory" '+(sort==='memory'?'selected':'')+'>Peak memory</option>'+
+   '</select></label></div>';
+  content+='<div class="submission-table-wrap"><table class="submission-table"><thead><tr><th>Rank</th><th>Learner</th><th>Java provider</th><th>Runtime</th><th>Memory</th></tr></thead><tbody>'+
+   rows.map(r=>'<tr><td>#'+Number(r.rank)+'</td><td><div class="submission-user">'+
+    '<a class="submission-avatar-link" href="'+publicProfileHref(r)+'" aria-label="View '+h(r.display_name||r.username)+' profile">'+profileAvatar(r)+'</a>'+
+    '<button type="button" class="submission-open" data-sub="'+h(r.id)+'"><span><strong>'+h(r.display_name||r.username)+'</strong><small>@'+h(r.username)+'</small></span></button>'+
+    profileIcon(r)+'</div></td><td>'+h(r.compiler==='judge0-java-17'?'Judge0 Java 17':'Wandbox Java 21')+'</td>'+
+    '<td>'+h(runtimeLabel(r.runtime_ms))+'</td><td>'+h(memoryLabel(r.memory_bytes))+'</td></tr>').join('')+'</tbody></table></div>';
+  if(!rows.length)content+='<p class="muted">No public-test solutions have been shared for this revision. An accepted learner can opt in from My submissions.</p>';
+  content+='<div class="submission-pager"><button data-prev '+(page===0?'disabled':'')+'>← Previous</button><span>Page '+(page+1)+'</span><button data-next '+(rows.length<25?'disabled':'')+'>Next →</button></div>';
+  content+='<p class="benchmark-note">Only accepted server-checked public cases qualify. A public-test rank is not a full-suite verification or the global ByteQuest rank. Each compiler has its own ranking, and sharing is optional.</p>';
+  root.innerHTML=content;bindSwitch();bindBoard();
+  root.querySelectorAll('[data-sub]').forEach(button=>button.onclick=()=>read(button.dataset.sub));
+  root.querySelector('[data-sub-sort]')?.addEventListener('change',e=>{sort=e.target.value;page=0;load();});
+  root.querySelector('[data-prev]')?.addEventListener('click',()=>{page=Math.max(0,page-1);load();});
+  root.querySelector('[data-next]')?.addEventListener('click',()=>{page++;load();});
  }
  function renderCommunity(response){
-  let content=heading();
+  if(board==='public')return renderPublicCommunity(response);
+  let content=heading()+boardTabs();
   if(!response.unlocked){
    const attempt=localRows().find(row=>row.status==='practice_accepted'&&row.revision===problem.revision);
    const evidence=attempt?practiceVerificationSummary(problem,attempt):null;
@@ -111,7 +169,7 @@ export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=
     (evidence?'<p><strong>'+h(evidence.tests)+'</strong> · <strong>'+h(evidence.hidden)+'</strong></p><p>'+h(evidence.explanation)+'</p>':
       '<p>Community rankings unlock only after a server-verified accepted submission for this problem revision. Browser-only practice does not run private hidden tests.</p>')+
     '<button type="button" class="button secondary" data-verify-submit>Try server verification</button></div>';
-   bindSwitch();
+   bindSwitch();bindBoard();
    root.querySelector('[data-verify-submit]')?.addEventListener('click',()=>document.getElementById('submitBtn')?.click());
    return;
   }
@@ -133,7 +191,7 @@ export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=
   if(!rows.length)content+='<p class="muted">No shared accepted solutions for this revision yet. Private submissions appear under My submissions.</p>';
   content+='<div class="submission-pager"><button data-prev '+(page===0?'disabled':'')+'>← Previous</button><span>Page '+(page+1)+'</span><button data-next '+(rows.length<25?'disabled':'')+'>Next →</button></div>';
   content+='<p class="benchmark-note">'+h(note)+' Each learner’s best shared result for the current revision appears; compare runtimes within the same language.</p>';
-  root.innerHTML=content;bindSwitch();
+  root.innerHTML=content;bindSwitch();bindBoard();
   root.querySelectorAll('[data-sub]').forEach(button=>button.onclick=()=>read(button.dataset.sub));
   root.querySelector('[data-sub-language]')?.addEventListener('change',e=>{language=e.target.value;page=0;load();});
   root.querySelector('[data-sub-sort]')?.addEventListener('change',e=>{sort=e.target.value;page=0;load();});
@@ -159,16 +217,16 @@ export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=
    root.innerHTML=heading()+'<div class="submission-locked"><strong>Sign in to view community rankings.</strong></div>';
    bindSwitch();return;
   }
-  root.innerHTML=heading()+'<p class="muted">Loading community rankings…</p>';bindSwitch();
+  root.innerHTML=heading()+boardTabs()+'<p class="muted">Loading community submissions…</p>';bindSwitch();bindBoard();
   try{
-   const response=await cloud.request('submission-list',{problemId:problem.id,language,sort,page},user);
+   const response=await cloud.request(board==='public'?'submission-public-list':'submission-list',{problemId:problem.id,language,sort,page},user);
    if(valid(ticket,user)&&!history)renderCommunity(response);
   }catch(error){
    if(valid(ticket,user)&&!history){root.innerHTML=heading()+'<p class="muted">'+h(error.message||'Could not load community rankings.')+'</p>';bindSwitch();}
   }
  }
  return{
-  mount(element,p,lang){generation++;root=element;problem=p;language='all';sort='runtime';page=0;history=true;load();},
+  mount(element,p,lang){generation++;root=element;problem=p;language='all';sort='runtime';page=0;history=true;board=Number(p?.hiddenCount)>0?'public':'full';load();},
   close(){generation++;root=null;if(dialog.open)dialog.close();},
   refresh(){if(root?.isConnected&&cloud.user?.id===owner)load();}
  };

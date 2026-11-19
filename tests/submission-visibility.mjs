@@ -22,10 +22,10 @@ assert.ok(migration.includes("s.owner_id=bytequest_submissions.owner_id"));
 // Recent accepted attempts should be visible even if not shared, while
 // community rankings remain a separate opt-in view.
 assert.match(submissions,/page=0,history=true,owner=null/);
-assert.ok(submissions.includes('history=true;load();'));
+assert.ok(submissions.includes("history=true;board=Number(p?.hiddenCount)>0?'public':'full';load();"),'My submissions stays the default and full/public boards are separate');
 assert.ok(submissions.includes("Community rankings"));
 assert.ok(submissions.includes("My submissions"));
-assert.ok(submissions.includes('server-verified solutions are labeled separately'));
+assert.ok(submissions.includes('Accepted public-only Java results can be shared explicitly'),'Server-checked public submissions require sharing consent and remain separate from full rankings');
 assert.ok(submissions.includes('Browser practice is private and not verified'));
 
 // The problem number stays in the IDE toolbar while changing tabs, and in

@@ -15,3 +15,24 @@
 @media(max-width:700px){.header-tools .friend-search input{width:100%!important}.minimal-header{height:auto!important}}
 
 .result-summary.unavailable{color:var(--muted)!important;background:var(--surface-2)!important;border-color:var(--border)!important}
+
+
+/* Public-test participation is opt-in, separated from full-suite verification. */
+#practiceView .submission-board-tabs{
+ display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 18px;
+}
+#practiceView .submission-board-tabs button{
+ font-size:11px;border-radius:8px;padding:8px 12px;min-height:34px;
+ background:transparent;color:var(--muted);border:1px solid var(--border);
+}
+#practiceView .submission-board-tabs button[aria-pressed="true"]{
+ color:var(--accent);border-color:var(--accent);background:var(--blue-soft);
+}
+#practiceView .public-share-action{
+ display:inline-flex;margin-top:7px;min-height:28px;padding:5px 8px;
+ font-size:10px!important;border-radius:7px;white-space:normal;text-align:left;
+ border:1px solid var(--border);color:var(--accent);background:transparent;
+}
+#practiceView .public-share-action:hover{border-color:var(--accent)}
+#practiceView .public-share-action:disabled{opacity:.55;cursor:wait}
+@media(max-width:560px){#practiceView .submission-board-tabs button{flex:1 1 auto}}
