@@ -1,4 +1,4 @@
-import {mountShell} from './shell.js?v=quiet-2';
+import {mountShell} from './shell.js?v=quiet-2&online-alerts=1';
 import {Cloud} from './cloud.js?v=outage-1';
 import {leaderboardRow,latestLeaderboard} from './leaderboard-model.js?v=avatar-1';
 import {createViewCache} from './view-cache.js?v=avatar-1';
