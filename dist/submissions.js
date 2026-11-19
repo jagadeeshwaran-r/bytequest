@@ -58,8 +58,8 @@ export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=
   return '<div class="submission-heading"><div><span class="eyebrow">SUBMISSION HISTORY</span><h3>'+
    (history?'My submissions':'Community submissions')+'</h3>'+
    '<p class="submission-view-note">'+(history?
-   'Your latest 25 submissions. Accepted public-only Java results can be shared explicitly to join the separate public-test board.':
-   'Public-test rankings and full-suite verified rankings are separate; only explicitly shared solutions appear.')+
+   'Your latest 25 submissions. New accepted solutions are publicly showcased; earlier private results can be published here.':
+   'Accepted solutions join the public showcase by default. Public-test and full-suite rankings remain separate.')+
    '</p></div><button class="button secondary" data-history>'+
    (history?'Community rankings':'My submissions')+'</button></div>';
  }
@@ -107,22 +107,22 @@ export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=
     const isLocal=row.local,legacy=Boolean(row.legacy),at=new Date(row.created_at);
     const date=Number.isNaN(at.getTime())?'—':at.toLocaleDateString();
     const publicOnly=Number(problem?.hiddenCount)>0&&row.suite_kind==='public';
-    const label=legacy?'Earlier solved progress':isLocal?(practiceTitles[row.status]||'Practice attempt'):publicOnly?'Public tests accepted · private':(row.shared?'Verified · shared':'Verified · private');
+    const label=legacy?'Earlier solved progress':isLocal?(practiceTitles[row.status]||'Practice attempt'):publicOnly?(row.shared?'Public tests accepted · showcased':'Public tests accepted · earlier private'):(row.shared?'Verified · showcased':'Verified · earlier private');
     const status=legacy?'Original submission code was not recorded':isLocal?row.passed+' / '+row.total+' public/custom tests':'Accepted';
     const metric=legacy?'Not recorded':isLocal?(row.elapsedMs===null?'Not measured':'Browser '+Math.round(row.elapsedMs)+' ms'):runtimeLabel(row.runtime_ms);
     const optIn=!legacy&&!isLocal&&row.benchmark_version==='bq-public-only-v1'&&
      row.suite_kind==='public'&&Number(row.problem_revision)===Number(problem.revision);
-    const sharing=optIn?
-      '<button class="button secondary public-share-action" type="button" data-public-share="'+h(row.id)+'" data-shared="'+(!row.shared)+'">'+
-      (row.shared?'Unshare public solution':'Share code & join public board')+'</button>':'';
+    const sharing=optIn&&!row.shared?
+      '<button class="button secondary public-share-action" type="button" data-public-share="'+h(row.id)+'" data-shared="true">'+
+      'Publish earlier accepted solution'+'</button>':'';
     return '<tr><td>'+h(date)+'</td><td><div class="submission-user"><button type="button" class="submission-open" '+
      (legacy?'disabled':(isLocal?'data-local="':'data-sub="')+h(row.id)+'"')+'><span><strong>'+h(label)+'</strong><small>'+h(status)+'</small></span></button></div>'+sharing+'</td>'+
      '<td><span class="submission-language">'+h(languageNames[row.language]||row.language)+'</span></td>'+
      '<td>'+h(metric)+'</td><td>'+h(legacy||isLocal?'Not measured':memoryLabel(row.memory_bytes))+'</td></tr>';
    }).join('')+'</tbody></table></div>';
-  if(!rows.length&&!loading)content+='<p class="muted">No submissions recorded for this problem yet. Submit Java with the browser compiler to save a private practice attempt here.</p>';
+  if(!rows.length&&!loading)content+='<p class="muted">No submissions recorded for this problem yet. Accepted server submissions appear in the public showcase.</p>';
   if(legacy.length)content+='<p class="muted">This older solve was recovered from your progress. Past submission code was never saved and cannot be reconstructed.</p>';
-  content+='<p class="benchmark-note">Public-test submissions stay private until you choose “Share code & join public board”. Sharing reveals your source and profile to accepted learners. Rankings compare only the same Java compiler; hidden cases remain unverified. Browser-only practice does not unlock protected answers.</p>';
+  content+='<p class="benchmark-note">New server-accepted solutions are publicly showcased by default. Earlier private submissions stay private until you publish them. Accepted code is visible to other eligible learners; public-test rankings compare only the same Java provider and never claim hidden tests passed.</p>';
   root.innerHTML=content;bindSwitch();
   root.querySelectorAll('[data-local]').forEach(button=>button.onclick=()=>openPractice(button.dataset.local));
   root.querySelectorAll('[data-sub]').forEach(button=>button.onclick=()=>read(button.dataset.sub));
@@ -138,7 +138,8 @@ export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=
   content+='<p class="submission-view-note">PUBLIC TESTS ONLY · Hidden tests have not been checked. Rankings are separate for Judge0 Java 17 and Wandbox Java 21. Runtime and memory are estimates, not fair comparisons across providers.</p>';
   content+=mine?
    '<p class="submission-view-note"><strong>Your public-test position: #'+Number(mine.rank)+' of '+Number(mine.peers)+'</strong> · '+h(mine.compiler==='judge0-java-17'?'Judge0 Java 17':'Wandbox Java 21')+'</p>':
-   '<p class="submission-view-note">Your accepted result remains private. To participate, open My submissions and choose “Share code & join public board”.</p>';
+   '<p class="submission-view-note">Your public-test rank appears when your accepted result is showcased and your profile is discoverable.</p>'+
+   '<button class="button secondary public-share-action" type="button" data-publish-earlier>Publish earlier accepted result</button>';
   content+='<div class="submission-filters"><label>Rank by<select data-sub-sort>'+
    '<option value="runtime" '+(sort==='runtime'?'selected':'')+'>Runtime</option>'+
    '<option value="memory" '+(sort==='memory'?'selected':'')+'>Peak memory</option>'+
@@ -149,11 +150,34 @@ export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=
     '<button type="button" class="submission-open" data-sub="'+h(r.id)+'"><span><strong>'+h(r.display_name||r.username)+'</strong><small>@'+h(r.username)+'</small></span></button>'+
     profileIcon(r)+'</div></td><td>'+h(r.compiler==='judge0-java-17'?'Judge0 Java 17':'Wandbox Java 21')+'</td>'+
     '<td>'+h(runtimeLabel(r.runtime_ms))+'</td><td>'+h(memoryLabel(r.memory_bytes))+'</td></tr>').join('')+'</tbody></table></div>';
-  if(!rows.length)content+='<p class="muted">No public-test solutions have been shared for this revision. An accepted learner can opt in from My submissions.</p>';
+  if(!rows.length)content+='<p class="muted">No accepted public-test solutions have been showcased for this revision yet. New accepted results are published automatically.</p>';
   content+='<div class="submission-pager"><button data-prev '+(page===0?'disabled':'')+'>← Previous</button><span>Page '+(page+1)+'</span><button data-next '+(rows.length<25?'disabled':'')+'>Next →</button></div>';
-  content+='<p class="benchmark-note">Only accepted server-checked public cases qualify. A public-test rank is not a full-suite verification or the global ByteQuest rank. Each compiler has its own ranking, and sharing is optional.</p>';
+  content+='<p class="benchmark-note">Accepted server-checked public solutions are showcased by default. A public-test rank is not full-suite verification or global ByteQuest rank; Java providers are ranked separately.</p>';
   root.innerHTML=content;bindSwitch();bindBoard();
   root.querySelectorAll('[data-sub]').forEach(button=>button.onclick=()=>read(button.dataset.sub));
+  root.querySelector('[data-publish-earlier]')?.addEventListener('click',async event=>{
+   const button=event.currentTarget,ticket=generation,user=cloud.user?.id;
+   if(!user)return;
+   button.disabled=true;
+   try{
+    const response=await cloud.request('submission-history',{problemId:problem.id},user);
+    if(!valid(ticket,user)||history)return;
+    const earlier=(response.users||[]).find(r=>r.suite_kind==='public'&&
+      r.benchmark_version==='bq-public-only-v1'&&
+      Number(r.problem_revision)===Number(problem.revision)&&!r.shared);
+    if(!earlier){
+      notify('No earlier private public-test result for this revision. Check profile discoverability or My submissions.');
+      button.disabled=false;return;
+    }
+    await cloud.request('submission-public-share',{id:earlier.id,shared:true},user);
+    if(valid(ticket,user)&&!history){
+      notify('Your previous accepted result is now on the ByteQuest public showcase.');
+      load();
+    }
+   }catch(error){
+    if(valid(ticket,user)&&!history){notify(String(error?.message||error));button.disabled=false;}
+   }
+  });
   root.querySelector('[data-sub-sort]')?.addEventListener('change',e=>{sort=e.target.value;page=0;load();});
   root.querySelector('[data-prev]')?.addEventListener('click',()=>{page=Math.max(0,page-1);load();});
   root.querySelector('[data-next]')?.addEventListener('click',()=>{page++;load();});
@@ -239,16 +263,15 @@ export function requestSubmission({problem,language,allowPublicPractice=false}){
   const dialog=document.createElement('dialog');
   dialog.className='submission-dialog submit-confirm';dialog.setAttribute('aria-labelledby','submitTitle');
   const explanation=publicDefault?
-   'Public Java verification checks the published cases on the server. If they all pass, your solution is saved and the Java answer unlocks. The '+Number(problem.hiddenCount)+' hidden cases are NOT checked.':
-   'Your '+h(languageNames[language]||language)+' solution will request server verification.';
+   'Public Java verification checks published cases on the server. Accepted solutions are publicly showcased and unlock the Java answer. The '+Number(problem.hiddenCount)+' hidden cases are NOT checked.':
+   'Your '+h(languageNames[language]||language)+' solution will request server verification. Accepted code joins the ByteQuest public showcase.';
   dialog.innerHTML='<button class="dialog-close" type="button" aria-label="Cancel submission">×</button>'+
    '<span class="eyebrow">READY TO SUBMIT</span><h2 id="submitTitle">'+h(problem.title)+'</h2>'+
    '<p class="body-copy">'+explanation+'</p>'+
    '<form><label>Explain your approach <small>optional</small><textarea name="approach" rows="3" maxlength="5000" placeholder="What idea makes your solution work?"></textarea></label>'+
    '<div class="submission-complexity"><label>Time complexity<input name="time" maxlength="80" placeholder="e.g. O(n)"></label>'+
    '<label>Extra space complexity<input name="space" maxlength="80" placeholder="e.g. O(n)"></label></div>'+
-   '<label class="share-solution" '+(publicDefault?'hidden':'')+'><input name="shared" type="checkbox" checked><span>Share my accepted solution'+
-   '<small>Only full-suite accepted solutions can be shared and ranked. Public-only submissions stay private.</small></span></label>'+
+   '<p class="benchmark-note"><strong>Public showcase:</strong> Accepted code and your public profile are shared with eligible learners. Public-test and full-suite rankings stay separate.</p>'+
    '<p class="benchmark-note">'+(publicDefault?
     'Full private-suite verification is a separate option. It needs a configured private judge and may be unavailable. Public-only acceptance does not earn hidden-suite rankings.':
     'Runtime comparisons are meaningful only for matching benchmark versions. Complexity notes are author-stated.')+'</p>'+
@@ -260,7 +283,7 @@ export function requestSubmission({problem,language,allowPublicPractice=false}){
   const collect=scope=>{
     const fields=new FormData(dialog.querySelector('form'));
     return{approach:fields.get('approach'),timeComplexity:fields.get('time'),
-     spaceComplexity:fields.get('space'),shared:scope==='complete'&&fields.get('shared')==='on',
+     spaceComplexity:fields.get('space'),shared:true,showcase:true,
      scope,nonce:crypto.randomUUID()};
   };
   dialog.querySelector('form').onsubmit=e=>{
