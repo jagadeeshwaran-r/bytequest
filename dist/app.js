@@ -54,6 +54,9 @@ function writeLocalProgress(key,value){
 state=reconcilePracticeProgress(readLocal(storageKey));
 let publicProfile=null;
 const communityCache=createViewCache();
+const serverAcceptedRevisions=new Set();
+const canCheckJavaReference=p=>canRevealEditorialSolution(state,p.id)||
+ serverAcceptedRevisions.has((cloud.user?.id||'')+':'+p.id+':'+p.revision);
 let communityWarmupTimer=null;
 function scheduleCommunityWarmup(owner,profile){
   clearTimeout(communityWarmupTimer);
@@ -184,7 +187,7 @@ function renderLearning(){
     current.tests.slice(0,2).forEach((c,i)=>{const explanation=Array.isArray(current.exampleExplanations)?String(current.exampleExplanations[i]||"").trim():"";content+='<div class="example-card"><div class="example-label">Example '+(i+1)+'</div><code>Input: <b>'+html(formatArgs(c.args))+'</b>\nOutput: <b>'+html(JSON.stringify(c.expected))+'</b></code>'+(explanation?'<div class="example-explanation"><strong>Explanation</strong><p>'+html(explanation)+'</p></div>':(c.label&&!/^Example \d+$/.test(c.label)?'<p>'+html(c.label)+'</p>':''))+'</div>';});
     content+='<h4>Constraints</h4><div class="constraints">'+html(current.constraints)+'</div><details class="concept-hint"><summary>Reveal the key concept</summary><p>'+html(current.topic)+(current.pattern&&current.pattern!==current.topic?' · '+html(current.pattern):'')+'</p></details>';
   } else if(tab==="learn"){
-    content+='<span class="pattern-tag">EDITORIAL</span><h3>Approach</h3><p class="body-copy">'+html(current.idea)+'</p><div class="pattern-callout"><strong>Invariant</strong>'+html(current.invariant)+'</div><div class="complexity-row"><div class="complexity-box"><small>TIME</small><b>'+html(current.complexity.time)+'</b></div><div class="complexity-box"><small>EXTRA SPACE</small><b>'+html(current.complexity.space)+'</b></div></div><p class="tradeoff">'+html(current.complexity.tradeoff)+'</p>'+editorialSolutionGateMarkup(canRevealEditorialSolution(state,current.id))+'';
+    content+='<span class="pattern-tag">EDITORIAL</span><h3>Approach</h3><p class="body-copy">'+html(current.idea)+'</p><div class="pattern-callout"><strong>Invariant</strong>'+html(current.invariant)+'</div><div class="complexity-row"><div class="complexity-box"><small>TIME</small><b>'+html(current.complexity.time)+'</b></div><div class="complexity-box"><small>EXTRA SPACE</small><b>'+html(current.complexity.space)+'</b></div></div><p class="tradeoff">'+html(current.complexity.tradeoff)+'</p>'+editorialSolutionGateMarkup(canCheckJavaReference(current))+'';
   } else {
     content+='<span class="pattern-tag">A LITTLE MOVING PICTURE</span><h3>Watch the idea click.</h3><p class="body-copy">A guided trace of the reference approach. Your code runs separately in the editor.</p><div id="traceBoard" class="trace-board"></div><p id="traceCaption" class="trace-caption"></p><div class="trace-controls"><button id="traceBack" aria-label="Previous animation step">←</button><button id="tracePlay" class="play-trace">▶ Play</button><button id="traceNext" aria-label="Next animation step">→</button><button id="traceReset" aria-label="Restart animation">↻</button><span id="traceCounter" class="trace-counter"></span></div><div class="code-note">Pause at any step. Say out loud: <i>“What do I know so far, and what changes next?”</i></div>';
   }
@@ -195,7 +198,7 @@ function renderLearning(){
   if($("referenceBtn"))$("referenceBtn").onclick=async()=>{
     // A locally stored practice solve is only a UI hint. The verified
     // Firebase identity and accepted-submission row control actual access.
-    if(!canRevealEditorialSolution(state,current.id)||!cloud.user)return;
+    if(!canCheckJavaReference(current)||!cloud.user)return;
     const selected=current,owner=cloud.user.id,ticket=creditEpoch;
     const button=$("referenceBtn"),output=$("referenceContent");
     button.disabled=true;button.textContent="Checking verified access…";
@@ -384,11 +387,19 @@ async function submitOnline(resume=null){
   if(epoch!==runEpoch||account!==accountEpoch||cloud.user?.id!==user)return;
   if(lang==="java"&&result.status==="unavailable"){
    browserFallback=true;
-   verificationFailure="The server-side Java judge returned unavailable. No accepted submission was recorded.";
+   verificationFailure=String(result.message||"Both Java execution providers are unavailable. No accepted submission was recorded.");
   }else{
   if(result.status!=='unavailable')logAttempt(p,result.passed||0,result.total||p.tests.length);
   const output=$("resultOutput"),feedback=submissionFeedback(result);output.innerHTML=feedback.html;notify(feedback.announcement);output.tabIndex=-1;output.focus({preventScroll:true});output.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
-  if(result.accepted){const header=output.querySelector('.submission-verdict>header');const metrics=document.createElement('div');metrics.className='verdict-metrics';const runtime=document.createElement('span');runtime.textContent=runtimeLabel(result.runtimeMs??result.submission?.runtime_ms);const memory=document.createElement('span');memory.textContent=memoryLabel(result.memoryBytes??result.submission?.memory_bytes);metrics.append(runtime,memory);const link=document.createElement('button');link.className='verdict-link';link.textContent='View submissions';link.onclick=()=>{tab='submissions';renderLearning();};(header||output).append(metrics,link);completeQuest(p,result.verificationScope==='public'&&Number(p.hiddenCount)>0?'public':false);if(tab==='submissions')submissions.refresh();}
+  if(result.accepted){const header=output.querySelector('.submission-verdict>header');const metrics=document.createElement('div');metrics.className='verdict-metrics';const runtime=document.createElement('span');runtime.textContent=runtimeLabel(result.runtimeMs??result.submission?.runtime_ms);const memory=document.createElement('span');memory.textContent=memoryLabel(result.memoryBytes??result.submission?.memory_bytes);metrics.append(runtime,memory);const link=document.createElement('button');link.className='verdict-link';link.textContent='View submissions';link.onclick=()=>{tab='submissions';renderLearning();};(header||output).append(metrics,link);
+   serverAcceptedRevisions.add(user+':'+p.id+':'+p.revision);
+   completeQuest(p,result.verificationScope==='public'&&Number(p.hiddenCount)>0?'public':false);
+   if(tab==='submissions')submissions.refresh();
+   const answer=document.createElement('button');answer.type='button';answer.className='verdict-link';
+   answer.textContent='View unlocked Java answer';
+   answer.onclick=()=>{if(current?.id!==p.id||cloud.user?.id!==user)return;
+     tab='learn';renderLearning();$('referenceBtn')?.click();};
+   (header||output).append(answer);}
   }
  }catch(e){
   if(epoch===runEpoch&&account===accountEpoch&&cloud.user?.id===user){
@@ -411,9 +422,10 @@ async function submitOnline(resume=null){
   // successful execution of 70 private hidden cases.
   const summary=privateJudgeUnavailableSummary(p),output=$("resultOutput");
   const notice=document.createElement("section");notice.className="submission-verification-unavailable";
-  const title=document.createElement("strong");title.textContent=publicOnly?"Public server verification unavailable":summary.title;
-  const counts=document.createElement("p");counts.textContent=summary.hidden;
-  const detail=document.createElement("p");detail.textContent=publicOnly?"No server-accepted public submission was recorded. Browser practice remains available but cannot unlock community solutions.":summary.explanation;
+  const title=document.createElement("strong");title.textContent=publicOnly||!Number(p.hiddenCount)?"Public Java execution unavailable":summary.title;
+  const counts=document.createElement("p");counts.textContent=Number(p.hiddenCount)>0?summary.hidden:"No server acceptance was recorded";
+  const detail=document.createElement("p");detail.textContent=publicOnly||!Number(p.hiddenCount)?
+   "Neither public Java runner completed verification. Your code remains saved. Browser-only practice cannot unlock the Java answer.":summary.explanation;
   const cause=document.createElement("p");cause.textContent=verificationFailure;
   const actions=document.createElement("div");actions.className="submission-verification-actions";
   const practice=document.createElement("button");practice.type="button";
@@ -433,7 +445,7 @@ async function submitOnline(resume=null){
   actions.append(practice,retry);
   notice.append(title,counts,detail,cause,actions);
   output.replaceChildren(notice);
-  notify(publicOnly?"Public verification unavailable. You can choose browser practice.":"Server verification unavailable. Your code is saved. No hidden-test acceptance was recorded.");
+  notify(publicOnly||!Number(p.hiddenCount)?"Public Java providers unavailable. Your code is saved; retry or use browser practice.":"Private verification unavailable. Your code is saved. No hidden-test acceptance was recorded.");
  }
 }
 function logAttempt(p,passed,total){
