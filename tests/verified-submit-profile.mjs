@@ -11,7 +11,7 @@ assert.equal(privateJavaJudgeUnavailable(new Error('Wrong answer')),false);
 assert.equal(privateJavaJudgeUnavailable(new Error('This problem changed.')),false);
 
 const app=readFileSync('dist/app.js','utf8');
-const start=app.indexOf('async function submitOnline()');
+const start=app.indexOf('async function submitOnline(');
 const end=app.indexOf('function logAttempt(');
 assert.ok(start>0&&end>start);
 const submission=app.slice(start,end);
@@ -19,7 +19,6 @@ assert.match(submission,/await cloud\.request\('submission-create'/,'Send signed
 assert.match(submission,/if\(lang==="java"&&result\.status==="unavailable"\)/,
  'Only an explicit unavailable verdict can trigger a practice fallback');
 assert.match(submission,/publicOnly&&\/unavailable\|not connected/,'Public-only server outages also offer an explicit browser practice choice');
- 'Only known configuration errors can trigger a practice fallback');
 assert.match(submission,/practice\.onclick=\(\)=>\{/,
  'A failed private-judge request must offer public practice only after explicit click');
 assert.match(submission,/void run\(true,\{forceBrowser:true,sourceOverride:source\}\)/,
