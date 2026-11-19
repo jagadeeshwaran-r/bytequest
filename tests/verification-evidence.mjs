@@ -30,7 +30,7 @@ assert.ok(block.includes('practice.onclick=()=>{')&&block.includes('void run(tru
  'Public browser practice must require a deliberate second click');
 assert.ok(!block.includes('await run(true,{forceBrowser:true,sourceOverride:source})'),
  'Never auto-submit an unverified practice acceptance after backend failure');
-assert.ok(block.includes('retry.onclick=()=>{')&&block.includes('void submitOnline();'),
+assert.ok(block.includes('retry.onclick=()=>{')&&block.includes('void submitOnline({problemId:p.id,revision:p.revision,lang,user,account,source,options})'),
  'Learner must be able to request verified Submit again');
 assert.ok(block.includes('const unchanged=()=>'),'Prevent replay of stale Java source or wrong signed-in account');
 const community=readFileSync('dist/submissions.js','utf8');
