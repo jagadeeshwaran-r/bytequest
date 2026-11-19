@@ -31,7 +31,7 @@ export async function submitSolution({owner,body,db,benchmarkJudge,privateJudge,
  if(!await db.claimOnlineRun(owner))throw new HttpError(429,'Wait 5 seconds between submissions. Online execution allows up to 60 runs per hour.');
  let result;
  if(publicOnly){
-  const verdict=await benchmarkJudge.run(data.source,row.content,row.content.tests,'java');
+  const verdict=await benchmarkJudge.run(data.source,row.content,row.content.tests,'java',{publicCasesOnly:true});
   if(!verdict.accepted)return {...verdict,verificationScope:'public'};
   result={...verdict,verificationScope:'public',
     message:'All '+row.content.tests.length+' published public cases passed on the server.'+
@@ -53,9 +53,14 @@ export async function submitSolution({owner,body,db,benchmarkJudge,privateJudge,
    return{accepted:false,status,message:status==='unavailable'?'The server-side Java judge is temporarily unavailable. Retry shortly.':status==='compile_error'?'Java could not compile in the hosted judge. Check your code using Run.':status==='runtime_error'?'The private suite stopped on a runtime error.':status==='time_limit_exceeded'?'The private suite exceeded the execution time limit.':'The submission did not pass every test. Recheck edge cases.'};
   }
   result={accepted:true,status:'accepted',runtimeMs:verdict.runtimeMs??null,memoryBytes:verdict.memoryBytes??null,memoryMetric:verdict.memoryMetric||'process_peak_rss',compiler:verdict.compiler,benchmarkVersion:verdict.benchmarkVersion,total:row.content.tests.length+row.hidden.length,message:'All server-side tests passed.'};
- }else result=await benchmarkJudge.run(data.source,row.content,row.content.tests,data.language);
+ }else result=await benchmarkJudge.run(data.source,row.content,row.content.tests,data.language,{publicCasesOnly:!hasHidden&&data.language==='java'});
  if(!result.accepted)return result;
- const submission=await db.recordSubmission(owner,{...data,runtimeMs:result.runtimeMs,memoryBytes:result.memoryBytes,memoryMetric:result.memoryMetric,compiler:result.compiler,benchmarkVersion:result.benchmarkVersion,suiteKind:hasHidden&&!publicOnly?'private':'public',testCount:result.total});
+ // A public shared demo judge can prove the published cases, but its timing
+ // must not be compared with the dedicated/primary benchmark leaderboard.
+ const alternate=result.compiler==='judge0-java-17';
+ if(alternate)result.message=String(result.message||'All published public tests passed.')+
+  ' Accepted on the alternate JDK 17 judge. Saved privately; runtime rankings require the primary verified benchmark.';
+ const submission=await db.recordSubmission(owner,{...data,shared:alternate?false:data.shared,runtimeMs:result.runtimeMs,memoryBytes:result.memoryBytes,memoryMetric:result.memoryMetric,compiler:result.compiler,benchmarkVersion:result.benchmarkVersion,suiteKind:hasHidden&&!publicOnly?'private':'public',testCount:result.total});
  return{...result,submission,verificationScope:publicOnly?'public':'complete'};
 }
 function publicOwn(s){return{id:s.id,language:s.language,runtime_ms:s.runtime_ms,memory_bytes:s.memory_bytes,compiler:s.compiler,shared:s.shared,created_at:s.created_at};}
