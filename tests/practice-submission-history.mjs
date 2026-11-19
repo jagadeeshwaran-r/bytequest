@@ -96,7 +96,7 @@ assert.match(app,/if\(verdict\.accepted&&saved\)completeQuest\(p,true\)/,'Only p
 assert.match(history,/renderHistory\(\[\],\{loading:Boolean\(user\)\}\)/,'Paint local history before remote API');
 assert.match(history,/renderHistory\(\[\],\{error:error\.message/,'Offline response must preserve visible practice history');
 assert.match(history,/localRows\(\)/);
-assert.match(history,/Only server-verified accepted submissions are eligible/);
+assert.match(history,/Accepted server-checked public suites unlock learning materials/);
 assert.match(history,/function openPractice\(id\)/,'Private snapshots must open without a server submission ID');
 assert.ok(app.includes('state=reconcilePracticeProgress(readLocal(storageKey))'),
  'Startup restores accepted browser practice after interrupted progress writes');

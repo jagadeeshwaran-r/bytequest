@@ -11,22 +11,21 @@ assert.equal(privateJavaJudgeUnavailable(new Error('Wrong answer')),false);
 assert.equal(privateJavaJudgeUnavailable(new Error('This problem changed.')),false);
 
 const app=readFileSync('dist/app.js','utf8');
-const start=app.indexOf('async function submitOnline()');
+const start=app.indexOf('async function submitOnline(');
 const end=app.indexOf('function logAttempt(');
 assert.ok(start>0&&end>start);
 const submission=app.slice(start,end);
 assert.match(submission,/await cloud\.request\('submission-create'/,'Send signed-in Java to server acceptance path');
 assert.match(submission,/if\(lang==="java"&&result\.status==="unavailable"\)/,
  'Only an explicit unavailable verdict can trigger a practice fallback');
-assert.match(submission,/lang==="java"&&privateJavaJudgeUnavailable\(e\)/,
- 'Only known configuration errors can trigger a practice fallback');
+assert.match(submission,/publicOnly&&\/unavailable\|not connected/,'Public-only server outages also offer an explicit browser practice choice');
 assert.match(submission,/practice\.onclick=\(\)=>\{/,
  'A failed private-judge request must offer public practice only after explicit click');
 assert.match(submission,/void run\(true,\{forceBrowser:true,sourceOverride:source\}\)/,
  'Explicit browser practice uses exactly the source attempted on the server');
 assert.ok(!submission.includes('await run(true,{forceBrowser:true,sourceOverride:source})'),
  'A failed private submit cannot silently become a counted browser-practice acceptance');
-assert.match(submission,/\$\("codeEditor"\)\.value===source/,'Before either explicit action, require the original editor source');
+assert.match(submission,/codeTools\.prepare\(\)===source/,'Retry and practice actions must match the original prepared code');
 assert.match(submission,/if\(result\.accepted\)/,'Server acceptance is the only way to unlock shared submissions');
 
 const quest=app.slice(app.indexOf('function completeQuest('),app.indexOf('function celebrate('));

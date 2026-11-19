@@ -60,4 +60,12 @@ assert.match(app,/if\(verdict\.accepted&&saved\)completeQuest\(p,true\)/,'Practi
 assert.match(editor,/blocksEditorClipboardEvent\(event\)/);
 assert.match(editor,/blocksEditorShortcut\(key,mod\)/);
 assert.match(editor,/blocksEditorBeforeInput\(e\.inputType\)/);
+const submissionDialog=readFileSync('dist/submissions.js','utf8');
+assert.match(app,/allowPublicPractice:lang==='java'/,'Signed-in Java users can choose public practice directly');
+assert.match(app,/const publicOnly=options\.mode==='public-practice'/,'Public-only verification requires an explicit user choice');
+assert.match(app,/options=\{scope:'public',nonce:crypto.randomUUID\(\),shared:false/,'Public-only submit uses server verification and disables sharing');
+assert.match(app,/if\(lang!=='java'\|\|codeTools\.prepare\(\)!==source\)/,'Reject stale or non-Java server public submissions');
+assert.match(submissionDialog,/allowPublicPractice=false/,'The public practice dialog action is opt-in for Java only');
+assert.match(submissionDialog,/Submit public tests \(unlock answer\)/,'Clearly label public-only verification');
+assert.match(submissionDialog,/result=\{mode:'public-practice'\}/,'Public-only intent is explicit and separate from verified submission');
 console.log('PASS: browser Java submissions, local progress, honest verdicts, and copy-allowed/paste-blocked editor.');
