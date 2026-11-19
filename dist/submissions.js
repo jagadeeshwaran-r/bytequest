@@ -43,7 +43,7 @@ export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=
    if(!valid(ticket,user))return;
    const s=r.submission,a=r.author;
    dialog.innerHTML='<button class="dialog-close" aria-label="Close solution">×</button>'+
-    '<span class="eyebrow">SERVER-VERIFIED ACCEPTED SOLUTION</span>'+
+    '<span class="eyebrow">ACCEPTED SOLUTION · '+h(s.suite_kind==='private'?'FULL SUITE':'PUBLIC SUITE')+'</span>'+
     '<h2 id="submissionTitle">'+h(a.display_name||a.username||'Your solution')+(a.username?profileIcon(a):'')+'</h2>'+
     '<p class="muted">'+h(languageNames[s.language]||s.language)+' · '+h(runtimeLabel(s.runtime_ms))+' · '+h(memoryLabel(s.memory_bytes))+'</p>'+
     '<div class="complexity-row"><div><small>Author-stated time</small><b>'+h(s.time_complexity||'Not supplied')+'</b></div>'+
@@ -56,10 +56,10 @@ export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=
  }
  function heading(){
   return '<div class="submission-heading"><div><span class="eyebrow">SUBMISSION HISTORY</span><h3>'+
-   (history?'My submissions':'Community rankings')+'</h3>'+
+   (history?'My submissions':'Community submissions')+'</h3>'+
    '<p class="submission-view-note">'+(history?
    'Your latest 25 submissions for this problem. Java browser practice and server-verified solutions are labeled separately.':
-   'Best shared server-verified solutions for the current problem revision.')+
+   'Shared solutions unlocked after accepted server verification of all published public cases or the full private suite.')+
    '</p></div><button class="button secondary" data-history>'+
    (history?'Community rankings':'My submissions')+'</button></div>';
  }
@@ -85,7 +85,8 @@ export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=
    '</tr></thead><tbody>'+rows.map(row=>{
     const isLocal=row.local,legacy=Boolean(row.legacy),at=new Date(row.created_at);
     const date=Number.isNaN(at.getTime())?'—':at.toLocaleDateString();
-    const label=legacy?'Earlier solved progress':isLocal?(practiceTitles[row.status]||'Practice attempt'):(row.shared?'Verified · shared':'Verified · private');
+    const publicOnly=Number(problem?.hiddenCount)>0&&row.suite_kind==='public';
+    const label=legacy?'Earlier solved progress':isLocal?(practiceTitles[row.status]||'Practice attempt'):publicOnly?'Public tests accepted · private':(row.shared?'Verified · shared':'Verified · private');
     const status=legacy?'Original submission code was not recorded':isLocal?row.passed+' / '+row.total+' public/custom tests':'Accepted';
     const metric=legacy?'Not recorded':isLocal?(row.elapsedMs===null?'Not measured':'Browser '+Math.round(row.elapsedMs)+' ms'):runtimeLabel(row.runtime_ms);
     return '<tr><td>'+h(date)+'</td><td><div class="submission-user"><button type="button" class="submission-open" '+
@@ -95,7 +96,7 @@ export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=
    }).join('')+'</tbody></table></div>';
   if(!rows.length&&!loading)content+='<p class="muted">No submissions recorded for this problem yet. Submit Java with the browser compiler to save a private practice attempt here.</p>';
   if(legacy.length)content+='<p class="muted">This older solve was recovered from your progress. Past submission code was never saved and cannot be reconstructed.</p>';
-  content+='<p class="benchmark-note">Only server-verified accepted submissions are eligible for shared solutions or runtime rankings. Browser practice results are personal progress records.</p>';
+  content+='<p class="benchmark-note">Accepted server-checked public suites unlock learning materials. Private-suite benchmarks remain separate; browser-only practice is personal progress and cannot unlock shared solutions.</p>';
   root.innerHTML=content;bindSwitch();
   root.querySelectorAll('[data-local]').forEach(button=>button.onclick=()=>openPractice(button.dataset.local));
   root.querySelectorAll('[data-sub]').forEach(button=>button.onclick=()=>read(button.dataset.sub));
@@ -173,16 +174,16 @@ export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=
  };
 }
 export function requestSubmission({problem,language,allowPublicPractice=false}){
- return new Promise(resolve=>{const dialog=document.createElement('dialog');dialog.className='submission-dialog submit-confirm';dialog.setAttribute('aria-labelledby','submitTitle');dialog.innerHTML='<button class="dialog-close" type="button" aria-label="Cancel submission">×</button><span class="eyebrow">READY TO SUBMIT</span><h2 id="submitTitle">'+h(problem.title)+'</h2><p class="body-copy">Your '+h(languageNames[language]||language)+' solution will request server verification. Hidden cases require an available private judge; if it is unavailable, no server acceptance will be recorded.</p><form><label>Explain your approach <small>optional</small><textarea name="approach" rows="3" maxlength="5000" placeholder="What idea makes your solution work?"></textarea></label><div class="submission-complexity"><label>Time complexity<input name="time" maxlength="80" placeholder="e.g. O(n)"></label><label>Extra space complexity<input name="space" maxlength="80" placeholder="e.g. O(n)"></label></div><label class="share-solution"><input name="shared" type="checkbox" checked><span>Share my accepted solution<small>Selected by default. Other learners who solve this revision can view your code and explanation. Uncheck to keep it private.</small></span></label><p class="benchmark-note">Java browser practice uses Java 17; this dialog is for server-verified non-Java submissions. Runtime and peak memory are practice measurements. Complexity notes are your explanation, not automatically verified.</p><div class="submission-actions"><button type="button" class="button secondary" data-cancel>Cancel</button><button class="button primary" type="submit">Submit solution →</button></div></form>';document.body.append(dialog);let result=null;
+ return new Promise(resolve=>{const dialog=document.createElement('dialog');dialog.className='submission-dialog submit-confirm';dialog.setAttribute('aria-labelledby','submitTitle');dialog.innerHTML='<button class="dialog-close" type="button" aria-label="Cancel submission">×</button><span class="eyebrow">READY TO SUBMIT</span><h2 id="submitTitle">'+h(problem.title)+'</h2><p class="body-copy">Your '+h(languageNames[language]||language)+' solution will request server verification. Hidden cases require an available private judge; if it is unavailable, no server acceptance will be recorded.</p><form><label>Explain your approach <small>optional</small><textarea name="approach" rows="3" maxlength="5000" placeholder="What idea makes your solution work?"></textarea></label><div class="submission-complexity"><label>Time complexity<input name="time" maxlength="80" placeholder="e.g. O(n)"></label><label>Extra space complexity<input name="space" maxlength="80" placeholder="e.g. O(n)"></label></div><label class="share-solution"><input name="shared" type="checkbox" checked><span>Share my accepted solution<small>Selected by default. Other learners who solve this revision can view your code and explanation. Uncheck to keep it private.</small></span></label><p class="benchmark-note">A full server submission checks private tests when configured. Public-only Java verification checks published cases; browser practice remains separate and cannot unlock protected answers. Complexity notes are author-stated.</p><div class="submission-actions"><button type="button" class="button secondary" data-cancel>Cancel</button><button class="button primary" type="submit">Submit solution →</button></div></form>';document.body.append(dialog);let result=null;
  if(allowPublicPractice){
   const actions=dialog.querySelector('.submission-actions');
   const practice=document.createElement('button');practice.type='button';practice.className='button secondary';
-  practice.textContent='Submit public tests (practice)';
-  practice.title='Run published public cases in your browser, save the attempt and count a practice solve. Hidden cases are not checked; no verified submission is created.';
+  practice.textContent='Submit public tests (unlock answer)';
+  practice.title='Verify every published public case with the server. Accepted results unlock the Java answer and shared community solutions. Hidden cases are not checked or ranked.';
   actions.insertBefore(practice,actions.querySelector('[type="submit"]'));
   practice.onclick=()=>{result={mode:'public-practice'};dialog.close();};
   const note=document.createElement('p');note.className='benchmark-note';
-  note.textContent='Public practice is available without the server judge. It checks published cases only, counts an accepted practice solve on your profile, and does not unlock verified community submissions.';
+  note.textContent='Public-only Java verification runs all published tests on the server and unlocks the Java reference and shared solutions when accepted. Hidden tests remain unchecked and public-only attempts are not shared or ranked. If the server is unavailable, browser practice is offered separately.';
   actions.before(note);
  }
  dialog.querySelector('form').onsubmit=e=>{e.preventDefault();const f=new FormData(e.target);result={approach:f.get('approach'),timeComplexity:f.get('time'),spaceComplexity:f.get('space'),shared:f.get('shared')==='on',nonce:crypto.randomUUID()};dialog.close();};dialog.querySelector('[data-cancel]').onclick=()=>dialog.close();dialog.querySelector('.dialog-close').onclick=()=>dialog.close();dialog.addEventListener('close',()=>{dialog.remove();resolve(result);},{once:true});dialog.showModal();});
