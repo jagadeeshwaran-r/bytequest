@@ -137,6 +137,13 @@
 #mapView .problem-table .company-logo,
 #mapView .problem-table .company-overflow{vertical-align:middle}
 #mapView .company-note{font-size:10px;line-height:1.6}
+#practiceView .problem-title-row h3.is-solved{
+  color:var(--accent);
+  text-decoration:underline;
+  text-decoration-color:color-mix(in srgb,var(--accent) 25%,transparent);
+  text-underline-offset:5px;
+  text-decoration-thickness:1px;
+}
 /* Compact Java answer affordance, never a distracting reference-access card. */
 #practiceView :is(.reference-lock,.reference-unlocked){
   display:flex;align-items:center;gap:8px;
