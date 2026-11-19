@@ -1,3 +1,4 @@
+import './temporary-java-provider-probe.mjs';
 import './site-maintenance.mjs';
 import './system-state.mjs';
 import './outage-offline-cache.mjs';
