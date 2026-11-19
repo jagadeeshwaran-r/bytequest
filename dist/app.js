@@ -15,7 +15,7 @@ import {companyIcons} from './companies.js?v=company-tooltips-1';
 import {problemStatusMarkup} from './problem-status.js?v=auth-ready-1';
 import {canRevealEditorialSolution,editorialSolutionGateMarkup} from './editorial-access.js?v=editorial-1&public-unlock=2&quiet=2&cross-browser=1';
 import {mountWorkspace} from './workspace.js';
-import {mountShell} from "./shell.js?v=quiet-2";
+import {mountShell} from "./shell.js?v=quiet-2&online-alerts=1";
 import {Dashboard} from "./dashboard.js?v=topic-directory-1";
 import {languages,starterFor,NativeJudge} from "./languages.js?v=structural-2";
 import {problems as bundledProblems} from "./problems.js?v=private-reference-1";
