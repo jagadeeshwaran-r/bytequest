@@ -373,9 +373,12 @@ async function submitOnline(resume=null){
  if(!options||current?.id!==p.id||language!==lang||cloud.user?.id!==user||account!==accountEpoch)return;
  // Explicit server-verified public-suite request, never hidden-test acceptance.
  const publicOnly=options.mode==='public-practice'||options.scope==='public';
+ if(publicOnly&&(lang!=='java'||codeTools.prepare()!==source)){
+  notify('Your code changed. Submit the new version instead.');return;
+ }
  if(publicOnly&&options.mode==='public-practice'){
-  if(lang!=='java'||codeTools.prepare()!==source){notify('Your code changed. Submit the new version instead.');return;}
-  options={scope:'public',nonce:crypto.randomUUID(),shared:false,approach:'',timeComplexity:'',spaceComplexity:''};
+  options={...options,scope:'public',nonce:options.nonce||crypto.randomUUID(),shared:false};
+  delete options.mode;
  }
  const epoch=++runEpoch;
  let browserFallback=false,verificationFailure="";
