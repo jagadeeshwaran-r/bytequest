@@ -95,6 +95,10 @@ Java browser practice uses Java 17 for both Run and Submit; previously recorded 
 C++ keeps its normal compiler diagnostics and adds ByteQuest problem-contract checks. The declared result type must match the problem. For integer-returning problems, returning a boolean expression is rejected rather than silently converting it to 0/1; use an explicit `int` conversion when that is intentional. Boolean-returning problems require boolean values. Checks apply to the problem function's direct returns, preserve recursive calls and skip nested lambdas/local classes; macro-generated return statements are not a full C++ AST analysis. Ordinary comparisons and sorting predicates remain valid.
 
 
+## Public showcase policy
+
+Accepted server submissions are showcased by default after a clear notice in the submission dialog. Java public-suite solutions are visible on the **Public tests** community board and ranked only against the same execution provider; passing public tests never implies passing hidden private tests. Full-suite verified results remain separate. Browser-only practice is **not** published or verified. Earlier accepted results that were saved as private remain private until their owner explicitly chooses to publish an earlier accepted result. The server requires the new `showcase:true` client flag before making any public-only submission shared, so old cached clients cannot silently expose code after deployment. A discoverable community profile is required to appear on the ranking board.
+
 ## Public Java runner resilience
 
 Authenticated Java public-suite submissions are checked on the server. ByteQuest first tries a **Judge0 JDK 17** endpoint and switches to **Wandbox** only on a provider-availability failure, not on a wrong answer or compilation error. Neither runner is sent private hidden cases by this public-only path. Full hidden suites still use the existing explicitly configured private judge path.

@@ -31,8 +31,8 @@ assert.match(sql,/grant execute on function public\.bytequest_public_submissions
 assert.ok(!sql.toLowerCase().includes('security definer'),'Function executes with restricted service credentials, not publicly elevated privileges');
 assert.match(api,/owner_id:owner,action:action==='submission-public-list'\?'list':'share'/,'Backend obtains the owner only from authenticated token');
 assert.match(route,/submission-public-share/,'Share action validates a proper UUID and explicit consent');
-assert.match(ui,/Share code & join public board/,'The user must explicitly consent to revealing their solution');
-assert.match(ui,/Unshare public solution/,'Sharing is reversible');
+assert.match(ui,/Publish earlier accepted solution/,'Earlier private accepted solutions require deliberate publishing');
+assert.match(ui,/data-publish-earlier/,'Existing private accepted results can be published with an explicit click');
 assert.match(ui,/data-community-board="public"/,'Public tests have a visibly separate community board');
 assert.match(ui,/data-community-board="full"/,'Full hidden-suite ranking remains available');
 assert.match(ui,/compiler==='judge0-java-17'/,'The provider is visible to users');

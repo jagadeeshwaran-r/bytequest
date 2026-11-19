@@ -4,8 +4,15 @@ export function validateSubmission(body){
  if(typeof body.problemId!=='string'||!/^[a-z][a-z0-9-]{1,63}$/.test(body.problemId)||!['java','python','c','cpp'].includes(body.language)||typeof body.source!=='string'||!body.source.trim()||body.source.length>60000||!Number.isSafeInteger(body.revision)||body.revision<1)throw new HttpError(400,'Choose a current problem, language and solution under 60 KB.');
  if(typeof body.nonce!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.nonce)||typeof body.shared!=='boolean')throw new HttpError(400,'Confirm your submission and sharing preference.');
  if(!['complete','public'].includes(body.scope??'complete'))throw new HttpError(400,'Choose a valid verification scope.');
+ if(body.showcase!==undefined&&typeof body.showcase!=='boolean')throw new HttpError(400,'Choose a valid public-showcase setting.');
  if(body.scope==='public'&&body.language!=='java')throw new HttpError(400,'Public-only verification currently supports Java.');
- const data={problemId:body.problemId,language:body.language,source:body.source,revision:body.revision,nonce:body.nonce,shared:body.scope==='public'?false:body.shared,scope:body.scope??'complete'};
+ // Compatibility: old cached clients explicitly promised a private public-only
+ // submission. Publish ONLY when the new confirmation UI sends both flags.
+ // Future public-showcase clients default both to true.
+ const publishPublic=body.scope==='public'&&body.showcase===true&&body.shared===true;
+ const data={problemId:body.problemId,language:body.language,source:body.source,
+  revision:body.revision,nonce:body.nonce,
+  shared:body.scope==='public'?publishPublic:body.shared,scope:body.scope??'complete'};
  for(const [key,max] of [['approach',5000],['timeComplexity',80],['spaceComplexity',80]]){if(typeof (body[key]??'')!=='string'||(body[key]||'').length>max)throw new HttpError(400,'Keep your explanation and complexity notes within their limits.');data[key]=(body[key]||'').trim();}return data;
 }
 export async function submitSolution({owner,body,db,benchmarkJudge,privateJudge,allowExternalHiddenJudge=false}){
@@ -35,7 +42,9 @@ export async function submitSolution({owner,body,db,benchmarkJudge,privateJudge,
   if(!verdict.accepted)return {...verdict,verificationScope:'public'};
   result={...verdict,verificationScope:'public',
     message:'All '+row.content.tests.length+' published public cases passed on the server.'+
-      (hasHidden?' Private hidden cases were NOT checked.':' No hidden cases were required.'),
+      (hasHidden?' Private hidden cases were NOT checked.':' No hidden cases were required.')+
+      (data.shared?' Your accepted solution is published on the public-test community showcase.':
+        ' Your accepted solution was saved privately using an earlier client. Publish it from My submissions.'),
     // Never mix public-only records from hidden problems into full-judge rankings.
     benchmarkVersion:'bq-public-only-v1'};
  }else if(hasHidden&&privateJudge?.ready){
@@ -55,12 +64,12 @@ export async function submitSolution({owner,body,db,benchmarkJudge,privateJudge,
   result={accepted:true,status:'accepted',runtimeMs:verdict.runtimeMs??null,memoryBytes:verdict.memoryBytes??null,memoryMetric:verdict.memoryMetric||'process_peak_rss',compiler:verdict.compiler,benchmarkVersion:verdict.benchmarkVersion,total:row.content.tests.length+row.hidden.length,message:'All server-side tests passed.'};
  }else result=await benchmarkJudge.run(data.source,row.content,row.content.tests,data.language,{publicCasesOnly:!hasHidden&&data.language==='java'});
  if(!result.accepted)return result;
- // A public shared demo judge can prove the published cases, but its timing
- // must not be compared with the dedicated/primary benchmark leaderboard.
+ // Public-runner results can be showcased but NEVER enter the full-suite
+ // benchmark. The public board partitions by Java provider.
  const alternate=result.compiler==='judge0-java-17';
  if(alternate)result.message=String(result.message||'All published public tests passed.')+
-  ' Accepted on the alternate JDK 17 judge. Saved privately; runtime rankings require the primary verified benchmark.';
- const submission=await db.recordSubmission(owner,{...data,shared:alternate?false:data.shared,runtimeMs:result.runtimeMs,memoryBytes:result.memoryBytes,memoryMetric:result.memoryMetric,compiler:result.compiler,benchmarkVersion:result.benchmarkVersion,suiteKind:hasHidden&&!publicOnly?'private':'public',testCount:result.total});
+  ' Executed on the alternate JDK 17 judge; rankings compare only this provider and cannot confirm hidden tests.';
+ const submission=await db.recordSubmission(owner,{...data,runtimeMs:result.runtimeMs,memoryBytes:result.memoryBytes,memoryMetric:result.memoryMetric,compiler:result.compiler,benchmarkVersion:result.benchmarkVersion,suiteKind:hasHidden&&!publicOnly?'private':'public',testCount:result.total});
  return{...result,submission,verificationScope:publicOnly?'public':'complete'};
 }
 function publicOwn(s){return{id:s.id,language:s.language,runtime_ms:s.runtime_ms,memory_bytes:s.memory_bytes,compiler:s.compiler,shared:s.shared,created_at:s.created_at};}

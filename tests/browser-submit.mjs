@@ -63,7 +63,7 @@ assert.match(editor,/blocksEditorBeforeInput\(e\.inputType\)/);
 const submissionDialog=readFileSync('dist/submissions.js','utf8');
 assert.match(app,/allowPublicPractice:lang==='java'/,'Signed-in Java users can choose public practice directly');
 assert.match(app,/const publicOnly=options\.mode==='public-practice'/,'Public-only verification requires an explicit user choice');
-assert.match(app,/options=\{\.\.\.options,scope:'public',nonce:options.nonce\|\|crypto.randomUUID\(\),shared:false/,'Legacy public intent preserves explanation, uses explicit scope and disables sharing');
+assert.match(app,/options=\{\.\.\.options,scope:'public',nonce:options.nonce\|\|crypto.randomUUID\(\),shared:true,showcase:true/,'Public showcase requires explicit client marker, so old cached clients remain private');
 assert.match(app,/if\(publicOnly&&\(lang!=='java'\|\|codeTools\.prepare\(\)!==source\)\)/,'Reject stale or non-Java server public submissions');
 assert.match(submissionDialog,/allowPublicPractice=false/,'The public practice dialog action is opt-in for Java only');
 assert.match(submissionDialog,/Submit public tests →/,'Public tests are the primary Java submission action on hidden-suite problems');
