@@ -13,9 +13,9 @@ import {readSafeProgress,writeSafeProgress} from './reliable-storage.js?v=reliab
 import {pointsFor,totalPoints} from './rewards.js?v=upgrade-2';
 import {companyIcons} from './companies.js?v=company-tooltips-1';
 import {problemStatusMarkup} from './problem-status.js?v=auth-ready-1';
-import {canRevealEditorialSolution,editorialSolutionGateMarkup} from './editorial-access.js?v=editorial-1&public-unlock=2';
+import {canRevealEditorialSolution,editorialSolutionGateMarkup} from './editorial-access.js?v=editorial-1&public-unlock=2&quiet=2';
 import {mountWorkspace} from './workspace.js';
-import {mountShell} from "./shell.js?v=outage-1";
+import {mountShell} from "./shell.js?v=quiet-2";
 import {Dashboard} from "./dashboard.js?v=topic-directory-1";
 import {languages,starterFor,NativeJudge} from "./languages.js?v=structural-2";
 import {problems as bundledProblems} from "./problems.js?v=private-reference-1";
