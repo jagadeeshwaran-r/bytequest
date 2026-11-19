@@ -32,7 +32,7 @@ assert.ok(html.includes('id="clearProblemSearch"'));
 assert.ok(html.includes('id="visibleProblemCount"'));
 assert.ok(html.includes('<h2>Problem library</h2>'));
 assert.ok(html.includes('role="search"'));
-assert.ok(app.includes('editorialSolutionGateMarkup(canRevealEditorialSolution(state,current.id))'));
+assert.ok(app.includes('editorialSolutionGateMarkup(canCheckJavaReference(current))'));
 assert.ok(app.includes('cloud.request("reference-read",{problemId:selected.id,revision:selected.revision},owner)'), 'Reference source must be fetched through authenticated API');
 assert.ok(!app.includes('html(current.reference)'), 'No local reference solution may render from public data');
 assert.ok(app.includes('if(tab==="learn"&&current.id===p.id)renderLearning();'),

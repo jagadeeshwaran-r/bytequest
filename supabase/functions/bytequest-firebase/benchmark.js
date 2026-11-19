@@ -44,6 +44,7 @@ async function runJudge0PublicJava(code,{fetchImpl,wait=ms=>new Promise(resolve=
  const body=JSON.stringify({source_code:code.replace(/\nclass Wandbox \{/,'\npublic class Main {'),
   language_id:languageId,enable_network:false,cpu_time_limit:3,wall_time_limit:9,
   memory_limit:262144,max_file_size:256});
+ const started=Date.now(),deadline=started+12000;
  const read=async response=>{
   const declared=Number(response.headers?.get?.('content-length'));
   if(Number.isFinite(declared)&&declared>200000)return null;
@@ -55,7 +56,8 @@ async function runJudge0PublicJava(code,{fetchImpl,wait=ms=>new Promise(resolve=
   }catch{return null;}finally{reader.releaseLock();}
  };
  const perform=async (method,requestUrl,sendBody)=>{
-  try{const response=await fetchImpl(requestUrl,{method,headers, ...(sendBody?{body}:{}),signal:AbortSignal.timeout(15000)});
+  try{const remaining=deadline-Date.now();if(remaining<=0)return{error:408};
+   const response=await fetchImpl(requestUrl,{method,headers, ...(sendBody?{body}:{}),signal:AbortSignal.timeout(Math.max(1,Math.min(7000,remaining)))});
    if(!response.ok){await response.body?.cancel?.().catch(()=>{});return {error:response.status};}
    return{value:await read(response)};
   }catch{return{error:0};}

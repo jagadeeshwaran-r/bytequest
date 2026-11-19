@@ -94,6 +94,15 @@ Java browser practice uses Java 17 for both Run and Submit; previously recorded 
 
 C++ keeps its normal compiler diagnostics and adds ByteQuest problem-contract checks. The declared result type must match the problem. For integer-returning problems, returning a boolean expression is rejected rather than silently converting it to 0/1; use an explicit `int` conversion when that is intentional. Boolean-returning problems require boolean values. Checks apply to the problem function's direct returns, preserve recursive calls and skip nested lambdas/local classes; macro-generated return statements are not a full C++ AST analysis. Ordinary comparisons and sorting predicates remain valid.
 
+
+## Public Java runner resilience
+
+Authenticated Java public-suite submissions are checked on the server. ByteQuest first tries a **Judge0 JDK 17** endpoint and switches to **Wandbox** only on a provider-availability failure, not on a wrong answer or compilation error. Neither runner is sent private hidden cases by this public-only path. Full hidden suites still use the existing explicitly configured private judge path.
+
+The default `https://ce.judge0.com` endpoint is a **shared public demonstration** without a production availability guarantee. For reliable production traffic, provision a dedicated or managed Judge0 instance and configure its secret settings in Supabase: `BYTEQUEST_PUBLIC_JUDGE0_URL` (HTTPS base URL), optional `BYTEQUEST_PUBLIC_JUDGE0_KEY` (server only), and `BYTEQUEST_PUBLIC_JAVA_LANGUAGE_ID` (91 for the tested JDK 17 image; check your own instance's languages endpoint). Never embed the provider key in GitHub Pages, and restrict access to the judge behind network and token controls. The source is submitted by the existing authenticated, rate-limited backend, not directly from the browser.
+
+A successful alternate-provider public test run is recorded as an accepted but **private and unranked** submission; it unlocks the current problem revision's reference and eligible community reading, but it does not assert hidden-test acceptance or comparable runtime rankings. Infrastructure failures preserve drafts without unlocking solutions. Browser-only practice remains unverified.
+
 ## Private friend chat and live alerts
 
 Use **Messages and updates** in the glass header, then choose **Messages** or **Updates**. The single badge combines unread conversations and community updates. You can also choose **Message** on a followed profile. Sending requires mutual follows and discoverable profiles. Participant-only API checks protect conversation history; the project owner administers the database. Unfollowing disables new messages while participants retain existing history. Green chat dots use the existing 30-second, privacy-aware presence lease. A focused, visible conversation marks incoming messages read through the newest visible message; senders see Seen receipts update through the live account feed. Messages outside the current read range remain unread.
