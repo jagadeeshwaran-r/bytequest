@@ -5,7 +5,7 @@ import {runInNewContext} from 'node:vm';
 // Run the actual maintenance gate with the dynamic import replaced by a fake
 // application loader. No network access, browser storage, or global DOM needed.
 const source=readFileSync('dist/maintenance-gate.js','utf8')
- .replace(/^import[^\n]+\n/g,'')
+ .replace(/^import[^\n]+\n/gm,'')
  .replace('await import(appSource);','await loadApp(appSource);');
 function scenario(responses,now=Date.parse('2026-11-19T11:00:00Z')){
  const handlers={},winHandlers={},navigation=[],styles={};
