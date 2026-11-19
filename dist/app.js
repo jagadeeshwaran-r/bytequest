@@ -358,16 +358,19 @@ async function run(submit,{forceBrowser=false,sourceOverride=null}={}){
   }catch(error){if(epoch===runEpoch){if(submit&&language==="java")rememberJavaSubmit(p,source,"runtime_error",0,cases.length,null,customCases.length);const message=language!=="java"&&error?.name==='TimeoutError'?"Compiler request timed out. Your code is saved. Please try again shortly.":String(error.message||error);$("resultOutput").textContent=message;notify(message);}}
   finally{if(epoch===runEpoch){clearTimeout(watchdog);setBusy(false);$("runStatus").textContent=languages[language].name+(language==="java"?" · browser compiler":" · online via Wandbox");updateStats();persist();}}
 }
-async function submitOnline(){
- const p=current,lang=language,source=codeTools.prepare(),user=cloud.user?.id,account=accountEpoch;
+async function submitOnline(resume=null){
+ const p=current,lang=language,source=resume?.source??codeTools.prepare(),user=cloud.user?.id,account=accountEpoch;
+ if(resume&&(resume.problemId!==p?.id||resume.revision!==p.revision||resume.lang!==lang||resume.user!==user||resume.account!==account)){
+  notify('Your code, problem or account changed. Start a new submission.');return;
+ }
  // Choosing submission options is not a compiler run and must never lock the editor.
  let options;
- try{options=await requestSubmission({problem:p,language:languages[lang].name,allowPublicPractice:lang==='java'});}
+ try{options=resume?.options??await requestSubmission({problem:p,language:languages[lang].name,allowPublicPractice:lang==='java'});}
  catch(error){notify(error?.message||'Could not open the submission dialog. Please try again.');return;}
  if(!options||current?.id!==p.id||language!==lang||cloud.user?.id!==user||account!==accountEpoch)return;
  // Explicit server-verified public-suite request, never hidden-test acceptance.
- const publicOnly=options.mode==='public-practice';
- if(publicOnly){
+ const publicOnly=options.mode==='public-practice'||options.scope==='public';
+ if(publicOnly&&options.mode==='public-practice'){
   if(lang!=='java'||codeTools.prepare()!==source){notify('Your code changed. Submit the new version instead.');return;}
   options={scope:'public',nonce:crypto.randomUUID(),shared:false,approach:'',timeComplexity:'',spaceComplexity:''};
  }
@@ -418,14 +421,14 @@ async function submitOnline(){
   const retry=document.createElement("button");retry.type="button";
   retry.className="button secondary";retry.textContent=publicOnly?"Retry public verification":"Retry server verification";
   const unchanged=()=>current?.id===p.id&&language===lang&&accountEpoch===account&&
-    cloud.user?.id===user&&$("codeEditor").value===source;
+    cloud.user?.id===user&&codeTools.prepare()===source;
   practice.onclick=()=>{
     if(!unchanged()){notify("Your code or account changed. Submit the new version instead.");return;}
     void run(true,{forceBrowser:true,sourceOverride:source});
   };
   retry.onclick=()=>{
     if(!unchanged()){notify("Your code or account changed. Submit the new version instead.");return;}
-    void submitOnline();
+    void submitOnline({problemId:p.id,revision:p.revision,lang,user,account,source,options});
   };
   actions.append(practice,retry);
   notice.append(title,counts,detail,cause,actions);
