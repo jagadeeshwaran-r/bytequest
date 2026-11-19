@@ -48,6 +48,7 @@ import "./next-features.mjs";
 import "./upgrades.mjs";
 import "./presence.mjs";
 import "./social.mjs";
+import './one-minute-online-alerts.mjs';
 import "./leaderboard.mjs";
 import "./leaderboard-points-ranking.mjs";
 import "./online.mjs";
