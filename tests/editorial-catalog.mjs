@@ -16,7 +16,7 @@ assert.equal(canRevealEditorialSolution({solved:{[problemId]:Date.now()}},''),fa
 const locked=editorialSolutionGateMarkup(false);
 const unlocked=editorialSolutionGateMarkup(true);
 assert.match(locked,/Java solution locked/);
-assert.match(locked,/Submit a server-verified accepted solution/);
+assert.match(locked,/Pass all published tests through Submit public tests/);
 assert.ok(!locked.includes('id="referenceBtn"'),'Unsolved problems must not render a reveal control');
 assert.ok(!locked.includes('<pre'),'Unsolved problems must not render reference source');
 assert.ok(locked.includes('id="referenceContent"'),'Keep editor tab mounting consistent');
