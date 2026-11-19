@@ -25,7 +25,7 @@ assert.match(account,/renderPractice\(\);\s*\$\("codeEditor"\)\.readOnly=false;/
 assert.ok(!account.includes('readOnly=true'),'Account network requests must not strand editor input');
 assert.ok(source.includes('Run passed. This is a test run, not a recorded solve.'),'Passing Run must clearly distinguish testing from recorded Submit');
 
-const submit=source.slice(source.indexOf('async function submitOnline()'),source.indexOf('function logAttempt('));
+const submit=source.slice(source.indexOf('async function submitOnline('),source.indexOf('function logAttempt('));
 assert.ok(submit.indexOf('await requestSubmission(')<submit.indexOf('setBusy(true)'),
  'Opening/cancelling submission confirmation should not lock the editor');
 assert.ok(submit.includes('catch(error){notify('),
@@ -33,7 +33,7 @@ assert.ok(submit.includes('catch(error){notify('),
 assert.ok(submit.indexOf('try{\n  results=null;renderTests()')>submit.indexOf('setBusy(true)'),
  'Initialization errors must be covered by the final unlock');
 
-const run=source.slice(source.indexOf('async function run(submit,'),source.indexOf('async function submitOnline()'));
+const run=source.slice(source.indexOf('async function run(submit,'),source.indexOf('async function submitOnline('));
 assert.ok(run.indexOf('try{\n    results=null;renderTests()')>run.indexOf('setBusy(true)'),
  'A rendering error after beginning a run must still reach finally/unlock');
 assert.ok(run.includes('finally{if(epoch===runEpoch){clearTimeout(watchdog);setBusy(false)'));
