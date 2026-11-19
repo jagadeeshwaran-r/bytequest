@@ -174,7 +174,7 @@ export function mountSubmissions(cloud,{notify=()=>{},getPracticeSubmissions=()=
  };
 }
 export const defaultSubmissionScope=({problem,language,allowPublicPractice=false})=>
- allowPublicPractice&&Number(problem?.hiddenCount)>0?'public':'complete';
+ allowPublicPractice&&/^java\b/i.test(String(language))&&Number(problem?.hiddenCount)>0?'public':'complete';
 export function requestSubmission({problem,language,allowPublicPractice=false}){
  return new Promise(resolve=>{
   const publicDefault=defaultSubmissionScope({problem,language,allowPublicPractice})==='public';
