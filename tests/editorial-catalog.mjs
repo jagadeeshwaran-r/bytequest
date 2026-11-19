@@ -15,14 +15,15 @@ assert.equal(canRevealEditorialSolution({solved:{[problemId]:Date.now()}},''),fa
 
 const locked=editorialSolutionGateMarkup(false);
 const unlocked=editorialSolutionGateMarkup(true);
-assert.match(locked,/Java solution locked/);
-assert.match(locked,/Pass all published tests through Submit public tests/);
+assert.match(locked,/Java answer/);
+assert.match(locked,/Unlock after an accepted public submission/);
 assert.ok(!locked.includes('id="referenceBtn"'),'Unsolved problems must not render a reveal control');
 assert.ok(!locked.includes('<pre'),'Unsolved problems must not render reference source');
 assert.ok(locked.includes('id="referenceContent"'),'Keep editor tab mounting consistent');
-assert.match(unlocked,/Java reference access/);
+assert.match(unlocked,/View Java answer/);
 assert.ok(unlocked.includes('id="referenceBtn"'));
 assert.ok(!unlocked.includes('<pre'),'Reveal still requires an explicit click');
+assert.ok(!unlocked.includes('reference-gate-icon')&&!locked.includes('reference-gate-icon'),'No decorative reference-access box or large icon');
 
 const html=readFileSync('dist/index.html','utf8');
 const app=readFileSync('dist/app.js','utf8');
