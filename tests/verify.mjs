@@ -1,4 +1,3 @@
-import './temporary-judge0-harness-smoke.mjs';
 import './java-judge-failover.mjs';
 import './site-maintenance.mjs';
 import './system-state.mjs';
