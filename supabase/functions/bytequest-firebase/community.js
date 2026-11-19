@@ -1,6 +1,6 @@
 import {profileDetails} from './domain/profile-fields.js';
 import {HttpError} from './handler.js';
-const actions=new Set(['creator-search','problem-authors','chat-list','chat-thread','chat-send','chat-read','live-events-poll','submission-list','submission-read','submission-history','friend-analytics','leaderboard','presence','profile-presence','friend-presence','self','profile-save','search','profile','follow','followers','following','notifications','notifications-read','roles','role-set']);
+const actions=new Set(['creator-search','problem-authors','chat-list','chat-thread','chat-send','chat-read','live-events-poll','submission-list','submission-read','submission-history','submission-public-list','submission-public-share','friend-analytics','leaderboard','presence','profile-presence','friend-presence','self','profile-save','search','profile','follow','followers','following','notifications','notifications-read','roles','role-set']);
 export const communityActions=actions;
 export function validateCommunity(action,body){
  const data={};
@@ -16,6 +16,17 @@ export function validateCommunity(action,body){
   if(action==='submission-list'){if(!['all','java','python','c','cpp'].includes(body.language??'all')||!['runtime','memory'].includes(body.sort??'runtime')||!Number.isSafeInteger(body.page??0)||(body.page??0)<0||(body.page??0)>1000000)throw new HttpError(400,'Choose a valid submission filter.');Object.assign(data,{language:body.language??'all',sort:body.sort??'runtime',page:body.page??0});}
  }
  if(action==='submission-read'){if(typeof body.id!=='string'||!/^[0-9a-f-]{36}$/i.test(body.id))throw new HttpError(400,'Choose a valid submission.');data.id=body.id.toLowerCase();}
+ if(action==='submission-public-list'){
+  if(typeof body.problemId!=='string'||!/^[a-z][a-z0-9-]{1,63}$/.test(body.problemId)||
+     !['runtime','memory'].includes(body.sort??'runtime')||!Number.isSafeInteger(body.page??0)||
+     (body.page??0)<0||(body.page??0)>1000000)throw new HttpError(400,'Choose a valid public-test submission board.');
+  Object.assign(data,{problemId:body.problemId,sort:body.sort??'runtime',page:body.page??0});
+ }
+ if(action==='submission-public-share'){
+  if(typeof body.id!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.id)||
+     typeof body.shared!=='boolean')throw new HttpError(400,'Choose an accepted public submission and sharing preference.');
+  Object.assign(data,{id:body.id.toLowerCase(),shared:body.shared});
+ }
 
  if(action==='friend-analytics'){
   if(!Array.isArray(body.targets)||body.targets.length>100||body.targets.some(id=>typeof id!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)))throw new HttpError(400,'Choose up to 100 followed profiles.');
