@@ -22,7 +22,7 @@ import {languages,starterFor,NativeJudge} from "./languages.js?v=structural-2";
 import {problems as bundledProblems} from "./problems.js?v=private-reference-1";
 import {Cloud} from "./cloud.js?v=outage-1";
 import {createViewCache,prefetchCommunityViews} from "./view-cache.js?v=avatar-1";
-import {blankProgress, validateProgress, mergeProgress, solveStreak} from "./progress.js?v=practice-history-1";
+import {blankProgress, validateProgress, mergeProgress, solveStreak} from "./progress.js?v=practice-history-1&first-solve=1";
 import {recoverOwnProfileSolves} from "./profile-solve-recovery.js?v=1";
 // Problem Studio runs solely in studio.html. Never initialize its form on Problems.
 const problems=[...bundledProblems];
@@ -501,9 +501,15 @@ function logAttempt(p,passed,total){
 }
 function completeQuest(p,practice=false){
   const previous=structuredClone(state);
-  const solvedDay=new Date().toISOString().slice(0,10);state.acceptedDays??=[];if(!state.acceptedDays.includes(solvedDay))state.acceptedDays.push(solvedDay);
   const first=!state.solved[p.id],isReview=!first&&due(p.id);
-  if(first){state.solved[p.id]=Date.now();state.reviews[p.id]={anchor:Date.now(),step:0};}
+  // Re-submissions and spaced reviews still count as practice, not new streak days.
+  if(first){
+    const now=Date.now();
+    state.solved[p.id]=now;state.reviews[p.id]={anchor:now,step:0};
+    const solvedDay=new Date(now).toISOString().slice(0,10);
+    state.acceptedDays??=[];
+    if(!state.acceptedDays.includes(solvedDay))state.acceptedDays.push(solvedDay);
+  }
   else if(isReview){state.reviews[p.id].step++;}
   if(first||isReview)state.activity.push({id:p.id,at:Date.now(),type:first?"solved":"review",passed:p.tests.length,total:p.tests.length});
   $("successTitle").textContent=first?"Aha! Quest complete.":isReview?"That pattern is sticking.":"Another good repetition.";

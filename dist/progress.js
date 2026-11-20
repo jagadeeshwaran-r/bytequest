@@ -56,7 +56,10 @@ export function validateProgress(value) {
   clean.days=Array.isArray(value.days)?[...new Set(value.days.filter(d=>typeof d==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(d)))].sort().slice(-1000):[];
   clean.activity=Array.isArray(value.activity)?value.activity.filter(a=>a&&idPattern.test(a.id)&&time(a.at)&&["attempt","solved","review"].includes(a.type)).slice(-200).map(a=>({id:a.id,at:a.at,type:a.type,passed:Math.max(0,Math.min(100,Number(a.passed)||0)),total:Math.max(0,Math.min(100,Number(a.total)||0))})):[];
   clean.practiceSubmissions=normalizePracticeSubmissions(value.practiceSubmissions);
-  clean.acceptedDays=[...new Set([...(Array.isArray(value.acceptedDays)?value.acceptedDays:[]),...Object.values(clean.solved).map(utcDay),...clean.activity.filter(a=>['solved','review'].includes(a.type)).map(a=>utcDay(a.at))].filter(validDay))].sort().slice(-1000);
+  // Only the first accepted solution timestamp for each distinct problem
+  // contributes a streak day. Legacy acceptedDays and review events are not
+  // proof of a new solve, so never promote them into current streak credit.
+  clean.acceptedDays=firstSolveDays(clean.solved);
   if(idPattern.test(value.current))clean.current=value.current;
   clean.currentUpdated=time(value.currentUpdated);
   return clean;
@@ -77,7 +80,8 @@ export function mergeProgress(first,second) {
     if(a.attempts[id]||b.attempts[id])out.attempts[id]=Math.max(a.attempts[id]||0,b.attempts[id]||0);
   }
   out.days=[...new Set([...a.days,...b.days])].sort().slice(-1000);
-  out.acceptedDays=[...new Set([...a.acceptedDays,...b.acceptedDays])].sort().slice(-1000);
+  // Merging accounts/devices must not restore legacy review-only days.
+  out.acceptedDays=firstSolveDays(out.solved);
   out.activity=[...new Map([...a.activity,...b.activity].map(e=>[e.id+"-"+e.type+"-"+e.at,e])).values()].sort((x,y)=>x.at-y.at).slice(-200);
   out.practiceSubmissions=normalizePracticeSubmissions([...a.practiceSubmissions,...b.practiceSubmissions]);
   out.current=b.currentUpdated>a.currentUpdated?b.current:a.current;
@@ -87,8 +91,15 @@ export function mergeProgress(first,second) {
 
 const validDay=d=>typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d)&&Number.isFinite(Date.parse(d+'T00:00:00Z'))&&new Date(d+'T00:00:00Z').toISOString().slice(0,10)===d;
 function utcDay(at){return Number.isFinite(at)&&at>0&&at<7258118400000?new Date(at).toISOString().slice(0,10):null;}
+export function firstSolveDays(solved={},now=Date.now()){
+ const latest=utcDay(now);
+ if(!latest||!object(solved))return [];
+ return [...new Set(Object.values(solved).filter(at=>Number.isFinite(at)&&at>0&&at<=now)
+   .map(utcDay).filter(d=>validDay(d)&&d<=latest))].sort().slice(-1000);
+}
 export function solveStreak(progress,now=Date.now()){
- const days=new Set((progress.acceptedDays||[]).filter(d=>validDay(d)&&d<=utcDay(now))),cursor=new Date(utcDay(now)+'T00:00:00Z');let count=0;
- if(!days.has(cursor.toISOString().slice(0,10)))cursor.setUTCDate(cursor.getUTCDate()-1);
+ const today=utcDay(now);if(!today)return 0;
+ const days=new Set(firstSolveDays(progress?.solved,now)),cursor=new Date(today+'T00:00:00Z');let count=0;
+ if(!days.has(today))cursor.setUTCDate(cursor.getUTCDate()-1);
  while(days.has(cursor.toISOString().slice(0,10))){count++;cursor.setUTCDate(cursor.getUTCDate()-1);}return count;
 }

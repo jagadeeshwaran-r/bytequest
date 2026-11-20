@@ -25,7 +25,7 @@ assert.ok(app.includes('problemStatusMarkup(Boolean(state.solved[p.id]),{complet
   "Problem rows derive accepted status from saved solves but never label unconfirmed account progress as unsolved.");
 assert.ok(app.includes('if(view==="map"){if(previousView!==null&&previousView!=="map")$("questGrid").scrollLeft=0;renderMap();}'),
   "Navigating back from a practice problem must reset horizontal grid scrolling to the left.");
-assert.ok(app.includes('if(first){state.solved[p.id]=Date.now()'),
+assert.ok(app.includes('state.solved[p.id]=now;state.reviews[p.id]={anchor:now,step:0}'),
   "First successful accepted solution must still update solved state.");
 
 const css=readFileSync("dist/problem-alignment.css","utf8");
