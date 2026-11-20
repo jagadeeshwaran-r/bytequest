@@ -32,6 +32,7 @@ import "./topic-directory-cleanup.mjs";
 import "./solving-forecast.mjs";
 import "./problem-library-bootstrap.mjs";
 import "./editor-operators.mjs";
+import "./editor-brace-match.mjs";
 import "./workbench.mjs";
 import "./browser-submit.mjs";
 import "./verified-submit-profile.mjs";

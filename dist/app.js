@@ -2,6 +2,7 @@ import {profileAvatar,publicProfileHref} from './profile-view.js?v=workbench-1';
 import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=verification-evidence-1&public-unlock=2&public-default=1&community=1&showcase=1';
 import {launchCelebration} from './celebration.js?v=next-1';
 import {mountEditorTools} from './editor-tools.js?v=copy-enabled-1';
+import {matchingCurlyBraces} from './brace-match.js?v=brace-1';
 import {mountWorkspaceLayout} from './workspace-layout.js?v=workspace-1';
 import {submissionFeedback} from './submission-feedback.js?v=reliability-1&public-unlock=2';
 import {usesRemoteSubmit,browserSubmissionCases,browserSubmissionVerdict,privateJavaJudgeUnavailable} from './browser-submit.js?v=verified-java-1';
@@ -123,13 +124,43 @@ function xp() { return totalPoints(state,problems); }
 function dueTime(id) { const r=state.reviews[id]; if(!r||r.step>=3)return Infinity; return r.anchor+reviewDays[r.step]*86400000; }
 function due(id) { return dueTime(id)<=Date.now(); }
 function updateStats() { $("solvedCount").textContent=problems.filter(p=>state.solved[p.id]).length; $("solvedTotal").textContent=problems.length; $("catalogCount").textContent=problems.length+" problems · "+topics.length+" topics"; $("xpCount").textContent=xp(); $("streak").textContent=streak(); $("level").textContent=1+Math.floor(xp()/300); }
-function highlight(source) {
+function highlight(source,braces=null) {
+  const paint=(fragment,offset)=>{
+    if(!braces)return html(fragment);
+    let out='',last=0;
+    for(const at of [braces.open,braces.close]){
+      const index=at-offset;
+      if(index<last||index>=fragment.length)continue;
+      out+=html(fragment.slice(last,index))+'<span class="matching-curly-brace">'+html(fragment[index])+'</span>';
+      last=index+1;
+    }
+    return out+html(fragment.slice(last));
+  };
   const regex=/(\/\/[^\n]*|\/\*[\s\S]*?\*\/)|("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|\b(import|class|public|private|static|return|throw|new|for|while|if|else|int|boolean|void|true|false|null|long|double|char|continue|break|final|try|catch)\b|\b(String|Solution|Map|HashMap|Set|HashSet|Deque|ArrayDeque|Integer|Math|Arrays|Character|UnsupportedOperationException)\b|\b(\d+)\b/g;
   let out="", last=0;
-  for(const m of source.matchAll(regex)) { out+=html(source.slice(last,m.index)); const type=m[1]?"comment":m[2]?"string":m[3]?"keyword":m[4]?"type":"number"; out+='<span class="tok-'+type+'">'+html(m[0])+"</span>"; last=m.index+m[0].length; }
-  return out+html(source.slice(last))+"\n";
+  for(const m of source.matchAll(regex)) { out+=paint(source.slice(last,m.index),last); const type=m[1]?"comment":m[2]?"string":m[3]?"keyword":m[4]?"type":"number"; out+='<span class="tok-'+type+'">'+paint(m[0],m.index)+"</span>"; last=m.index+m[0].length; }
+  return out+paint(source.slice(last),last)+"\n";
 }
-function updateEditor() { $("codeHighlight").firstElementChild.innerHTML=highlight($("codeEditor").value); $("lineNumbers").textContent=$("codeEditor").value.split("\n").map((_,i)=>i+1).join("\n"); syncScroll(); }
+let lastEditorSource=null,lastBraceKey=null;
+function updatePairOverlay(force=false){
+ const editor=$("codeEditor");
+ const braces=document.activeElement===editor?matchingCurlyBraces(editor.value,editor.selectionStart,language,editor.selectionEnd):null;
+ const key=braces?braces.open+":"+braces.close:"none";
+ if(!force&&lastEditorSource===editor.value&&lastBraceKey===key)return;
+ lastEditorSource=editor.value;lastBraceKey=key;
+ $("codeHighlight").firstElementChild.innerHTML=highlight(editor.value,braces);
+ syncScroll();
+}
+function updateEditor(){
+ updatePairOverlay(true);
+ $("lineNumbers").textContent=$("codeEditor").value.split("\n").map((_,i)=>i+1).join("\n");
+}
+for(const eventName of ["focus","blur","keyup","click","mouseup","select"]){
+ $("codeEditor").addEventListener(eventName,()=>updatePairOverlay());
+}
+document.addEventListener("selectionchange",()=>{
+ if(document.activeElement===$("codeEditor"))updatePairOverlay();
+});
 function syncScroll(){ $("codeHighlight").scrollTop=$("codeEditor").scrollTop; $("codeHighlight").scrollLeft=$("codeEditor").scrollLeft; $("lineNumbers").scrollTop=$("codeEditor").scrollTop; }
 function saveDraft(){state.drafts[draftId()]=$("codeEditor").value;touch("drafts",draftId());persist();updateEditor();if(results){results=null;renderTests();$("resultOutput").replaceChildren();}}
 $("codeEditor").addEventListener("input",saveDraft);
