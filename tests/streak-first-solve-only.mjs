@@ -3,35 +3,35 @@ import {readFileSync} from 'node:fs';
 import {blankProgress,firstSolveDays,solveStreak,validateProgress,mergeProgress} from '../dist/progress.js';
 
 const at=s=>Date.parse(s+'T10:00:00Z');
-const now=Date.parse('2026-11-20T23:00:00Z');
+const now=Date.parse('2026-10-20T23:00:00Z');
 const p=blankProgress();
-p.acceptedDays=['2026-11-18','2026-11-19','2026-11-20'];
+p.acceptedDays=['2026-10-18','2026-10-19','2026-10-20'];
 p.activity=[
- {id:'two-sum',at:at('2026-11-20'),type:'review'},
- {id:'two-sum',at:at('2026-11-20'),type:'solved'}
+ {id:'two-sum',at:at('2026-10-20'),type:'review'},
+ {id:'two-sum',at:at('2026-10-20'),type:'solved'}
 ];
 assert.equal(solveStreak(p,now),0,'Legacy review and accepted-day records cannot extend the streak');
 assert.deepEqual(validateProgress(p).acceptedDays,[],'Legacy acceptedDays must not restore invalid days');
 
-p.solved={'two-sum':at('2026-11-18')};
+p.solved={'two-sum':at('2026-10-18')};
 assert.equal(solveStreak(p,now),0,'A repeat submission today does not extend a broken streak');
-assert.deepEqual(firstSolveDays(p.solved,now),['2026-11-18']);
-p.solved['valid-anagram']=at('2026-11-19');
+assert.deepEqual(firstSolveDays(p.solved,now),['2026-10-18']);
+p.solved['valid-anagram']=at('2026-10-19');
 assert.equal(solveStreak(p,now),2,'Yesterday is the active streak until a new problem is solved today');
-p.solved['contains-duplicate']=at('2026-11-20');
+p.solved['contains-duplicate']=at('2026-10-20');
 assert.equal(solveStreak(p,now),3);
-p.solved['reverse-linked-list']=at('2026-11-20');
+p.solved['reverse-linked-list']=at('2026-10-20');
 assert.equal(solveStreak(p,now),3,'Multiple first solves today only earn one day');
-assert.deepEqual(validateProgress(p).acceptedDays,['2026-11-18','2026-11-19','2026-11-20']);
-const yesterday=Date.parse('2026-11-19T12:00:00Z');
+assert.deepEqual(validateProgress(p).acceptedDays,['2026-10-18','2026-10-19','2026-10-20']);
+const yesterday=Date.parse('2026-10-19T12:00:00Z');
 assert.equal(solveStreak(p,yesterday),2,'Future-dated solves must not count early');
 
 const legacy=blankProgress();
-legacy.solved['two-sum']=at('2026-11-18');
-legacy.acceptedDays=['2026-11-19','2026-11-20'];
-legacy.activity=[{id:'two-sum',at:at('2026-11-20'),type:'review'}];
-const merged=mergeProgress(legacy,{...blankProgress(),solved:{'valid-anagram':at('2026-11-19')}});
-assert.deepEqual(merged.acceptedDays,['2026-11-18','2026-11-19'],'Merges must not resurrect review-only days');
+legacy.solved['two-sum']=at('2026-10-18');
+legacy.acceptedDays=['2026-10-19','2026-10-20'];
+legacy.activity=[{id:'two-sum',at:at('2026-10-20'),type:'review'}];
+const merged=mergeProgress(legacy,{...blankProgress(),solved:{'valid-anagram':at('2026-10-19')}});
+assert.deepEqual(merged.acceptedDays,['2026-10-18','2026-10-19'],'Merges must not resurrect review-only days');
 assert.equal(solveStreak(merged,now),2);
 assert.deepEqual(firstSolveDays({'two-sum':Number.NaN,'reverse-linked-list':Date.parse('2026-12-01T10:00:00Z')},now),[]);
 
