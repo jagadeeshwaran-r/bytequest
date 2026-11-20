@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';
 import {blankProgress,firstSolveDays,solveStreak,validateProgress,mergeProgress} from '../dist/progress.js';
 
 const at=s=>Date.parse(s+'T10:00:00Z');
-const now=Date.parse('2026-11-20T12:00:00Z');
+const now=Date.parse('2026-11-20T23:00:00Z');
 const p=blankProgress();
 p.acceptedDays=['2026-11-18','2026-11-19','2026-11-20'];
 p.activity=[
