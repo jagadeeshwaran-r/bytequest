@@ -17,7 +17,7 @@ create policy private_api_only on public.bytequest_submissions for all to anon,a
 
 create function public.bytequest_submission_record(owner_id text,data jsonb) returns jsonb language plpgsql security invoker set search_path='' as $$
 #variable_conflict use_column
-declare q public.bytequest_problems;s public.bytequest_submissions;g public.bytequest_firebase_progress;payload jsonb;at_ms numeric:=extract(epoch from clock_timestamp())*1000;today text:=to_char(now() at time zone 'UTC','YYYY-MM-DD');days jsonb;begin
+declare q public.bytequest_problems;s public.bytequest_submissions;g public.bytequest_firebase_progress;payload jsonb;at_ms numeric:=extract(epoch from clock_timestamp())*1000;first_at numeric;credited_day text;days jsonb;begin
  perform pg_advisory_xact_lock(hashtextextended('submission:'||owner_id,0));
  select * into s from public.bytequest_submissions a where a.owner_id=bytequest_submission_record.owner_id and a.client_nonce=(data->>'nonce')::uuid;
  if found then return to_jsonb(s)-'owner_id'-'source'-'approach';end if;
@@ -28,9 +28,19 @@ declare q public.bytequest_problems;s public.bytequest_submissions;g public.byte
  values(owner_id,q.id,q.revision,data->>'language',data->>'source',coalesce(data->>'approach',''),coalesce(data->>'timeComplexity',''),coalesce(data->>'spaceComplexity',''),coalesce((data->>'shared')::boolean,false),(data->>'runtimeMs')::double precision,(data->>'memoryBytes')::bigint,data->>'memoryMetric',data->>'compiler',data->>'benchmarkVersion',data->>'suiteKind',(data->>'testCount')::integer,(data->>'nonce')::uuid) returning * into s;
  select * into g from public.bytequest_firebase_progress p where p.user_id=owner_id for update;
  payload:=coalesce(g.payload,'{"version":1}'::jsonb);
- if not (coalesce(payload->'solved','{}') ? q.id) then payload:=jsonb_set(payload,'{solved}',coalesce(payload->'solved','{}')||jsonb_build_object(q.id,at_ms));end if;
- select coalesce(jsonb_agg(d order by d),'[]') into days from (select distinct d from jsonb_array_elements_text(case when jsonb_typeof(payload->'acceptedDays')='array' then payload->'acceptedDays' else '[]'::jsonb end) d union select today) all_days;
- payload:=jsonb_set(payload,'{acceptedDays}',days);
+ -- Repeat submissions are saved without crediting another streak day.
+ -- If a synced first solve was lost, recover the earliest verified submission.
+ if not (coalesce(payload->'solved','{}') ? q.id) then
+  select min(extract(epoch from t.created_at)*1000) into first_at
+  from public.bytequest_submissions t where t.owner_id=bytequest_submission_record.owner_id and t.problem_id=q.id;
+  first_at:=coalesce(first_at,at_ms);
+  payload:=jsonb_set(payload,'{solved}',coalesce(payload->'solved','{}')||jsonb_build_object(q.id,first_at));
+  credited_day:=to_char(to_timestamp(first_at::double precision/1000) at time zone 'UTC','YYYY-MM-DD');
+  select coalesce(jsonb_agg(d order by d),'[]') into days from
+   (select distinct d from jsonb_array_elements_text(case when jsonb_typeof(payload->'acceptedDays')='array' then payload->'acceptedDays' else '[]'::jsonb end) d
+    union select credited_day) first_days;
+  payload:=jsonb_set(payload,'{acceptedDays}',days);
+ end if;
  insert into public.bytequest_firebase_progress(user_id,payload,revision) values(owner_id,payload,1) on conflict(user_id) do update set payload=excluded.payload,revision=bytequest_firebase_progress.revision+1,updated_at=now();
  return to_jsonb(s)-'owner_id'-'source'-'approach';
 end $$;
@@ -75,16 +85,24 @@ declare p public.bytequest_social_profiles;payload jsonb;days jsonb;solves jsonb
  if p.owner_id is null then raise exception 'Profile not found' using errcode='P0002';end if;
  select g.payload into payload from public.bytequest_firebase_progress g where g.user_id=p.owner_id;
  payload:=coalesce(payload,'{}'::jsonb);
- with first_solves as (
+ -- The first accepted solve for each distinct published problem earns one day.
+ -- Keep the earliest known browser progress or verified server acceptance.
+ -- Repeat submissions, review events and legacy acceptedDays do not qualify.
+ with earliest as (
   select x.key as id,(x.value::text)::numeric as at_ms from jsonb_each(case when jsonb_typeof(payload->'solved')='object' then payload->'solved' else '{}'::jsonb end) x
   join public.bytequest_problems q on q.id=x.key and q.published
   where case when jsonb_typeof(x.value)='number' then (x.value::text)::numeric>0 and (x.value::text)::numeric<=extract(epoch from now())*1000 else false end
+  union all
+  select s.problem_id as id,extract(epoch from min(s.created_at))*1000 as at_ms
+  from public.bytequest_submissions s
+  join public.bytequest_problems q on q.id=s.problem_id and q.published
+  where s.owner_id=p.owner_id and s.created_at<=now()
+  group by s.problem_id
+ ),first_solves as (
+  select id,min(at_ms) as at_ms from earliest group by id
  ) select coalesce(jsonb_agg(jsonb_build_object('day',to_char(to_timestamp(f.at_ms::double precision/1000) at time zone 'UTC','YYYY-MM-DD'),'topic',q.content->>'topic')),'[]'::jsonb) into solves from first_solves f join public.bytequest_problems q on q.id=f.id;
  with accepted_days as (
-  select public.bytequest_valid_solve_day(x#>>'{}') as day from jsonb_array_elements(case when jsonb_typeof(payload->'acceptedDays')='array' then payload->'acceptedDays' else '[]'::jsonb end) x where jsonb_typeof(x)='string'
-  union select public.bytequest_valid_solve_day(x->>'day') from jsonb_array_elements(solves) x
-  union select (s.created_at at time zone 'UTC')::date from public.bytequest_submissions s join public.bytequest_problems q on q.id=s.problem_id and q.published where s.owner_id=p.owner_id
-  union select (to_timestamp((x->>'at')::double precision/1000) at time zone 'UTC')::date from jsonb_array_elements(case when jsonb_typeof(payload->'activity')='array' then payload->'activity' else '[]'::jsonb end) x join public.bytequest_problems q on q.id=x->>'id' and q.published where x->>'type' in ('solved','review') and case when jsonb_typeof(x->'at')='number' then (x->>'at')::numeric>0 and (x->>'at')::numeric<=extract(epoch from now())*1000 else false end
+  select public.bytequest_valid_solve_day(x->>'day') as day from jsonb_array_elements(solves) x
  ) select coalesce(jsonb_agg(to_char(day,'YYYY-MM-DD') order by day),'[]'::jsonb) into days from accepted_days where day is not null and day<=today;
  if not (days ? to_char(cursor_day,'YYYY-MM-DD')) then cursor_day:=cursor_day-1;end if;
  while days ? to_char(cursor_day,'YYYY-MM-DD') loop streak:=streak+1;cursor_day:=cursor_day-1;end loop;
