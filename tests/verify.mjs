@@ -24,6 +24,7 @@ import "./streak-shortcut-spacing.mjs";
 import "./profile-glass-company-ui.mjs";
 import "./profile-today-medals.mjs";
 import "./streak-awards.mjs";
+import "./streak-first-solve-only.mjs";
 import './streak-correction-solved-title.mjs';
 import "./profile-calendar-year.mjs";
 import "./profile-speed.mjs";
