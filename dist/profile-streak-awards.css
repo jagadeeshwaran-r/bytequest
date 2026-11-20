@@ -1,17 +1,17 @@
 /* Lifetime streak awards: earned only. Five podium-style medallions are
    constructed from scalable SVG, not raster assets. */
 .community-page #profileContent .streak-awards{
- display:flex;align-items:center;gap:clamp(16px,2vw,32px);
- justify-content:space-between;flex-wrap:wrap;
- padding:clamp(14px,1.8vw,26px) 0 clamp(16px,2.2vw,28px);
+ display:flex;align-items:center;gap:12px 22px;
+ justify-content:flex-start;flex-wrap:wrap;
+ padding:12px 0 14px;
  border-top:1px solid var(--border);
 }
-.community-page #profileContent .streak-awards-heading{flex:1 1 180px;min-width:160px}
+.community-page #profileContent .streak-awards-heading{flex:0 1 220px;min-width:170px}
 .community-page #profileContent .streak-awards-heading .eyebrow{
  color:var(--muted);font-size:9px;letter-spacing:.15em;
 }
 .community-page #profileContent .streak-awards-heading h3{
- font-size:clamp(16px,1.5vw,21px);font-weight:600;
+ font-size:clamp(16px,1.25vw,19px);font-weight:600;
  letter-spacing:-.035em;margin:7px 0 5px;color:var(--text);
 }
 .community-page #profileContent .streak-awards-heading p{
@@ -19,16 +19,16 @@
  max-width:32ch;
 }
 .community-page #profileContent .streak-awards-list{
- display:flex;align-items:center;justify-content:flex-end;
- flex-wrap:wrap;gap:clamp(8px,1.4vw,22px);
- min-width:0;flex:2 1 auto;
+ display:flex;align-items:center;justify-content:flex-start;
+ flex-wrap:wrap;gap:8px 12px;
+ min-width:0;flex:0 1 auto;
 }
 .community-page #profileContent .streak-award{
  --badge-dark:#111820;
  position:relative;display:flex;align-items:center;justify-content:center;
- width:clamp(88px,7.7vw,118px);
- flex:0 0 clamp(88px,7.7vw,118px);
- min-height:116px;user-select:none;
+ width:clamp(74px,6.3vw,94px);
+ flex:0 0 clamp(74px,6.3vw,94px);
+ min-height:0;user-select:none;
 }
 .community-page #profileContent .streak-award.tier-silver{
  --badge-light:#f1f5fa;--badge-edge:#a9b6c7;--badge-shadow:#6c7b8d;
@@ -90,20 +90,25 @@
  font:700 12px/1 var(--font-sans,Inter,sans-serif);
  font-variant-numeric:tabular-nums;
 }
+
+/* Keep the solving calendar close to the compact badge row, without altering
+   calendar spacing for profiles with no earned achievements. */
+.community-page #profileContent .streak-awards + .profile-calendar-section{
+ margin-top:10px!important;
+}
+
 @media(max-width:850px){
- .community-page #profileContent .streak-awards{
-  align-items:flex-start;gap:16px;
- }
- .community-page #profileContent .streak-awards-list{justify-content:flex-start}
+ .community-page #profileContent .streak-awards{gap:10px 16px}
+ .community-page #profileContent .streak-awards-heading{flex-basis:190px}
 }
 @media(max-width:540px){
  .community-page #profileContent .streak-awards{
-  padding:18px 0 24px;gap:16px;
+  padding:12px 0 14px;gap:10px;
  }
  .community-page #profileContent .streak-awards-heading{flex-basis:100%}
  .community-page #profileContent .streak-awards-list{gap:8px}
  .community-page #profileContent .streak-award{
-  width:clamp(82px,25vw,108px);flex-basis:clamp(82px,25vw,108px);
+  width:clamp(70px,21vw,86px);flex-basis:clamp(70px,21vw,86px);
  }
 }
 @media(prefers-reduced-motion:reduce){
