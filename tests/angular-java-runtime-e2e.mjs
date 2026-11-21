@@ -44,6 +44,19 @@ try{
    writes.push(r.url());
  });
  const origin='http://127.0.0.1:'+server.address().port;
+ const mocked=process.env.BQ_MOCK_JAVA==='1';
+ if(mocked){
+  // Isolate Angular/iframe/postMessage contract from the third-party CheerpJ CDN.
+  // This is NOT a Java execution test and must never replace the real test.
+  await page.route('https://cjrtnc.leaningtech.com/5.0/loader.js',route=>route.fulfill({
+   status:200,contentType:'application/javascript',
+   body:`window.cheerpjInit=async()=>{};
+window.cheerpjRunLibrary=async()=>({quest:{JavaRunner:{run:async(source,tests)=>{
+ const count=(String(tests).match(/check\\(/g)||[]).length;
+ return JSON.stringify({status:'ok',cases:Array.from({length:count},(_,i)=>({passed:true,label:'Case '+(i+1)}))});
+}}}});`
+  }));
+ }
  await page.goto(origin+'/#/angular/problem/two-sum',{waitUntil:'domcontentloaded',timeout:45000});
  const editor=page.getByRole('textbox',{name:'Java solution code'});
  await editor.waitFor({timeout:30000});
@@ -85,7 +98,7 @@ try{
  assert.equal(await page.locator('.reference-code').count(),0,'Guest Run leaked the private reference');
  assert.deepEqual(writes,[],'Guest Run wrote to production Supabase');
  assert.deepEqual(errors,[],'Angular browser errors: '+errors.join(' | '));
- console.log('PASS: real Java 17 compilation, '+cases.length+' public cases, guest Run cannot submit or unlock editorial');
+ console.log('PASS: '+(mocked?'mock Java iframe/message bridge':'real Java 17 compilation')+', '+cases.length+' public cases, guest Run cannot submit or unlock editorial');
  await page.close();
 }finally{
  if(browser)await browser.close();
