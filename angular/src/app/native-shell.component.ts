@@ -18,6 +18,7 @@ type ThemeMode='light'|'dark'|'system';
     <nav class="minimal-nav" aria-label="Main navigation">
       <a routerLink="/angular" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">Problems</a>
       <a routerLink="/angular/leaderboard" routerLinkActive="active">Leaderboard</a>
+      <a routerLink="/angular/find" routerLinkActive="active">Find friends</a>
     </nav>
     <div class="native-shell-tools"><bq-chat/></div>
     <div class="profile-dropdown">
@@ -29,8 +30,9 @@ type ThemeMode='light'|'dark'|'system';
       @if(menuOpen()){
         <div class="native-account-menu" id="nativeAccountMenu">
           <a routerLink="/angular/profile/me" (click)="menuOpen.set(false)">My profile</a>
+          <a routerLink="/angular/profile/edit" (click)="menuOpen.set(false)">Edit profile</a>
           <a routerLink="/angular/leaderboard" (click)="menuOpen.set(false)">Leaderboard</a>
-          <a routerLink="/classic/studio" (click)="menuOpen.set(false)">Problem studio (compatibility)</a>
+          <a routerLink="/angular/studio" (click)="menuOpen.set(false)">Problem studio</a>
           <div class="theme-choices">
             <button type="button" (click)="setTheme('light')">☀ Light</button>
             <button type="button" (click)="setTheme('dark')">☾ Dark</button>
