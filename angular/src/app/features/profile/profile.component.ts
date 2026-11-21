@@ -33,6 +33,13 @@ interface ProfileReply {
        </section>
      } @else if(loading()){
        <p class="muted" role="status">Loading profile…</p>
+     } @else if(needsProfile()){
+       <section class="white-card">
+         <h2>Set up your staging profile</h2>
+         <p class="muted">Your Google sign-in worked. This separate test database starts empty,
+           so your production ByteQuest profile and solving records are not copied here.</p>
+         <a class="button primary" routerLink="/angular/profile/edit">Create staging profile</a>
+       </section>
      } @else if(error()){
        <p class="muted" role="alert">{{error()}}</p>
      } @else if(profile()){
@@ -158,6 +165,7 @@ export class ProfileComponent {
   private readonly route=inject(ActivatedRoute);
   private readonly target=toSignal(this.route.paramMap.pipe(map(p=>p.get('target')||'me')),{initialValue:'me'});
   readonly profile=signal<ProfileReply|null>(null);
+  readonly needsProfile=signal(false);
   readonly error=signal('');
   readonly loading=signal(false);
   readonly year=signal(new Date().getUTCFullYear());
@@ -174,11 +182,15 @@ export class ProfileComponent {
   }
   private async load(target:string):Promise<void>{
     const ticket=++this.generation;
-    this.loading.set(true);this.error.set('');this.profile.set(null);
+    this.loading.set(true);this.error.set('');this.profile.set(null);this.needsProfile.set(false);
     try{
       let resolved=target;
       if(target==='me'){
-        const result=await this.api.request<{profile:Profile}>('self');
+        const result=await this.api.request<{profile:Profile|null}>('self');
+        if(!result.profile?.username){
+          if(ticket===this.generation)this.needsProfile.set(true);
+          return;
+        }
         resolved=result.profile.username;
       }
       const result=await this.api.request<ProfileReply>('profile',{target:resolved});
