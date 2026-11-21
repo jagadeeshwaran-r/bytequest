@@ -10,10 +10,10 @@ const config={
   projectId:'bytequest-7b841',
   appId:'1:25442282451:web:7b188546eadc81adb75d26'
 };
-export interface Identity{readonly id:string;readonly name:string;readonly email:string;}
+export interface Identity{readonly id:string;readonly name:string;readonly email:string;readonly avatarUrl:string;}
 const mapIdentity=(user:User|null):Identity|null=>user?{
   id:'firebase:'+config.projectId+':'+user.uid,
-  name:user.displayName||'Java explorer',email:user.email||''
+  name:user.displayName||'Java explorer',email:user.email||'',avatarUrl:user.photoURL||''
 }:null;
 
 @Injectable({providedIn:'root'})
