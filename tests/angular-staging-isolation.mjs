@@ -56,7 +56,8 @@ test('Both verified Java Submit and mutable account APIs use identical validated
      service+' must not contact production from staging');
  }
 
- assert.equal(settings.enabled,false,'Branch preview must remain non-writable before staging backend setup');
- assert.equal(settings.apiUrl,'');
- assert.equal(settings.publishableKey,'');
+ assert.equal(settings.enabled,true,'Staging must be enabled only after the isolated test project is provisioned');
+ assert.equal(settings.apiUrl,'https://ainsxwxvfybhwdennsvh.supabase.co/functions/v1/bytequest-firebase');
+ assert.match(settings.publishableKey,/^sb_publishable_/);
+ assert.equal(validateStagingBackend(settings).hostname,'ainsxwxvfybhwdennsvh.supabase.co');
 });
