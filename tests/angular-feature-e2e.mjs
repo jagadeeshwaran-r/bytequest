@@ -170,6 +170,8 @@ try{
     'Submission history is not rendered as the five-column table from the reference');
   await page.getByRole('button',{name:'Community rankings'}).click();
   await page.getByRole('heading',{name:'Community submissions'}).waitFor();
+  assert.equal(await page.getByRole('button',{name:'Public tests'}).getAttribute('aria-pressed'),'true',
+    'Accepted Java public submissions should open the public-test board, not the empty full-suite board');
   await page.getByRole('button',{name:'Public tests'}).click();
   await page.getByRole('button',{name:'Full-suite verified'}).click();
   assert.equal(await page.getByText('Sign in to view community rankings.').count(),1,
