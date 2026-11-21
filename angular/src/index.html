@@ -15,10 +15,12 @@
       html[data-theme="dark"]{background:#0b0f0d}
       bq-root{display:block;min-height:100dvh}
     </style>
+  </head>
+  <body>
     <script>
       /* Apply theme before first paint and install canonical CSS only ONCE.
-         The script runs after the compiled Angular styles in the document head
-         and before bootstrap, so navigation never tears down or refetches CSS. */
+         The script runs in the body after Angular build CSS was inserted into
+         the head, but before Angular bootstrap. */
       (function(){
         var mode='system';
         try{mode=localStorage.getItem('bytequest.theme')||'system'}catch(e){}
@@ -36,6 +38,6 @@
         }
       })();
     </script>
-  </head>
-  <body><bq-root></bq-root></body>
+    <bq-root></bq-root>
+  </body>
 </html>
