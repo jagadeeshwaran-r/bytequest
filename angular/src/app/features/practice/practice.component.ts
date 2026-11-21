@@ -245,6 +245,14 @@ Output: <b>{{format(example.expected)}}</b></code>
     .native-submission-history-link{align-self:flex-start;border:0;background:transparent;
       color:var(--accent);font-weight:600;font-size:11px;text-decoration:underline;padding:3px 0}
     .native-practice .runbar .native-run-status{min-width:0;overflow-wrap:anywhere}
+    /* When a verdict appears, let the test playground shrink rather than
+       clipping the new result banner or the Submit buttons below it. */
+    :host .native-practice .editor-pane .test-panel{
+      flex:1 1 105px!important;min-height:105px!important;max-height:none!important;overflow:auto
+    }
+    .native-practice .editor-pane .native-editor-area{flex-shrink:1}
+    .native-practice .editor-pane .runbar{flex-shrink:0}
+
     @media(max-width:850px){.native-practice .lab{display:block}.native-learning-content{max-height:420px}}
   `]
 })
