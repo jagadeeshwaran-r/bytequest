@@ -40,7 +40,10 @@ const remote=await fetch('https://identitytoolkit.googleapis.com/v1/projects?key
 });
 const raw=await remote.json();
 assert.equal(remote.status,200,'Firebase public Auth config unavailable: '+JSON.stringify(raw).slice(0,240));
-assert.equal(raw.projectId,projectId,'Frontend Firebase project ID mismatch');
+// The public Identity Toolkit getProjects endpoint returns the numeric Google
+// project number, whereas Firebase SDK projectId is the human-readable slug.
+const projectNumber=value('appId').split(':')[1];
+assert.equal(String(raw.projectId),projectNumber,'Frontend Firebase project number mismatch');
 assert.ok(Array.isArray(raw.authorizedDomains),'Firebase did not return authorized domains');
 assert.ok(raw.authorizedDomains.includes(new URL(origin).hostname),
  'Staging domain is not in Firebase authorizedDomains; add it under Authentication > Settings');
