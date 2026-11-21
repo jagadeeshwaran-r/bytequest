@@ -3,7 +3,13 @@ import {AuthService} from './auth.service';
 
 const URL='https://zwubrziriuppkldrdoos.supabase.co/functions/v1/bytequest-firebase';
 const KEY='sb_publishable_NpldkX3xQMLqThqaLlXJjg_v1q2quIn';
-const allowed=new Set(['self','profile','leaderboard','search','notifications','submission-history']);
+const allowed=new Set([
+  'self','profile','leaderboard','search','notifications',
+  'submission-history','submission-list','submission-read','submission-public-list',
+  'chat-list','chat-thread','followers','following','profile-presence',
+  'friend-presence','friend-analytics','studio-list','problem-authors',
+  'reference-read','roles','creator-search','maintenance-admin-get'
+]);
 @Injectable({providedIn:'root'})
 export class ReadonlyApiService{
   private readonly auth=inject(AuthService);
