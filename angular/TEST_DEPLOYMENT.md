@@ -6,7 +6,7 @@
 - Build: `npm run build --prefix angular`. The root `vercel.json` provides the Vercel build/output settings.
 - GitHub Actions: `.github/workflows/angular-branch-preview.yml` builds and writes `branch-preview/` to **this branch only**. It does not request `pages:write` or deploy to GitHub Pages.
 - The live site at `https://jagadeeshwaran-r.github.io/bytequest/` is unchanged.
-- The staging UI currently uses the real public problems API and a browser-only guest Java Run. Verified submissions, sign-in, social, chat, rank/streak writes are intentionally still on the legacy production UI.
+- The staging UI currently uses the real public problems API and a browser-only guest Java Run. A read-only Firebase login adapter, profile view and leaderboard view are also included, but login requires explicit authorization of the staging domain in Firebase. Verified submissions, editorials, creator Studio, writable social/chat, and rank/streak writes remain in the legacy production UI.
 
 ## Deploy to your connected Vercel account without merging
 
@@ -23,4 +23,4 @@ Never configure production service-role secrets in the Angular static app or Ver
 
 ## Current gap
 
-A full Angular feature-parity migration (all compiler languages, authenticated verified submissions and private judge, progress sync, profile edit, leaderboards, messaging, creator Studio, moderation, maintenance gate, offline/connection failure screens) is not yet complete. Do not market this preview as a full replacement until regression/permission tests pass for every feature.
+A full Angular feature-parity migration (C/C++/Python Run, authenticated verified submissions and private judge, progress sync, profile editing, messaging, creator Studio, moderation, maintenance gate, offline/connection failure screens) is not yet complete. Do not market this preview as a full replacement until regression/permission tests pass for every feature.
