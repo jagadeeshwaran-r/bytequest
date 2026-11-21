@@ -8,10 +8,11 @@
   },
   "scripts": {
     "prepare:catalog": "node ../scripts/export-angular-catalog.mjs",
-    "start": "npm run prepare:catalog && npm run prepare:runtime && ng serve",
-    "build": "npm run prepare:catalog && npm run prepare:runtime && ng build",
+    "start": "npm run prepare:catalog && npm run prepare:runtime && npm run prepare:legacy && ng serve",
+    "build": "npm run prepare:catalog && npm run prepare:runtime && npm run prepare:legacy && ng build",
     "test:catalog": "node --test ../tests/angular-migration.mjs",
-    "prepare:runtime": "node ../scripts/prepare-angular-runtime.mjs"
+    "prepare:runtime": "node ../scripts/prepare-angular-runtime.mjs",
+    "prepare:legacy": "node ../scripts/prepare-angular-legacy.mjs"
   },
   "dependencies": {
     "@angular/common": "^22.2.0",
