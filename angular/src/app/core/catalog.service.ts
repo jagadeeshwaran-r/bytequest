@@ -1,5 +1,6 @@
 import {Injectable,signal} from '@angular/core';
 import {validateStagingBackend,type StagingBackendConfig} from './staging-backend-contract';
+import {canonicalCompanyTags} from './public-company-tags';
 
 export type Difficulty = 'Easy' | 'Medium' | 'Hard';
 export interface Parameter {readonly name:string;readonly type:string;}
@@ -81,7 +82,9 @@ export class CatalogService {
           'import java.util.*;\\n\\nclass Solution {\\n    public '+returns+' '+method+'('+params.map(p=>p.type+' '+p.name).join(', ')+') {\\n        throw new UnsupportedOperationException("Implement your solution");\\n    }\\n}\\n';
         const result={
           id:c['id'],title:c['title'],difficulty:c['difficulty'],topic:c['topic'],
-          companies:Array.isArray(c['companies'])?(c['companies'] as unknown[]).filter((x):x is string=>typeof x==='string').slice(0,8):[],
+          companies:Array.isArray(c['companies'])&&c['companies'].some(x=>typeof x==='string'&&x.trim())
+            ?(c['companies'] as unknown[]).filter((x):x is string=>typeof x==='string'&&!!x.trim()).slice(0,8)
+            :canonicalCompanyTags(String(c['id']||''),method),
           description:c['description'],constraints:c['constraints']||'',
           method,params,returns,normalize:c['normalize']||'',
           revision:Number.isSafeInteger(source.revision)?Number(source.revision):null,
