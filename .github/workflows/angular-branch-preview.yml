@@ -76,6 +76,8 @@ jobs:
           npm install --prefix angular --no-save --no-audit --no-fund playwright-core@1.56.1
           node tests/angular-browser-navigation.mjs
           node tests/angular-feature-e2e.mjs
+      - name: Test Java iframe bridge independently of external CDN
+        run: BQ_MOCK_JAVA=1 node tests/angular-java-runtime-e2e.mjs
       - name: Diagnose Java runtime CDN reachability
         run: |
           curl --silent --show-error --location --head --max-time 15 'https://cjrtnc.leaningtech.com/5.0/loader.js' | head -n 12 || true
