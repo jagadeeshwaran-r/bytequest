@@ -14,6 +14,7 @@ on:
       - 'tests/angular-visual-parity.mjs'
       - 'tests/angular-java-submission.mjs'
       - 'tests/angular-native-shell.mjs'
+      - 'tests/angular-browser-navigation.mjs'
       - 'dist/judge.js'
       - 'dist/runner-core.js'
       - '.github/workflows/angular-branch-preview.yml'
@@ -52,6 +53,10 @@ jobs:
           node --test tests/angular-native-shell.mjs
       - name: Compile Angular preview
         run: npm run build --prefix angular
+      - name: Smoke-test client navigation in Chromium
+        run: |
+          npm install --prefix angular --no-save --no-audit --no-fund playwright-core@1.56.1
+          node tests/angular-browser-navigation.mjs
       - name: Verify public-only preview
         run: |
           test -f angular/dist/angular-preview/index.html
