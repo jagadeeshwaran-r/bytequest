@@ -40,6 +40,11 @@ test('Both verified Java Submit and mutable account APIs use identical validated
  assert.match(submit,/return validateStagingBackend\(config\)\.href/);
  assert.match(account,/import \{validateStagingBackend/);
  assert.match(account,/validateStagingBackend\(await this\.config\)/);
+ const readonly=await readFile('angular/src/app/core/readonly-api.service.ts','utf8');
+ assert.match(readonly,/validateStagingBackend\(config\)/,'All authenticated reads need an isolated Supabase endpoint');
+ assert.match(readonly,/fetch\(endpoint\.href/);
+ assert.doesNotMatch(readonly,/zwubrziriuppkldrdoos|https:\/\/.*supabase\.co\/functions\/v1/,
+  'Authenticated staging reads may never POST to production Supabase');
  assert.equal(settings.enabled,false,'Branch preview must remain non-writable before staging backend setup');
  assert.equal(settings.apiUrl,'');
  assert.equal(settings.publishableKey,'');
