@@ -36,6 +36,7 @@ type ThemeMode='light'|'dark'|'system';
       @if(menuOpen()){
         <div class="native-account-menu" id="nativeAccountMenu">
           <a routerLink="/angular/profile/me" (click)="menuOpen.set(false)">My profile</a>
+          <a routerLink="/angular/find" (click)="menuOpen.set(false)">Find friends</a>
           <a routerLink="/angular/profile/edit" (click)="menuOpen.set(false)">Edit profile</a>
           <a routerLink="/angular/leaderboard" (click)="menuOpen.set(false)">Leaderboard</a>
           <a routerLink="/angular/studio" (click)="menuOpen.set(false)">Problem studio</a>
