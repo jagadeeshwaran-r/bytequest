@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy,Component,inject,signal} from '@angular/core';
+import {ChangeDetectionStrategy,Component,effect,inject,signal} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {AuthService} from '../../core/auth.service';
 import {StagingActionService} from '../../core/staging-action.service';
@@ -192,6 +192,11 @@ export class ChatComponent{
  readonly draft=signal('');
  private sequence=0;
  private retryNonce:string|null=null;
+ constructor(){effect(()=>{
+   const owner=this.auth.user();
+   if(owner&&this.isOpen())void this.refresh();
+   else if(!owner){this.people.set([]);this.messages.set([]);this.updates.set([]);this.unread.set(0);}
+ });}
  toggle():void{if(this.isOpen()){this.close();return;}this.isOpen.set(true);void this.refresh();}
  close():void{this.isOpen.set(false);this.sequence++;}
  setTab(tab:Tab):void{this.tab.set(tab);void this.refresh();}
