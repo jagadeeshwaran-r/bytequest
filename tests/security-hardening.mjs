@@ -6,7 +6,7 @@ import {makeBenchmarkJudge} from "../supabase/functions/bytequest-firebase/bench
 import {submitSolution} from "../supabase/functions/bytequest-firebase/submissions.js";
 import {createHandler} from "../supabase/functions/bytequest-firebase/handler.js";
 import {submissionFeedback} from "../dist/submission-feedback.js";
-import {problems} from "../dist/problems.js";
+import {problems} from "./fixtures/reference-solutions.mjs";
 
 const p=problems[0],cases=p.tests.slice(0,1);
 const judgeUrl="https://judge.example.invalid/api";
