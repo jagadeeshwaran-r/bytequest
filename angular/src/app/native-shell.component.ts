@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core';
+import {AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, inject, NgZone, OnDestroy, signal} from '@angular/core';
 import {RouterLink, RouterLinkActive, RouterOutlet} from '@angular/router';
 import {AuthService} from './core/auth.service';
 import {ChatComponent} from './features/chat/chat.component';
@@ -80,9 +80,29 @@ type ThemeMode='light'|'dark'|'system';
     .native-auth-error{margin:10px 0;border:1px solid #b75757;border-radius:8px;padding:10px;color:#e78686}
   `]
 })
-export class NativeShellComponent{
+export class NativeShellComponent implements AfterViewInit, OnDestroy{
  readonly auth=inject(AuthService);
  readonly menuOpen=signal(false);
+ /** Pointer spotlight from the reference, delegated outside Angular change
+  * detection to avoid re-rendering editor and tables on pointer movement. */
+ private readonly host=inject<ElementRef<HTMLElement>>(ElementRef);
+ private readonly zone=inject(NgZone);
+ private readonly trackSpotlight=(event:PointerEvent):void=>{
+  if(event.pointerType==='touch'||!(event.target instanceof Element))return;
+  const card=event.target.closest<HTMLElement>('.bqp-panel,.person-card,.leader-summary,.studio-access-panel');
+  if(!card)return;
+  const rect=card.getBoundingClientRect();
+  card.style.setProperty('--bq-pointer-x',String(event.clientX-rect.left)+'px');
+  card.style.setProperty('--bq-pointer-y',String(event.clientY-rect.top)+'px');
+ };
+ ngAfterViewInit():void{
+  this.zone.runOutsideAngular(()=>{
+   this.host.nativeElement.addEventListener('pointermove',this.trackSpotlight,{passive:true});
+  });
+ }
+ ngOnDestroy():void{
+  this.host.nativeElement.removeEventListener('pointermove',this.trackSpotlight);
+ }
  setTheme(value:ThemeMode):void{
   try{localStorage.setItem('bytequest.theme',value)}catch{}
   this.applyTheme(value);
