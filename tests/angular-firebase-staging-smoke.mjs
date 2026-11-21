@@ -27,9 +27,9 @@ const get=async pathname=>{
 const home=await (await get('/')).text();
 assert.match(home,/<title>ByteQuest/);
 const stage=await (await get('/staging-backend.json')).json();
-assert.equal(stage.enabled,false,'Live staging must not write to real users without separate database');
-assert.equal(stage.apiUrl,'');
-assert.equal(stage.publishableKey,'');
+assert.equal(stage.enabled,true,'The separate staging database must be enabled for authenticated E2E');
+assert.equal(stage.apiUrl,'https://ainsxwxvfybhwdennsvh.supabase.co/functions/v1/bytequest-firebase');
+assert.match(stage.publishableKey,/^sb_publishable_/,'Staging must use only public API credentials');
 const catalog=await (await get('/catalog.json')).json();
 assert.ok(Array.isArray(catalog)&&catalog.length>=10,'Live Angular site has no usable catalog');
 assert.ok(catalog.every(x=>!Object.hasOwn(x,'hiddenTests')&&!Object.hasOwn(x,'reference')),
@@ -53,7 +53,7 @@ if(providers.length){
  assert.ok(google&&google.enabled!==false,'Google provider disabled in Firebase project configuration');
 }
 console.log('PASS live Firebase: API key identifies correct project and staging hostname is authorized');
-console.log('PASS live website: index, public catalog, no hidden code, isolated writes disabled');
+console.log('PASS live website: index, public catalog, no hidden code, writes pointed exclusively at isolated staging');
 
 let browser;
 try{
