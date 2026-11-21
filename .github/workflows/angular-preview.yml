@@ -1,0 +1,37 @@
+name: Angular migration preview (build only)
+
+on:
+  pull_request:
+    paths:
+      - 'angular/**'
+      - 'scripts/export-angular-catalog.mjs'
+      - 'tests/angular-*.mjs'
+      - '.github/workflows/angular-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install Angular dependencies
+        run: npm install --prefix angular --no-audit --no-fund
+      - name: Verify catalog and build isolation
+        run: node --test tests/angular-migration.mjs
+      - name: Verify matching-brace editor
+        run: node --experimental-strip-types --test tests/angular-editor.mjs
+      - name: Compile Angular preview
+        run: npm run build --prefix angular
+      - name: Upload static preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bytequest-angular-preview
+          path: angular/dist/angular-preview/
+          if-no-files-found: error
+          retention-days: 7

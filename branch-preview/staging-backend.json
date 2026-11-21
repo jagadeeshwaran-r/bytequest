@@ -1,0 +1,6 @@
+{
+  "enabled": false,
+  "apiUrl": "",
+  "publishableKey": "",
+  "note": "Java verified writes require a separately configured staging Supabase endpoint; NEVER point this at production."
+}

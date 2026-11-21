@@ -1,0 +1,164 @@
+/* ByteQuest profile: compact topic summary; scalable even with 100+ topics. */
+.community-page::before{display:none!important}
+.community-page .community-main{padding-top:18px!important}
+.community-page #communityMessage[hidden]{display:none!important}
+.community-page #profileAnalytics .topic-summary{
+ display:block!important;
+ margin:15px 0 24px!important;
+ padding:22px 24px!important;
+ border:1px solid var(--border);
+ background:var(--surface)!important;
+ border-radius:13px;
+}
+.community-page #profileAnalytics .topic-summary>div:first-child{
+ display:flex;justify-content:space-between;align-items:baseline;
+ gap:10px 24px;flex-wrap:wrap;
+ margin-bottom:17px;
+}
+.community-page #profileAnalytics .topic-summary h2{
+ margin:0!important;
+ font:650 18px/1.35 var(--font-sans)!important;
+ letter-spacing:-.025em;
+}
+.community-page #profileAnalytics .topic-summary>div:first-child p{
+ margin:0!important;max-width:440px;
+ font:400 11px/1.5 var(--font-sans)!important;
+}
+.community-page #profileAnalytics #topicBreakdown{
+ max-width:none!important;
+ width:100%;display:block;
+}
+.community-page #profileAnalytics .topic-coverage-stats{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:10px;
+}
+.community-page #profileAnalytics .topic-coverage-metric{
+ min-width:0;
+ background:var(--surface-2);
+ border:1px solid var(--border);
+ border-radius:9px;
+ padding:13px 15px;
+ display:flex;flex-direction:column;gap:6px;
+}
+.community-page #profileAnalytics .topic-coverage-metric strong{
+ font:650 22px/1.2 var(--font-sans);
+ color:var(--text);font-variant-numeric:tabular-nums;
+ letter-spacing:-.035em;
+}
+.community-page #profileAnalytics .topic-coverage-metric small{
+ font:450 12px var(--font-sans);color:var(--muted);
+}
+.community-page #profileAnalytics .topic-coverage-metric span{
+ font:400 10px/1.4 var(--font-sans);color:var(--muted);
+}
+.community-page #profileAnalytics .topic-coverage-bottom{
+ display:flex;align-items:center;justify-content:space-between;
+ flex-wrap:wrap;gap:12px;
+ margin-top:13px;
+}
+.community-page #profileAnalytics .topic-coverage-bottom p{
+ margin:0!important;font:400 10px/1.5 var(--font-sans)!important;
+ color:var(--muted)!important;
+}
+.community-page #profileAnalytics .topic-directory-toggle,
+.community-page #profileAnalytics .topic-directory-pager button{
+ border:1px solid var(--border);
+ border-radius:7px;
+ color:var(--text);
+ background:var(--surface-2);
+ padding:9px 12px;
+ font:500 11px var(--font-sans);
+ cursor:pointer;
+}
+.community-page #profileAnalytics .topic-directory-toggle:hover,
+.community-page #profileAnalytics .topic-directory-pager button:hover:not(:disabled){
+ border-color:var(--accent);color:var(--accent);
+}
+.community-page #profileAnalytics .topic-directory-toggle:focus-visible,
+.community-page #profileAnalytics .topic-directory :is(input,select,button):focus-visible{
+ outline:2px solid var(--accent);outline-offset:2px;
+}
+.community-page #profileAnalytics .topic-directory[hidden]{display:none!important}
+.community-page #profileAnalytics .topic-directory{
+ margin-top:19px;border-top:1px solid var(--border);padding-top:15px;
+}
+.community-page #profileAnalytics .topic-directory-filters{
+ display:flex;align-items:center;gap:8px;
+}
+.community-page #profileAnalytics .topic-directory-filters :is(input,select){
+ min-width:0;
+ background:var(--surface-2);
+ color:var(--text);
+ border:1px solid var(--border);
+ padding:10px 12px;
+ border-radius:8px;
+ font:400 11px var(--font-sans);
+ min-height:38px;
+}
+.community-page #profileAnalytics .topic-directory-filters input{flex:1}
+.community-page #profileAnalytics .topic-directory-filters select{flex:0 0 145px}
+.community-page #profileAnalytics .topic-result-count{
+ margin:11px 0 8px!important;font:450 10px var(--font-sans)!important;
+ color:var(--muted)!important;
+}
+.community-page #profileAnalytics .topic-directory-row{
+ display:grid;grid-template-columns:minmax(110px,1.2fr) minmax(90px,2fr) 65px 90px;
+ align-items:center;gap:12px;
+ min-height:42px;
+ padding:8px 4px;
+ border-bottom:1px solid var(--border);
+ font:450 11px var(--font-sans);
+}
+.community-page #profileAnalytics .topic-directory-row:last-child{border-bottom:0}
+.community-page #profileAnalytics .topic-directory-name{
+ min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+ color:var(--text);font-weight:500;
+}
+.community-page #profileAnalytics .topic-directory-progress{
+ display:block;height:6px;width:100%;background:var(--surface-2);
+ border:1px solid var(--border);border-radius:5px;
+ overflow:hidden;box-sizing:border-box;
+}
+.community-page #profileAnalytics .topic-directory-progress i{
+ display:block;height:100%;
+ background:var(--accent);border-radius:inherit;
+}
+.community-page #profileAnalytics .topic-directory-row strong{
+ justify-self:end;color:var(--text);white-space:nowrap;
+ font:600 11px var(--font-mono);
+ font-variant-numeric:tabular-nums;
+}
+.community-page #profileAnalytics .topic-directory-gain{
+ color:var(--muted);text-align:right;white-space:nowrap;font-size:9px;
+}
+.community-page #profileAnalytics .topic-directory-pager{
+ display:flex;align-items:center;justify-content:flex-end;
+ gap:10px;margin-top:13px;
+}
+.community-page #profileAnalytics .topic-directory-pager span{
+ color:var(--muted);font:400 10px var(--font-mono);
+}
+.community-page #profileAnalytics .topic-directory-pager button:disabled{
+ opacity:.4;cursor:default;
+}
+.community-page #profileAnalytics .topic-directory-empty,
+.community-page #profileAnalytics .topic-unavailable{
+ font:400 11px var(--font-sans)!important;color:var(--muted)!important;
+ padding:11px 0;margin:0!important;
+}
+@media(max-width:650px){
+ .community-page #profileAnalytics .topic-summary{padding:16px!important}
+ .community-page #profileAnalytics .topic-coverage-stats{gap:6px}
+ .community-page #profileAnalytics .topic-coverage-metric{
+  padding:11px 9px;border-radius:7px;
+ }
+ .community-page #profileAnalytics .topic-coverage-metric strong{font-size:17px}
+ .community-page #profileAnalytics .topic-coverage-metric span{font-size:9px}
+ .community-page #profileAnalytics .topic-directory-filters{flex-wrap:wrap}
+ .community-page #profileAnalytics .topic-directory-filters select{flex:1 1 130px}
+ .community-page #profileAnalytics .topic-directory-row{
+  grid-template-columns:minmax(0,1.15fr) minmax(60px,1fr) 53px;
+  gap:8px;
+ }
+ .community-page #profileAnalytics .topic-directory-gain{display:none}
+}

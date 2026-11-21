@@ -1,0 +1,1584 @@
+[
+  {
+    "id": "two-sum",
+    "title": "Two Sum",
+    "difficulty": "Easy",
+    "revision": null,
+    "hiddenCount": 0,
+    "topic": "Hash maps",
+    "description": "Return the zero-based indices of two distinct elements whose sum is target. Exactly one valid pair exists. The same array position cannot be used twice, even when target is twice its value. Equal numbers at different indices are allowed. Return the two indices in either order; returning the values themselves does not satisfy the contract.",
+    "constraints": "2 ≤ nums.length ≤ 10,000. Values and target are between −1,000,000 and 1,000,000.",
+    "starter": "import java.util.*;\n\nclass Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // Think about the pattern, then make it yours.\n        throw new UnsupportedOperationException(\"Implement your solution\");\n    }\n}\n",
+    "method": "twoSum",
+    "params": [
+      {
+        "name": "nums",
+        "type": "int[]"
+      },
+      {
+        "name": "target",
+        "type": "int"
+      }
+    ],
+    "returns": "int[]",
+    "normalize": "sort-int",
+    "tests": [
+      {
+        "args": [
+          [
+            2,
+            7,
+            11,
+            15
+          ],
+          9
+        ],
+        "expected": [
+          0,
+          1
+        ],
+        "label": "A friendly first pair"
+      },
+      {
+        "args": [
+          [
+            3,
+            2,
+            4
+          ],
+          6
+        ],
+        "expected": [
+          1,
+          2
+        ],
+        "label": "Look beyond the first value"
+      },
+      {
+        "args": [
+          [
+            3,
+            3
+          ],
+          6
+        ],
+        "expected": [
+          0,
+          1
+        ],
+        "label": "Equal values, different indices"
+      },
+      {
+        "args": [
+          [
+            -3,
+            4,
+            3,
+            90
+          ],
+          0
+        ],
+        "expected": [
+          0,
+          2
+        ],
+        "label": "Negative numbers"
+      },
+      {
+        "args": [
+          [
+            0,
+            4,
+            3,
+            0
+          ],
+          0
+        ],
+        "expected": [
+          0,
+          3
+        ],
+        "label": "Zero is a value too"
+      }
+    ],
+    "examples": [
+      {
+        "args": [
+          [
+            2,
+            7,
+            11,
+            15
+          ],
+          9
+        ],
+        "expected": [
+          0,
+          1
+        ],
+        "label": "A friendly first pair"
+      },
+      {
+        "args": [
+          [
+            3,
+            2,
+            4
+          ],
+          6
+        ],
+        "expected": [
+          1,
+          2
+        ],
+        "label": "Look beyond the first value"
+      }
+    ]
+  },
+  {
+    "id": "contains-duplicate",
+    "title": "Contains Duplicate",
+    "difficulty": "Easy",
+    "revision": null,
+    "hiddenCount": 0,
+    "topic": "Hash maps",
+    "description": "Determine whether any integer appears at least twice in nums. Compare values, not positions. Return true as soon as a repeated value is found, and false if all values are distinct. Negative numbers and zero are ordinary values. An empty array or an array with one element has no duplicate. You do not need to report which value repeats.",
+    "constraints": "0 ≤ nums.length ≤ 10,000. Negative values are allowed.",
+    "starter": "import java.util.*;\n\nclass Solution {\n    public boolean containsDuplicate(int[] nums) {\n        // Think about the pattern, then make it yours.\n        throw new UnsupportedOperationException(\"Implement your solution\");\n    }\n}\n",
+    "method": "containsDuplicate",
+    "params": [
+      {
+        "name": "nums",
+        "type": "int[]"
+      }
+    ],
+    "returns": "boolean",
+    "normalize": "",
+    "tests": [
+      {
+        "args": [
+          [
+            1,
+            2,
+            3,
+            1
+          ]
+        ],
+        "expected": true,
+        "label": "A repeated visitor"
+      },
+      {
+        "args": [
+          [
+            1,
+            2,
+            3,
+            4
+          ]
+        ],
+        "expected": false,
+        "label": "All unique"
+      },
+      {
+        "args": [
+          []
+        ],
+        "expected": false,
+        "label": "Empty input"
+      },
+      {
+        "args": [
+          [
+            -1,
+            -1
+          ]
+        ],
+        "expected": true,
+        "label": "Negative duplicate"
+      },
+      {
+        "args": [
+          [
+            0
+          ]
+        ],
+        "expected": false,
+        "label": "One value"
+      }
+    ],
+    "examples": [
+      {
+        "args": [
+          [
+            1,
+            2,
+            3,
+            1
+          ]
+        ],
+        "expected": true,
+        "label": "A repeated visitor"
+      },
+      {
+        "args": [
+          [
+            1,
+            2,
+            3,
+            4
+          ]
+        ],
+        "expected": false,
+        "label": "All unique"
+      }
+    ]
+  },
+  {
+    "id": "valid-anagram",
+    "title": "Valid Anagram",
+    "difficulty": "Easy",
+    "revision": null,
+    "hiddenCount": 0,
+    "topic": "Strings",
+    "description": "Decide whether strings s and t contain exactly the same letters with the same frequencies. Rearranging letters is allowed; adding or removing a letter is not. Matching only the set of distinct letters is insufficient because repeated letters matter. The inputs contain lowercase English letters. Two empty strings are anagrams, and different-length strings cannot be anagrams.",
+    "constraints": "Only lowercase English letters. 0 ≤ string length ≤ 10,000.",
+    "starter": "import java.util.*;\n\nclass Solution {\n    public boolean isAnagram(String s, String t) {\n        // Think about the pattern, then make it yours.\n        throw new UnsupportedOperationException(\"Implement your solution\");\n    }\n}\n",
+    "method": "isAnagram",
+    "params": [
+      {
+        "name": "s",
+        "type": "String"
+      },
+      {
+        "name": "t",
+        "type": "String"
+      }
+    ],
+    "returns": "boolean",
+    "normalize": "",
+    "tests": [
+      {
+        "args": [
+          "listen",
+          "silent"
+        ],
+        "expected": true,
+        "label": "Same letters, new order"
+      },
+      {
+        "args": [
+          "rat",
+          "car"
+        ],
+        "expected": false,
+        "label": "Different letters"
+      },
+      {
+        "args": [
+          "aacc",
+          "ccac"
+        ],
+        "expected": false,
+        "label": "Counts matter"
+      },
+      {
+        "args": [
+          "",
+          ""
+        ],
+        "expected": true,
+        "label": "Empty pair"
+      },
+      {
+        "args": [
+          "a",
+          "aa"
+        ],
+        "expected": false,
+        "label": "Length mismatch"
+      }
+    ],
+    "examples": [
+      {
+        "args": [
+          "listen",
+          "silent"
+        ],
+        "expected": true,
+        "label": "Same letters, new order"
+      },
+      {
+        "args": [
+          "rat",
+          "car"
+        ],
+        "expected": false,
+        "label": "Different letters"
+      }
+    ]
+  },
+  {
+    "id": "binary-search",
+    "title": "Binary Search",
+    "difficulty": "Easy",
+    "revision": null,
+    "hiddenCount": 0,
+    "topic": "Binary search",
+    "description": "Find target in the strictly increasing sorted array nums. Return its zero-based index if present, or -1 if it is absent. The ordering is part of the input contract, so no sorting is required. Handle an empty search interval without accessing an invalid index. Your algorithm should halve the search interval at each step and run in logarithmic time.",
+    "constraints": "0 ≤ nums.length ≤ 10,000. The array is sorted in increasing order.",
+    "starter": "import java.util.*;\n\nclass Solution {\n    public int search(int[] nums, int target) {\n        // Think about the pattern, then make it yours.\n        throw new UnsupportedOperationException(\"Implement your solution\");\n    }\n}\n",
+    "method": "search",
+    "params": [
+      {
+        "name": "nums",
+        "type": "int[]"
+      },
+      {
+        "name": "target",
+        "type": "int"
+      }
+    ],
+    "returns": "int",
+    "normalize": "",
+    "tests": [
+      {
+        "args": [
+          [
+            -1,
+            0,
+            3,
+            5,
+            9,
+            12
+          ],
+          9
+        ],
+        "expected": 4,
+        "label": "In the right half"
+      },
+      {
+        "args": [
+          [
+            -1,
+            0,
+            3,
+            5,
+            9,
+            12
+          ],
+          2
+        ],
+        "expected": -1,
+        "label": "Missing target"
+      },
+      {
+        "args": [
+          [
+            5
+          ],
+          5
+        ],
+        "expected": 0,
+        "label": "A single match"
+      },
+      {
+        "args": [
+          [],
+          3
+        ],
+        "expected": -1,
+        "label": "Empty search"
+      },
+      {
+        "args": [
+          [
+            1,
+            3,
+            5
+          ],
+          1
+        ],
+        "expected": 0,
+        "label": "Left boundary"
+      }
+    ],
+    "examples": [
+      {
+        "args": [
+          [
+            -1,
+            0,
+            3,
+            5,
+            9,
+            12
+          ],
+          9
+        ],
+        "expected": 4,
+        "label": "In the right half"
+      },
+      {
+        "args": [
+          [
+            -1,
+            0,
+            3,
+            5,
+            9,
+            12
+          ],
+          2
+        ],
+        "expected": -1,
+        "label": "Missing target"
+      }
+    ]
+  },
+  {
+    "id": "lower-bound",
+    "title": "Lower Bound",
+    "difficulty": "Easy",
+    "revision": null,
+    "hiddenCount": 0,
+    "topic": "Binary search",
+    "description": "Find the first index i for which nums[i] is greater than or equal to target. The array is sorted in nondecreasing order and can contain duplicates. If every element is smaller than target, return nums.length. This is an insertion boundary rather than an exact-match search: if target occurs several times, return the index of its first occurrence. For an empty array the answer is 0.",
+    "constraints": "0 ≤ nums.length ≤ 10,000. Values are sorted in nondecreasing order.",
+    "starter": "import java.util.*;\n\nclass Solution {\n    public int lowerBound(int[] nums, int target) {\n        // Think about the pattern, then make it yours.\n        throw new UnsupportedOperationException(\"Implement your solution\");\n    }\n}\n",
+    "method": "lowerBound",
+    "params": [
+      {
+        "name": "nums",
+        "type": "int[]"
+      },
+      {
+        "name": "target",
+        "type": "int"
+      }
+    ],
+    "returns": "int",
+    "normalize": "",
+    "tests": [
+      {
+        "args": [
+          [
+            1,
+            3,
+            3,
+            5
+          ],
+          3
+        ],
+        "expected": 1,
+        "label": "First duplicate"
+      },
+      {
+        "args": [
+          [
+            1,
+            3,
+            5
+          ],
+          4
+        ],
+        "expected": 2,
+        "label": "Between values"
+      },
+      {
+        "args": [
+          [
+            1,
+            3
+          ],
+          9
+        ],
+        "expected": 2,
+        "label": "After the end"
+      },
+      {
+        "args": [
+          [],
+          2
+        ],
+        "expected": 0,
+        "label": "Empty array"
+      },
+      {
+        "args": [
+          [
+            1,
+            2
+          ],
+          0
+        ],
+        "expected": 0,
+        "label": "Before the start"
+      }
+    ],
+    "examples": [
+      {
+        "args": [
+          [
+            1,
+            3,
+            3,
+            5
+          ],
+          3
+        ],
+        "expected": 1,
+        "label": "First duplicate"
+      },
+      {
+        "args": [
+          [
+            1,
+            3,
+            5
+          ],
+          4
+        ],
+        "expected": 2,
+        "label": "Between values"
+      }
+    ]
+  },
+  {
+    "id": "sorted-squares",
+    "title": "Squares of a Sorted Array",
+    "difficulty": "Easy",
+    "revision": null,
+    "hiddenCount": 0,
+    "topic": "Two pointers",
+    "description": "Square every value in the sorted input array and return those squares in nondecreasing order. Negative values can have larger squares than positive values, so preserving the original order is not sufficient. Include repeated values and zeros with their original multiplicities. Aim for a linear-time approach by comparing values at the two ends and filling the output from largest to smallest.",
+    "constraints": "0 ≤ nums.length ≤ 10,000. −10,000 ≤ nums[i] ≤ 10,000.",
+    "starter": "import java.util.*;\n\nclass Solution {\n    public int[] sortedSquares(int[] nums) {\n        // Think about the pattern, then make it yours.\n        throw new UnsupportedOperationException(\"Implement your solution\");\n    }\n}\n",
+    "method": "sortedSquares",
+    "params": [
+      {
+        "name": "nums",
+        "type": "int[]"
+      }
+    ],
+    "returns": "int[]",
+    "normalize": "",
+    "tests": [
+      {
+        "args": [
+          [
+            -4,
+            -1,
+            0,
+            3,
+            10
+          ]
+        ],
+        "expected": [
+          0,
+          1,
+          9,
+          16,
+          100
+        ],
+        "label": "Mixed signs"
+      },
+      {
+        "args": [
+          [
+            -7,
+            -3,
+            2,
+            3,
+            11
+          ]
+        ],
+        "expected": [
+          4,
+          9,
+          9,
+          49,
+          121
+        ],
+        "label": "Compare both ends"
+      },
+      {
+        "args": [
+          []
+        ],
+        "expected": [],
+        "label": "Empty array"
+      },
+      {
+        "args": [
+          [
+            -5
+          ]
+        ],
+        "expected": [
+          25
+        ],
+        "label": "One negative"
+      },
+      {
+        "args": [
+          [
+            0,
+            0
+          ]
+        ],
+        "expected": [
+          0,
+          0
+        ],
+        "label": "Repeated zero"
+      }
+    ],
+    "examples": [
+      {
+        "args": [
+          [
+            -4,
+            -1,
+            0,
+            3,
+            10
+          ]
+        ],
+        "expected": [
+          0,
+          1,
+          9,
+          16,
+          100
+        ],
+        "label": "Mixed signs"
+      },
+      {
+        "args": [
+          [
+            -7,
+            -3,
+            2,
+            3,
+            11
+          ]
+        ],
+        "expected": [
+          4,
+          9,
+          9,
+          49,
+          121
+        ],
+        "label": "Compare both ends"
+      }
+    ]
+  },
+  {
+    "id": "valid-palindrome",
+    "title": "Valid Palindrome",
+    "difficulty": "Easy",
+    "revision": null,
+    "hiddenCount": 0,
+    "topic": "Two pointers",
+    "description": "Check whether s reads the same forward and backward after ignoring non-alphanumeric characters and letter case. For this exercise, alphanumeric means ASCII letters a–z or A–Z and digits 0–9. Spaces and punctuation do not participate in comparisons. A string with no remaining characters is a palindrome. You can compare from both ends without constructing a cleaned copy.",
+    "constraints": "0 ≤ s.length ≤ 10,000. Input contains ASCII characters only. An empty normalized string is a palindrome.",
+    "starter": "import java.util.*;\n\nclass Solution {\n    public boolean isPalindrome(String s) {\n        // Think about the pattern, then make it yours.\n        throw new UnsupportedOperationException(\"Implement your solution\");\n    }\n}\n",
+    "method": "isPalindrome",
+    "params": [
+      {
+        "name": "s",
+        "type": "String"
+      }
+    ],
+    "returns": "boolean",
+    "normalize": "",
+    "tests": [
+      {
+        "args": [
+          "A man, a plan, a canal: Panama"
+        ],
+        "expected": true,
+        "label": "Ignore punctuation"
+      },
+      {
+        "args": [
+          "race a car"
+        ],
+        "expected": false,
+        "label": "Different middle"
+      },
+      {
+        "args": [
+          " "
+        ],
+        "expected": true,
+        "label": "No letters"
+      },
+      {
+        "args": [
+          "0P"
+        ],
+        "expected": false,
+        "label": "Digits count"
+      },
+      {
+        "args": [
+          "abba"
+        ],
+        "expected": true,
+        "label": "A mirror"
+      }
+    ],
+    "examples": [
+      {
+        "args": [
+          "A man, a plan, a canal: Panama"
+        ],
+        "expected": true,
+        "label": "Ignore punctuation"
+      },
+      {
+        "args": [
+          "race a car"
+        ],
+        "expected": false,
+        "label": "Different middle"
+      }
+    ]
+  },
+  {
+    "id": "move-zeroes",
+    "title": "Move Zeroes",
+    "difficulty": "Easy",
+    "revision": null,
+    "hiddenCount": 0,
+    "topic": "Two pointers",
+    "description": "Move every zero in nums to the end while preserving the relative order of all nonzero values. Perform the rearrangement in the original array. Unlike a void-returning version of this exercise, this platform also requires you to return the modified array so the judge can compare it. Preserve the length and every value; do not simply remove zero entries. Empty and all-zero arrays should remain valid.",
+    "constraints": "0 ≤ nums.length ≤ 10,000. Preserve the relative order of nonzero elements.",
+    "starter": "import java.util.*;\n\nclass Solution {\n    public int[] moveZeroes(int[] nums) {\n        // Think about the pattern, then make it yours.\n        throw new UnsupportedOperationException(\"Implement your solution\");\n    }\n}\n",
+    "method": "moveZeroes",
+    "params": [
+      {
+        "name": "nums",
+        "type": "int[]"
+      }
+    ],
+    "returns": "int[]",
+    "normalize": "",
+    "tests": [
+      {
+        "args": [
+          [
+            0,
+            1,
+            0,
+            3,
+            12
+          ]
+        ],
+        "expected": [
+          1,
+          3,
+          12,
+          0,
+          0
+        ],
+        "label": "Lift the nonzero values"
+      },
+      {
+        "args": [
+          [
+            0
+          ]
+        ],
+        "expected": [
+          0
+        ],
+        "label": "Only zero"
+      },
+      {
+        "args": [
+          []
+        ],
+        "expected": [],
+        "label": "Empty array"
+      },
+      {
+        "args": [
+          [
+            1,
+            2
+          ]
+        ],
+        "expected": [
+          1,
+          2
+        ],
+        "label": "Already in place"
+      },
+      {
+        "args": [
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "expected": [
+          1,
+          0,
+          0
+        ],
+        "label": "Leading zeroes"
+      }
+    ],
+    "examples": [
+      {
+        "args": [
+          [
+            0,
+            1,
+            0,
+            3,
+            12
+          ]
+        ],
+        "expected": [
+          1,
+          3,
+          12,
+          0,
+          0
+        ],
+        "label": "Lift the nonzero values"
+      },
+      {
+        "args": [
+          [
+            0
+          ]
+        ],
+        "expected": [
+          0
+        ],
+        "label": "Only zero"
+      }
+    ]
+  },
+  {
+    "id": "max-profit",
+    "title": "Best Time to Buy and Sell Stock",
+    "difficulty": "Easy",
+    "revision": null,
+    "hiddenCount": 0,
+    "topic": "Arrays",
+    "description": "Choose at most one day to buy and one later day to sell a stock. prices[i] is the price on day i. Return the greatest possible profit. You must buy before selling and cannot make multiple transactions. If no profitable transaction exists, return 0 rather than a loss. Track the lowest earlier buying price while scanning the possible selling days.",
+    "constraints": "0 ≤ prices.length ≤ 10,000. 0 ≤ prices[i] ≤ 100,000.",
+    "starter": "import java.util.*;\n\nclass Solution {\n    public int maxProfit(int[] prices) {\n        // Think about the pattern, then make it yours.\n        throw new UnsupportedOperationException(\"Implement your solution\");\n    }\n}\n",
+    "method": "maxProfit",
+    "params": [
+      {
+        "name": "prices",
+        "type": "int[]"
+      }
+    ],
+    "returns": "int",
+    "normalize": "",
+    "tests": [
+      {
+        "args": [
+          [
+            7,
+            1,
+            5,
+            3,
+            6,
+            4
+          ]
+        ],
+        "expected": 5,
+        "label": "Buy low, sell later"
+      },
+      {
+        "args": [
+          [
+            7,
+            6,
+            4,
+            3,
+            1
+          ]
+        ],
+        "expected": 0,
+        "label": "No good trade"
+      },
+      {
+        "args": [
+          []
+        ],
+        "expected": 0,
+        "label": "No days"
+      },
+      {
+        "args": [
+          [
+            2
+          ]
+        ],
+        "expected": 0,
+        "label": "One day"
+      },
+      {
+        "args": [
+          [
+            2,
+            4,
+            1
+          ]
+        ],
+        "expected": 2,
+        "label": "Respect the order"
+      }
+    ],
+    "examples": [
+      {
+        "args": [
+          [
+            7,
+            1,
+            5,
+            3,
+            6,
+            4
+          ]
+        ],
+        "expected": 5,
+        "label": "Buy low, sell later"
+      },
+      {
+        "args": [
+          [
+            7,
+            6,
+            4,
+            3,
+            1
+          ]
+        ],
+        "expected": 0,
+        "label": "No good trade"
+      }
+    ]
+  },
+  {
+    "id": "window-sum",
+    "title": "Maximum Sum of a Fixed-Size Subarray",
+    "difficulty": "Easy",
+    "revision": null,
+    "hiddenCount": 0,
+    "topic": "Sliding window",
+    "description": "Among all contiguous subarrays containing exactly k elements, return the largest sum. A subarray uses consecutive positions and cannot skip elements. The window length must stay exactly k, even if some numbers are negative. Initialize from a real window rather than zero so that arrays whose window sums are all negative are handled correctly. The input guarantees a valid window length.",
+    "constraints": "1 ≤ k ≤ nums.length ≤ 10,000. −10,000 ≤ nums[i] ≤ 10,000.",
+    "starter": "import java.util.*;\n\nclass Solution {\n    public int maxWindowSum(int[] nums, int k) {\n        // Think about the pattern, then make it yours.\n        throw new UnsupportedOperationException(\"Implement your solution\");\n    }\n}\n",
+    "method": "maxWindowSum",
+    "params": [
+      {
+        "name": "nums",
+        "type": "int[]"
+      },
+      {
+        "name": "k",
+        "type": "int"
+      }
+    ],
+    "returns": "int",
+    "normalize": "",
+    "tests": [
+      {
+        "args": [
+          [
+            1,
+            12,
+            -5,
+            -6,
+            50,
+            3
+          ],
+          4
+        ],
+        "expected": 51,
+        "label": "A moving window"
+      },
+      {
+        "args": [
+          [
+            -3,
+            -1,
+            -2
+          ],
+          2
+        ],
+        "expected": -3,
+        "label": "All negatives"
+      },
+      {
+        "args": [
+          [
+            5
+          ],
+          1
+        ],
+        "expected": 5,
+        "label": "One value"
+      },
+      {
+        "args": [
+          [
+            1,
+            2,
+            3
+          ],
+          3
+        ],
+        "expected": 6,
+        "label": "The whole array"
+      },
+      {
+        "args": [
+          [
+            4,
+            1,
+            2,
+            8
+          ],
+          1
+        ],
+        "expected": 8,
+        "label": "Width one"
+      }
+    ],
+    "examples": [
+      {
+        "args": [
+          [
+            1,
+            12,
+            -5,
+            -6,
+            50,
+            3
+          ],
+          4
+        ],
+        "expected": 51,
+        "label": "A moving window"
+      },
+      {
+        "args": [
+          [
+            -3,
+            -1,
+            -2
+          ],
+          2
+        ],
+        "expected": -3,
+        "label": "All negatives"
+      }
+    ]
+  },
+  {
+    "id": "valid-parentheses",
+    "title": "Valid Parentheses",
+    "difficulty": "Easy",
+    "revision": null,
+    "hiddenCount": 0,
+    "topic": "Stacks",
+    "description": "Check whether every opening bracket has a matching closing bracket of the same type and the pairs are correctly nested. The string contains only parentheses (), square brackets [], and braces {}. A closing bracket must match the most recent unmatched opening bracket. Equal counts alone are insufficient; for example, crossed pairs are invalid. The empty string is valid.",
+    "constraints": "Only the characters ( ) [ ] { } appear. 0 ≤ s.length ≤ 10,000.",
+    "starter": "import java.util.*;\n\nclass Solution {\n    public boolean isValid(String s) {\n        // Think about the pattern, then make it yours.\n        throw new UnsupportedOperationException(\"Implement your solution\");\n    }\n}\n",
+    "method": "isValid",
+    "params": [
+      {
+        "name": "s",
+        "type": "String"
+      }
+    ],
+    "returns": "boolean",
+    "normalize": "",
+    "tests": [
+      {
+        "args": [
+          "()[]{}"
+        ],
+        "expected": true,
+        "label": "Three bracket types"
+      },
+      {
+        "args": [
+          "([)]"
+        ],
+        "expected": false,
+        "label": "Crossed nesting"
+      },
+      {
+        "args": [
+          "{[]}"
+        ],
+        "expected": true,
+        "label": "Nested buddies"
+      },
+      {
+        "args": [
+          ""
+        ],
+        "expected": true,
+        "label": "Empty is balanced"
+      },
+      {
+        "args": [
+          "]"
+        ],
+        "expected": false,
+        "label": "Closing too early"
+      },
+      {
+        "args": [
+          "(("
+        ],
+        "expected": false,
+        "label": "Unclosed brackets"
+      }
+    ],
+    "examples": [
+      {
+        "args": [
+          "()[]{}"
+        ],
+        "expected": true,
+        "label": "Three bracket types"
+      },
+      {
+        "args": [
+          "([)]"
+        ],
+        "expected": false,
+        "label": "Crossed nesting"
+      }
+    ]
+  },
+  {
+    "id": "fibonacci",
+    "title": "Fibonacci Number",
+    "difficulty": "Easy",
+    "revision": null,
+    "hiddenCount": 0,
+    "topic": "Dynamic programming",
+    "description": "Compute the nth Fibonacci number using F(0)=0, F(1)=1, and F(n)=F(n−1)+F(n−2) for n≥2. Return the exact integer result, not the sequence. The bounded input keeps the result within the supported int range. Consider an iterative approach that stores only the previous two terms instead of repeatedly recomputing smaller subproblems.",
+    "constraints": "0 ≤ n ≤ 40. The result fits in a Java int.",
+    "starter": "import java.util.*;\n\nclass Solution {\n    public int fib(int n) {\n        // Think about the pattern, then make it yours.\n        throw new UnsupportedOperationException(\"Implement your solution\");\n    }\n}\n",
+    "method": "fib",
+    "params": [
+      {
+        "name": "n",
+        "type": "int"
+      }
+    ],
+    "returns": "int",
+    "normalize": "",
+    "tests": [
+      {
+        "args": [
+          0
+        ],
+        "expected": 0,
+        "label": "Base zero"
+      },
+      {
+        "args": [
+          1
+        ],
+        "expected": 1,
+        "label": "Base one"
+      },
+      {
+        "args": [
+          6
+        ],
+        "expected": 8,
+        "label": "A short sequence"
+      },
+      {
+        "args": [
+          10
+        ],
+        "expected": 55,
+        "label": "Keep growing"
+      },
+      {
+        "args": [
+          40
+        ],
+        "expected": 102334155,
+        "label": "Avoid repeated recursion"
+      }
+    ],
+    "examples": [
+      {
+        "args": [
+          0
+        ],
+        "expected": 0,
+        "label": "Base zero"
+      },
+      {
+        "args": [
+          1
+        ],
+        "expected": 1,
+        "label": "Base one"
+      }
+    ]
+  },
+  {
+    "id": "gcd",
+    "title": "Greatest Common Divisor",
+    "difficulty": "Easy",
+    "revision": null,
+    "hiddenCount": 0,
+    "topic": "Math",
+    "description": "Return the greatest common divisor of nonnegative integers a and b: the largest positive integer that divides both without a remainder. Use the convention gcd(0,0)=0. If only one argument is zero, the answer is the other argument. Euclid’s algorithm repeatedly replaces the pair with the smaller value and the division remainder until the remainder is zero.",
+    "constraints": "0 ≤ a, b ≤ 1,000,000,000.",
+    "starter": "import java.util.*;\n\nclass Solution {\n    public int gcd(int a, int b) {\n        // Think about the pattern, then make it yours.\n        throw new UnsupportedOperationException(\"Implement your solution\");\n    }\n}\n",
+    "method": "gcd",
+    "params": [
+      {
+        "name": "a",
+        "type": "int"
+      },
+      {
+        "name": "b",
+        "type": "int"
+      }
+    ],
+    "returns": "int",
+    "normalize": "",
+    "tests": [
+      {
+        "args": [
+          48,
+          18
+        ],
+        "expected": 6,
+        "label": "A common divisor"
+      },
+      {
+        "args": [
+          17,
+          13
+        ],
+        "expected": 1,
+        "label": "Coprime values"
+      },
+      {
+        "args": [
+          0,
+          9
+        ],
+        "expected": 9,
+        "label": "One zero"
+      },
+      {
+        "args": [
+          0,
+          0
+        ],
+        "expected": 0,
+        "label": "Two zeroes"
+      },
+      {
+        "args": [
+          1000000000,
+          250000000
+        ],
+        "expected": 250000000,
+        "label": "Large values"
+      }
+    ],
+    "examples": [
+      {
+        "args": [
+          48,
+          18
+        ],
+        "expected": 6,
+        "label": "A common divisor"
+      },
+      {
+        "args": [
+          17,
+          13
+        ],
+        "expected": 1,
+        "label": "Coprime values"
+      }
+    ]
+  },
+  {
+    "id": "count-primes",
+    "title": "Count Primes",
+    "difficulty": "Medium",
+    "revision": null,
+    "hiddenCount": 0,
+    "topic": "Math",
+    "description": "Count how many prime numbers are strictly less than n. A prime is an integer greater than 1 with exactly two positive divisors: 1 and itself. Neither 0 nor 1 is prime. Do not count n itself even if it is prime. For n≤2 the answer is 0. A sieve can mark multiples in batches instead of testing every candidate independently.",
+    "constraints": "0 ≤ n ≤ 100,000.",
+    "starter": "import java.util.*;\n\nclass Solution {\n    public int countPrimes(int n) {\n        // Think about the pattern, then make it yours.\n        throw new UnsupportedOperationException(\"Implement your solution\");\n    }\n}\n",
+    "method": "countPrimes",
+    "params": [
+      {
+        "name": "n",
+        "type": "int"
+      }
+    ],
+    "returns": "int",
+    "normalize": "",
+    "tests": [
+      {
+        "args": [
+          10
+        ],
+        "expected": 4,
+        "label": "2, 3, 5, 7"
+      },
+      {
+        "args": [
+          0
+        ],
+        "expected": 0,
+        "label": "Below zero"
+      },
+      {
+        "args": [
+          2
+        ],
+        "expected": 0,
+        "label": "Strictly smaller"
+      },
+      {
+        "args": [
+          3
+        ],
+        "expected": 1,
+        "label": "Only two"
+      },
+      {
+        "args": [
+          100
+        ],
+        "expected": 25,
+        "label": "A bigger sieve"
+      }
+    ],
+    "examples": [
+      {
+        "args": [
+          10
+        ],
+        "expected": 4,
+        "label": "2, 3, 5, 7"
+      },
+      {
+        "args": [
+          0
+        ],
+        "expected": 0,
+        "label": "Below zero"
+      }
+    ]
+  },
+  {
+    "id": "climb-stairs",
+    "title": "Climbing Stairs",
+    "difficulty": "Easy",
+    "revision": null,
+    "hiddenCount": 0,
+    "topic": "Dynamic programming",
+    "description": "Count the distinct ordered sequences of steps that reach exactly stair n when each move climbs either one or two stairs. Order matters: one then two differs from two then one. For n=0, count the empty sequence as one valid way. The bounded input keeps the answer within the supported int range. Relate the ways to reach a stair to the previous two stairs.",
+    "constraints": "0 ≤ n ≤ 40.",
+    "starter": "import java.util.*;\n\nclass Solution {\n    public int climbStairs(int n) {\n        // Think about the pattern, then make it yours.\n        throw new UnsupportedOperationException(\"Implement your solution\");\n    }\n}\n",
+    "method": "climbStairs",
+    "params": [
+      {
+        "name": "n",
+        "type": "int"
+      }
+    ],
+    "returns": "int",
+    "normalize": "",
+    "tests": [
+      {
+        "args": [
+          0
+        ],
+        "expected": 1,
+        "label": "Stay put"
+      },
+      {
+        "args": [
+          1
+        ],
+        "expected": 1,
+        "label": "One step"
+      },
+      {
+        "args": [
+          2
+        ],
+        "expected": 2,
+        "label": "Two routes"
+      },
+      {
+        "args": [
+          5
+        ],
+        "expected": 8,
+        "label": "Build from smaller stairs"
+      },
+      {
+        "args": [
+          10
+        ],
+        "expected": 89,
+        "label": "A longer climb"
+      }
+    ],
+    "examples": [
+      {
+        "args": [
+          0
+        ],
+        "expected": 1,
+        "label": "Stay put"
+      },
+      {
+        "args": [
+          1
+        ],
+        "expected": 1,
+        "label": "One step"
+      }
+    ]
+  },
+  {
+    "id": "max-subarray",
+    "title": "Maximum Subarray",
+    "difficulty": "Medium",
+    "revision": null,
+    "hiddenCount": 0,
+    "topic": "Arrays",
+    "description": "Find the largest sum among all nonempty contiguous subarrays of nums. A subarray is a consecutive range, not an arbitrary selection of elements. Return only the sum. You must select at least one value, so an all-negative input returns its largest individual element rather than zero. At each position, decide whether to extend the previous range or start a new one.",
+    "constraints": "1 ≤ nums.length ≤ 10,000. −10,000 ≤ nums[i] ≤ 10,000.",
+    "starter": "import java.util.*;\n\nclass Solution {\n    public int maxSubArray(int[] nums) {\n        // Think about the pattern, then make it yours.\n        throw new UnsupportedOperationException(\"Implement your solution\");\n    }\n}\n",
+    "method": "maxSubArray",
+    "params": [
+      {
+        "name": "nums",
+        "type": "int[]"
+      }
+    ],
+    "returns": "int",
+    "normalize": "",
+    "tests": [
+      {
+        "args": [
+          [
+            -2,
+            1,
+            -3,
+            4,
+            -1,
+            2,
+            1,
+            -5,
+            4
+          ]
+        ],
+        "expected": 6,
+        "label": "The stretch [4, −1, 2, 1]"
+      },
+      {
+        "args": [
+          [
+            -3,
+            -1,
+            -2
+          ]
+        ],
+        "expected": -1,
+        "label": "All negative"
+      },
+      {
+        "args": [
+          [
+            5
+          ]
+        ],
+        "expected": 5,
+        "label": "One value"
+      },
+      {
+        "args": [
+          [
+            1,
+            2,
+            3
+          ]
+        ],
+        "expected": 6,
+        "label": "Keep everything"
+      },
+      {
+        "args": [
+          [
+            0,
+            0
+          ]
+        ],
+        "expected": 0,
+        "label": "All zero"
+      }
+    ],
+    "examples": [
+      {
+        "args": [
+          [
+            -2,
+            1,
+            -3,
+            4,
+            -1,
+            2,
+            1,
+            -5,
+            4
+          ]
+        ],
+        "expected": 6,
+        "label": "The stretch [4, −1, 2, 1]"
+      },
+      {
+        "args": [
+          [
+            -3,
+            -1,
+            -2
+          ]
+        ],
+        "expected": -1,
+        "label": "All negative"
+      }
+    ]
+  }
+]

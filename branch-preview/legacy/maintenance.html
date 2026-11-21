@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080c0c">
+<meta name="robots" content="noindex">
+<title>Site maintenance · ByteQuest</title>
+<script src="./theme-mode.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./maintenance-admin.css?v=1">
+<script type="module" src="./maintenance-admin.js?v=1"></script>
+</head>
+<body>
+<header class="ma-header">
+ <a href="./index.html" class="ma-logo">Byte<strong>Quest</strong></a>
+ <div class="ma-header-actions"><span>ADMIN OPERATIONS</span><a href="./status.html?issue=maintenance">Preview maintenance screen ↗</a></div>
+</header>
+<main class="ma-shell">
+ <p class="ma-eyebrow">PLATFORM CONTROL / 01</p>
+ <h1>Site <span>maintenance.</span></h1>
+ <p class="ma-description">Schedule a maintenance window, inform learners, and pause backend writes while keeping account data and existing drafts intact.</p>
+ <section id="maAuth" class="ma-panel">
+  <h2>Verify administrator</h2>
+  <p id="maAuthText">Checking your Google session and library administrator access…</p>
+  <button id="maSignIn" type="button" hidden>Sign in with Google</button>
+  <button id="maRetry" type="button" hidden>Retry access check</button>
+ </section>
+ <section id="maControl" hidden>
+  <div class="ma-overview">
+   <div><span class="ma-tag" id="maState">DISABLED</span><h2 id="maStateTitle">Schedule saved but not active</h2><p id="maStateDetail">The backend continues operating normally until an administrator explicitly enables maintenance.</p></div>
+   <div class="ma-overview-meta"><span>VERIFIED LIBRARY ADMIN</span><strong id="maOwner">—</strong><button type="button" id="maSignOut">Sign out</button></div>
+  </div>
+  <form id="maForm" class="ma-panel">
+   <div class="ma-section-head"><div><p class="ma-eyebrow">WINDOW / 02</p><h2>Maintenance settings</h2></div><span class="ma-hint">Times are always IST (UTC+05:30)</span></div>
+   <div class="ma-form-grid">
+    <label class="ma-field"><span>Mode</span><select id="maMode"><option value="scheduled">Scheduled — start automatically</option><option value="on">Immediate — start when armed</option></select></label>
+    <label class="ma-field"><span>Start time (IST)</span><input type="datetime-local" id="maStart" required></label>
+    <label class="ma-field"><span>Expected end time (IST)</span><input type="datetime-local" id="maEnd" required></label>
+   </div>
+   <label class="ma-field ma-message"><span>Message shown to learners</span><textarea id="maMessage" maxlength="280" rows="3" required></textarea><small><span id="maChars">0</span> / 280 characters</small></label>
+   <div class="ma-notice"><strong>Safety first.</strong> Saving settings does not turn maintenance on. The selected window is armed only after an explicit, verified administrator confirmation. Server writes are blocked only during the active window.</div>
+   <div class="ma-buttons">
+    <button type="submit" class="ma-outline" id="maSave">Save settings only</button>
+    <button type="button" class="ma-primary" id="maArm">Enable schedule</button>
+    <button type="button" class="ma-danger" id="maDisable">Disable maintenance</button>
+   </div>
+  </form>
+  <section class="ma-guide"><div><h2>What happens to users?</h2><p>During maintenance, visitors see the ByteQuest connection page with your message and expected return time. Signed-in library administrators can access the control panel. Existing browser drafts are not erased; cloud saves and submissions are not accepted during the active window.</p></div><a href="./status.html?issue=maintenance">Preview visitor view ↗</a></section>
+ </section>
+ <p id="maFeedback" class="ma-feedback" role="status" aria-live="polite"></p>
+</main>
+</body>
+</html>

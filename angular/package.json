@@ -1,0 +1,32 @@
+{
+  "name": "bytequest-angular-preview",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
+  },
+  "scripts": {
+    "prepare:catalog": "node ../scripts/export-angular-catalog.mjs",
+    "start": "npm run prepare:catalog && npm run prepare:runtime && npm run prepare:legacy && ng serve",
+    "build": "npm run prepare:catalog && npm run prepare:runtime && npm run prepare:legacy && ng build",
+    "test:catalog": "node --test ../tests/angular-migration.mjs",
+    "prepare:runtime": "node ../scripts/prepare-angular-runtime.mjs",
+    "prepare:legacy": "node ../scripts/prepare-angular-legacy.mjs"
+  },
+  "dependencies": {
+    "@angular/common": "^22.2.0",
+    "@angular/compiler": "^22.2.0",
+    "@angular/core": "^22.2.0",
+    "@angular/platform-browser": "^22.2.0",
+    "@angular/router": "^22.2.0",
+    "rxjs": "^7.8.2",
+    "firebase": "13.3.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^22.2.0",
+    "@angular/cli": "^22.2.0",
+    "@angular/compiler-cli": "^22.2.0",
+    "typescript": "~6.0.0"
+  }
+}

@@ -1,0 +1,8 @@
+/* Minimal, non-blocking maintenance notice; preserves the code editor. */
+.bq-maintenance-alert[hidden]{display:none!important}
+.bq-maintenance-alert{position:sticky;top:0;z-index:1050;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px 20px;padding:12px clamp(18px,5vw,80px);background:#242016;color:#f6ebd0;border-bottom:1px solid #b7935199;box-shadow:0 5px 24px #0005;font:12px/1.6 Inter,system-ui,sans-serif}
+.bq-maintenance-alert[data-active="true"]{background:#322119;border-color:#dd8b65}
+.bq-maintenance-alert-text{margin:0;max-width:940px;flex:1 1 320px}
+.bq-maintenance-alert a{color:inherit;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.bq-maintenance-alert button{font:inherit;cursor:pointer;background:transparent;border:1px solid #e1be855e;border-radius:8px;padding:5px 10px;color:inherit}
+@media(max-width:600px){.bq-maintenance-alert{padding:12px 16px;gap:10px}.bq-maintenance-alert a,.bq-maintenance-alert button{font-size:11px}}

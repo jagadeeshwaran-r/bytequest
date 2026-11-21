@@ -1,0 +1,36 @@
+// Loaded only after the ByteQuest maintenance preflight succeeds.
+await new Promise(resolve=>{
+  const loader=document.createElement('script');
+  loader.src='https://cjrtnc.leaningtech.com/5.0/loader.js';
+  loader.onload=resolve;loader.onerror=resolve;
+  document.head.append(loader);
+});
+
+const channel = "bytequest-java";
+const send = data => parent.postMessage({channel,...data}, location.origin);
+let Runner;
+let running = false;
+try {
+  if (typeof cheerpjInit !== "function") throw new Error("The Java runtime CDN is unavailable. Check your connection and try again.");
+  send({type:"status",message:"Loading the browser JDK. The first launch can take a minute."});
+  await cheerpjInit({version:17,status:"none",javaProperties:["java.io.tmpdir=/files"]});
+  const jar = "/app" + new URL("java-runner.jar", location.href).pathname;
+  const lib = await cheerpjRunLibrary(jar);
+  Runner = await lib.quest.JavaRunner;
+  // Warm javac too: loading the JVM alone leaves the compiler's first-use download on Run.
+  send({type:"status",message:"Preparing the Java compiler in the background…"});
+  const warm=JSON.parse(await Runner.run("class Solution { public int warmup() { return 0; } }",'check("Compiler warm-up", () -> new Solution().warmup(), 0);'));
+  if(warm.status!=="ok"||!warm.cases.every(c=>c.passed))throw new Error("Compiler warm-up failed.");
+  send({id:"boot",type:"ready",result:true});
+} catch (error) {
+  send({id:"boot",type:"error",message:"Java could not start: " + String(error.message || error)});
+}
+addEventListener("message", async event => {
+  if (event.source !== parent || event.origin !== location.origin || event.data?.channel !== channel || event.data.type !== "run") return;
+  const {id,source,tests} = event.data;
+  if (!Runner || running) { send({id,type:"error",message:"The Java runtime is busy or not ready."}); return; }
+  running = true;
+  try { send({id,type:"result",result:JSON.parse(await Runner.run(source,tests))}); }
+  catch (error) { send({id,type:"error",message:String(error.message || error)}); }
+  finally { running = false; }
+});

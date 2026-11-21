@@ -1,0 +1,7 @@
+/* Keep comparison operators literal, with matching editor overlay/caret spacing. */
+.code-scroll pre,.code-scroll pre code,.code-scroll textarea,.line-numbers,
+.reference-code,.reference-code *,.submission-source,.submission-source *,
+.result-output,.studio-form textarea {
+ font-variant-ligatures:none!important;
+ font-feature-settings:"liga" 0,"calt" 0!important;
+}

@@ -1,0 +1,24 @@
+import type {Routes} from '@angular/router';
+
+// The default test route opens the native Angular UI. The classic routes retain the canonical UI unchanged. This
+// compatibility bridge preserves features while native Angular migration is
+// incrementally completed. It is not a claim of full Angular code migration.
+// /angular is the new native workspace: persistent original-style ByteQuest shell, no iframe.
+const screen=()=>import('./legacy-screen.component').then(m=>m.LegacyScreenComponent);
+export const routes:Routes=[
+  {path:'',pathMatch:'full',redirectTo:'angular'},
+  {path:'classic/problems',loadComponent:screen,data:{screen:'index.html'},title:'ByteQuest · Original problems'},
+  {path:'classic/community',loadComponent:screen,data:{screen:'community.html'},title:'ByteQuest · Community'},
+  {path:'classic/leaderboard',loadComponent:screen,data:{screen:'leaderboard.html'},title:'ByteQuest · Leaderboard'},
+  {path:'classic/studio',loadComponent:screen,data:{screen:'studio.html'},title:'ByteQuest · Studio'},
+  {path:'angular',loadComponent:()=>import('./native-shell.component').then(m=>m.NativeShellComponent),children:[
+    {path:'',loadComponent:()=>import('./features/problems/problems.component').then(m=>m.ProblemsComponent),title:'Angular problems · ByteQuest'},
+    {path:'problem/:id',loadComponent:()=>import('./features/practice/practice.component').then(m=>m.PracticeComponent),title:'Angular practice · ByteQuest'},
+    {path:'profile/edit',loadComponent:()=>import('./features/profile/edit-profile.component').then(m=>m.EditProfileComponent),title:'Edit ByteQuest profile'},
+    {path:'find',loadComponent:()=>import('./features/search/search.component').then(m=>m.SearchComponent),title:'Find ByteQuest friends'},
+    {path:'studio',loadComponent:()=>import('./features/studio/studio.component').then(m=>m.StudioComponent),title:'ByteQuest Java Studio'},
+    {path:'profile/:target',loadComponent:()=>import('./features/profile/profile.component').then(m=>m.ProfileComponent),title:'Angular profile · ByteQuest'},
+    {path:'leaderboard',loadComponent:()=>import('./features/leaderboard/leaderboard.component').then(m=>m.LeaderboardComponent),title:'Angular leaderboard · ByteQuest'}
+  ]},
+  {path:'**',redirectTo:'angular'}
+];
