@@ -13,6 +13,7 @@ export interface Problem {
   readonly title: string;
   readonly difficulty: Difficulty;
   readonly topic: string;
+  readonly companies?: readonly string[];
   readonly description: string;
   readonly constraints: string;
   readonly starter: string;
@@ -80,6 +81,7 @@ export class CatalogService {
           'import java.util.*;\\n\\nclass Solution {\\n    public '+returns+' '+method+'('+params.map(p=>p.type+' '+p.name).join(', ')+') {\\n        throw new UnsupportedOperationException("Implement your solution");\\n    }\\n}\\n';
         const result={
           id:c['id'],title:c['title'],difficulty:c['difficulty'],topic:c['topic'],
+          companies:Array.isArray(c['companies'])?(c['companies'] as unknown[]).filter((x):x is string=>typeof x==='string').slice(0,8):[],
           description:c['description'],constraints:c['constraints']||'',
           method,params,returns,normalize:c['normalize']||'',
           revision:Number.isSafeInteger(source.revision)?Number(source.revision):null,
