@@ -48,3 +48,13 @@ For verification run `npm run test:catalog`, `node --experimental-strip-types --
 ## Safety principles
 
 The preview persists drafts under `bytequest.angular-preview.draft.java.` only and uses a distinct theme setting. It cannot read or overwrite the live site's stored progress. Backend/data schema is not changed. Existing CI/CD deploys only `dist/` from `main`.
+
+## Same-UI compatibility preview
+
+The Angular staging root now displays the **unchanged ByteQuest visual UI**, including the original Problems, Leaderboard, Profile, Studio, chat and editor surfaces, in a same-origin Angular routed compatibility frame. The original CSS, SVGs and scripts are copied at build time from the canonical `dist/` directory, without changing production. The migrated TypeScript components are still accessible under `/#/angular` for incremental feature testing.
+
+The compatibility frame is **not a complete Angular implementation**. Internally, the original JavaScript currently drives those pages. It exists to verify pixel-level feature parity during the rewrite. The staging copy removes C/C++/Python choices, forces Java as the only selectable language, and removes the native runner files.
+
+Firebase staging-domain authorization and Supabase Edge Function CORS restrictions remain separate blockers to authenticated flows. The staging maintenance gate cannot query the production server and does not claim authoritative maintenance status. Do not use staging to change live user records.
+
+Staging asset preparation: `npm run prepare:legacy` (included in `npm run build` and `npm start`). `angular/public/legacy/` is generated and ignored by git.
