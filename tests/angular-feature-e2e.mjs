@@ -143,7 +143,7 @@ try{
    if(request.method()!=='GET'&&/supabase\\.co/.test(request.url()))
      unsafeWrites.push(request.url());
  });
- await disconnected.route(/supabase\\.co/,route=>route.abort('internetdisconnected'));
+ await disconnected.route(/supabase\.co/,route=>route.abort('internetdisconnected'));
  await disconnected.goto(origin+'/#/angular',{waitUntil:'domcontentloaded',timeout:30000});
  await disconnected.locator('.native-catalog .problem-table tbody tr a.problem-title')
    .first().waitFor({timeout:25000});
