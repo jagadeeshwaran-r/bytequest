@@ -9,6 +9,7 @@ on:
       - 'scripts/export-angular-catalog.mjs'
       - 'scripts/prepare-angular-runtime.mjs'
       - 'scripts/prepare-angular-legacy.mjs'
+      - 'scripts/pack-staging-artifacts.mjs'
       - 'dist/**'
       - 'tests/angular-visual-parity.mjs'
       - 'dist/judge.js'
@@ -68,9 +69,11 @@ jobs:
           mkdir -p branch-preview
           find branch-preview -mindepth 1 -maxdepth 1 -exec rm -rf {} +
           cp -a angular/dist/angular-preview/. branch-preview/
+          node scripts/pack-staging-artifacts.mjs
+          test -s branch-manifest/index.json
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-          git add -f branch-preview
+          git add -f branch-preview branch-manifest
           if git diff --cached --quiet; then
             echo 'Preview unchanged.'
           else
