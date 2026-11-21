@@ -21,7 +21,7 @@ const server=createServer(async(req,res)=>{
    // CheerpJ expects byte-range support when loading JARs. The CI HTTP
    // fixture must behave like the real Vercel static server, not return a
    // full 200 body for every Range request.
-   const range=req.headers.range?.match(/^bytes=(\\d+)-(\\d*)$/);
+   const range=req.headers.range?.match(/^bytes=([0-9]+)-([0-9]*)$/);
    if(range){
      const start=Number(range[1]),end=range[2]?Number(range[2]):data.length-1;
      if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start>end||start>=data.length){
