@@ -17,6 +17,8 @@ export function publicCatalog(source=problems) {
       id:p.id, title:String(p.title), difficulty:String(p.difficulty),
       topic:String(p.topic), description:String(p.description), constraints:String(p.constraints||''),
       starter:String(p.starter||''), method:String(p.method||''),
+      params:Array.isArray(p.params)?p.params.map(param=>({name:String(param.name),type:String(param.type)})):[],
+      returns:String(p.returns||'void'),normalize:String(p.normalize||''),
       examples:(Array.isArray(p.tests)?p.tests:[]).slice(0,2).map(t=>({
         args:t.args,expected:t.expected,label:String(t.label||'')
       }))
