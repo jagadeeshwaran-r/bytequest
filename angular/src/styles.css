@@ -57,6 +57,25 @@ bq-editor{display:flex;flex-direction:column;min-height:430px;flex:1;min-width:0
 .syntax-layer,.source-input{position:absolute;inset:0;margin:0;padding:20px 18px 25px 4px;border:0;box-sizing:border-box;width:100%;height:100%;overflow:auto;white-space:pre;tab-size:4;letter-spacing:0;font:12px/24px 'JetBrains Mono',monospace}
 .syntax-layer{color:var(--text);pointer-events:none;scrollbar-width:none}
 .source-input{z-index:2;resize:none;background:transparent;color:transparent;-webkit-text-fill-color:transparent;caret-color:var(--accent);outline:none}
+/* The legacy theme CSS includes [data-theme=dark] textarea with an opaque
+   background. That rule is more specific than .source-input and sits on top
+   of Angular's syntax-highlighted pre, making valid Java code look blank.
+   The transparent textarea is *only* an input overlay; the pre is the text.
+   Scope the override to the Angular editor, not all form textareas. */
+bq-root .native-editor-area .code-stage > textarea.source-input{
+  background:transparent!important;
+  background-color:transparent!important;
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
+  caret-color:var(--accent);
+}
+bq-root .native-editor-area .code-stage > pre.syntax-layer{
+  z-index:1;
+  display:block;
+  visibility:visible;
+  opacity:1;
+  color:var(--text);
+}
 .source-input::selection{background:#57d68d55}
 .syntax-layer .matching-brace{background:color-mix(in srgb,var(--accent) 24%,transparent);color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);border-radius:2px}
 .token-keyword{color:#a78bfa}.token-string{color:#dbb072}.token-comment{color:var(--muted);font-style:italic}.token-type{color:#60b6d5}.token-number{color:#e9aa75}
