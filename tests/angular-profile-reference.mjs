@@ -13,7 +13,7 @@ test('Profile keeps source-of-truth fields and reference visual sections',async(
   for(const str of ['Problems solved','Total points','Daily streak','New day in','Streak badges',
     'Solving calendar','Recently solved','Skills practiced','Languages used',
     'Solving rhythm','Compare with friends','Topic coverage','Browse ','Show all ',
-    'Profile avatar','year()','record.stats.serverDay','record.insights?.skills',
+    'Profile avatar','year()','result.stats.serverDay','record.insights?.skills',
     'record.insights?.languages','friend-analytics','following','profileCalendar']){
     assert.ok(s.includes(str),'missing '+str);
   }
