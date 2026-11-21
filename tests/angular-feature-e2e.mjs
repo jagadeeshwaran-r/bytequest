@@ -182,7 +182,7 @@ try{
     'Switching submission tabs destroyed the Java draft');
   assert.equal(await page.getByRole('button',{name:'Submit solution'}).isDisabled(),true,
     'Verified submission must remain unavailable without isolated staging');
-  await page.getByRole('link',{name:'← Problems'}).click();
+  await nav.getByRole('link',{name:'Problems'}).click();
   assert.equal(await page.locator('header.minimal-header').count(),1);
   assert.equal(await header.evaluate(el=>el.isConnected),true,'Navigating destroyed persistent header');
   // Query state survives route transitions by design.
