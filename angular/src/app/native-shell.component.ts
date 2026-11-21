@@ -1,15 +1,9 @@
-import {ChangeDetectionStrategy, Component, inject, OnDestroy, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core';
 import {RouterLink, RouterLinkActive, RouterOutlet} from '@angular/router';
 import {AuthService} from './core/auth.service';
 
-/** Persistent native Angular shell. Reuses canonical ByteQuest styles, not new styling. */
-const styleSheets=[
-  'style.css','theme.css','minimal.css','green.css','presence.css','gloss.css',
-  'reference-style.css','community-next.css','catalog-refined.css','catalog-recovery.css',
-  'problem-alignment.css','premium-ui-polish.css','workspace-premium.css',
-  'workbench.css','editor-cleanup.css','profile-social.css','profile-compact.css',
-  'profile-unboxed.css','calendar-year.css','leaderboard-refined.css'
-];
+/** Persistent native Angular shell. Styles are installed once in index.html,
+ * before bootstrap, not injected and torn down with routed components. */
 type ThemeMode='light'|'dark'|'system';
 @Component({
   selector:'bq-native-shell',
@@ -71,38 +65,17 @@ type ThemeMode='light'|'dark'|'system';
     .native-auth-error{margin:10px 0;border:1px solid #b75757;border-radius:8px;padding:10px;color:#e78686}
   `]
 })
-export class NativeShellComponent implements OnDestroy{
+export class NativeShellComponent{
  readonly auth=inject(AuthService);
  readonly menuOpen=signal(false);
- private readonly styles:HTMLLinkElement[]=[];
- private readonly oldTheme=document.documentElement.dataset['theme'];
- constructor(){
-  // Public styles are generated from ByteQuest's canonical dist/ at build time.
-  for(const name of styleSheets){
-    const link=document.createElement('link');link.rel='stylesheet';
-    link.href=new URL('legacy/'+name,document.baseURI).href;
-    link.dataset['bqNative']='true';
-    document.head.append(link);this.styles.push(link);
-  }
-  this.restoreTheme();
- }
  setTheme(value:ThemeMode):void{
   try{localStorage.setItem('bytequest.theme',value)}catch{}
   this.applyTheme(value);
   this.menuOpen.set(false);
  }
- private restoreTheme():void{
-  let value:ThemeMode='system';
-  try{const stored=localStorage.getItem('bytequest.theme');if(stored==='light'||stored==='dark')value=stored;}catch{}
-  this.applyTheme(value);
- }
  private applyTheme(value:ThemeMode):void{
   const theme=value==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):value;
   document.documentElement.dataset['theme']=theme;
   document.documentElement.style.colorScheme=theme;
- }
- ngOnDestroy():void{
-  for(const link of this.styles)link.remove();
-  if(this.oldTheme!==undefined)document.documentElement.dataset['theme']=this.oldTheme;
  }
 }
