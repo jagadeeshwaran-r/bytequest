@@ -1001,3 +1001,121 @@ html[data-theme="dark"] bq-root .native-leaderboard .leader-table tbody tr:has(.
     display:none!important;
   }
 }
+
+
+/* Production-reference compact header and catalog at split-screen widths.
+   Left: Angular staging. Right: existing ByteQuest desktop screenshot at ~790px.
+   Scoped to native dark Angular pages; light theme and legacy remain unchanged. */
+@media (min-width:651px) and (max-width:1024px){
+  html[data-theme="dark"] bq-root:has(:is(.native-catalog,.native-practice,.native-leaderboard)) .minimal-header{
+    display:grid!important;
+    grid-template-columns:minmax(115px,auto) minmax(0,1fr) auto!important;
+    grid-template-rows:52px 46px!important;
+    width:calc(100% - 24px)!important;max-width:none!important;
+    height:110px!important;min-height:110px!important;
+    margin:12px auto 0!important;padding:4px 12px 8px!important;
+    gap:0 12px!important;align-items:center!important;overflow:visible!important;
+    border-radius:23px!important;top:12px!important;
+  }
+  html[data-theme="dark"] bq-root:has(:is(.native-catalog,.native-practice,.native-leaderboard)) .minimal-brand{
+    grid-column:1!important;grid-row:1!important;justify-self:start!important;
+    font-size:18px!important;white-space:nowrap;
+  }
+  html[data-theme="dark"] bq-root:has(:is(.native-catalog,.native-practice,.native-leaderboard)) .minimal-nav{
+    grid-column:2!important;grid-row:1!important;width:100%!important;
+    min-width:0!important;margin:0!important;display:flex!important;
+    justify-content:center!important;align-items:center!important;
+    gap:16px!important;flex:none!important;
+  }
+  html[data-theme="dark"] bq-root:has(:is(.native-catalog,.native-practice,.native-leaderboard)) .minimal-nav a{
+    font-size:11px!important;white-space:nowrap;
+  }
+  html[data-theme="dark"] bq-root:has(:is(.native-catalog,.native-practice,.native-leaderboard)) .minimal-nav a:nth-child(3){
+    display:none!important;
+  }
+  html[data-theme="dark"] bq-root:has(:is(.native-catalog,.native-practice,.native-leaderboard)) .profile-dropdown{
+    grid-column:3!important;grid-row:1!important;justify-self:end!important;
+    position:relative!important;padding:3px!important;background:#15151c!important;
+    border-color:#292b33!important;border-radius:50%!important;
+    min-width:36px!important;height:38px!important;
+  }
+  html[data-theme="dark"] bq-root:has(:is(.native-catalog,.native-practice,.native-leaderboard)) .native-profile-toggle{
+    font-size:0!important;gap:0!important;padding:0!important;
+    height:30px!important;min-height:30px!important;
+  }
+  html[data-theme="dark"] bq-root:has(:is(.native-catalog,.native-practice,.native-leaderboard)) .native-profile-toggle>span:nth-child(2){
+    display:none!important;
+  }
+  html[data-theme="dark"] bq-root:has(:is(.native-catalog,.native-practice,.native-leaderboard)) .native-avatar{
+    width:30px!important;height:30px!important;flex:none!important;
+  }
+  html[data-theme="dark"] bq-root:has(:is(.native-catalog,.native-practice,.native-leaderboard)) .native-compact-find{
+    display:flex!important;align-items:center!important;
+    grid-column:1/span 2!important;grid-row:2!important;
+    width:100%!important;height:39px!important;min-width:0!important;
+    padding:0 14px!important;border:1px solid #2b2c36!important;
+    background:#111218!important;border-radius:21px!important;
+    font:400 11px/1.4 Inter,system-ui,sans-serif!important;
+    color:#9597a3!important;text-decoration:none!important;
+  }
+  html[data-theme="dark"] bq-root:has(:is(.native-catalog,.native-practice,.native-leaderboard)) .native-compact-find:hover,
+  html[data-theme="dark"] bq-root:has(:is(.native-catalog,.native-practice,.native-leaderboard)) .native-compact-find:focus-visible{
+    color:#f3f3f4!important;border-color:#24c39a!important;
+  }
+  html[data-theme="dark"] bq-root:has(:is(.native-catalog,.native-practice,.native-leaderboard)) .native-shell-tools{
+    grid-column:3!important;grid-row:2!important;
+    justify-self:center!important;align-self:center!important;
+    margin:0!important;padding:0!important;flex:none!important;
+  }
+  html[data-theme="dark"] bq-root:has(:is(.native-catalog,.native-practice,.native-leaderboard)) .native-chat-wrapper .message-button{
+    width:39px!important;height:39px!important;
+    border-radius:50%!important;
+  }
+  html[data-theme="dark"] bq-root:has(.native-catalog) .native-bytequest-content{
+    max-width:none!important;padding:35px 16px 72px!important;
+  }
+  html[data-theme="dark"] bq-root #mapView.native-catalog .section-heading{
+    margin-bottom:16px!important;
+  }
+  html[data-theme="dark"] bq-root #mapView.native-catalog .filters{
+    flex-wrap:wrap!important;gap:11px!important;
+    padding-bottom:15px!important;
+  }
+  html[data-theme="dark"] bq-root #mapView.native-catalog .catalog-search-wrap{
+    flex:1 0 100%!important;width:100%!important;max-width:none!important;
+  }
+  html[data-theme="dark"] bq-root #mapView.native-catalog .search-box{
+    height:47px!important;
+  }
+  html[data-theme="dark"] bq-root #mapView.native-catalog .filters select{
+    flex:1 1 0!important;width:0!important;min-width:0!important;
+    max-width:none!important;height:46px!important;
+  }
+  html[data-theme="dark"] bq-root #mapView.native-catalog .catalog-meta{
+    margin:0 0 18px!important;min-height:75px!important;
+    align-content:start!important;justify-content:flex-start!important;
+    column-gap:13px!important;row-gap:8px!important;
+    padding:12px 2px 6px!important;
+  }
+  html[data-theme="dark"] bq-root #mapView.native-catalog .catalog-meta-hint{
+    display:block!important;flex:1 0 100%!important;
+    margin:0!important;text-align:right!important;color:#92949f!important;
+  }
+  html[data-theme="dark"] bq-root #mapView.native-catalog .problem-table{
+    min-width:710px!important;table-layout:fixed!important;
+  }
+  html[data-theme="dark"] bq-root #mapView.native-catalog .problem-table th:nth-child(1){width:54px!important}
+  html[data-theme="dark"] bq-root #mapView.native-catalog .problem-table th:nth-child(3){width:170px!important}
+  html[data-theme="dark"] bq-root #mapView.native-catalog .problem-table th:nth-child(4){width:120px!important}
+  html[data-theme="dark"] bq-root #mapView.native-catalog .problem-table th:nth-child(5){width:100px!important}
+  html[data-theme="dark"] bq-root #mapView.native-catalog .problem-table th{
+    padding:15px 13px!important;
+  }
+  html[data-theme="dark"] bq-root #mapView.native-catalog .problem-table td{
+    height:64px!important;min-height:64px!important;
+    padding:12px 13px!important;
+  }
+  html[data-theme="dark"] bq-root #mapView.native-catalog .native-company-list{
+    gap:5px!important;
+  }
+}
