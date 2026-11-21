@@ -1,4 +1,4 @@
-// Chromium screenshot-reference geometry: no Firebase credentials or database writes.
+// Chromium editorial-theme and geometry regression: no Firebase credentials or database writes.
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFile,access} from 'node:fs/promises';
@@ -57,7 +57,7 @@ try{
   assert.equal(state.tableCount,4);
   assert.ok(state.navRadius>=30,'Glass header not rounded: '+JSON.stringify(state));
   assert.ok(state.radius>=10,'Workspace shell not rounded: '+JSON.stringify(state));
-  assert.equal(state.panelBackground,'rgb(15, 15, 20)');
+  assert.equal(state.panelBackground,'rgb(14, 14, 18)');
   assert.ok(state.editor.height>150,'Editor collapsed: '+JSON.stringify(state));
   assert.ok(state.test.height>=135,'Test panel collapsed: '+JSON.stringify(state));
   assert.ok(state.bar.height>=50,'Submit controls clipped: '+JSON.stringify(state));
@@ -97,8 +97,8 @@ try{
      page:getComputedStyle(document.querySelector('bq-root')).backgroundColor,
      surface:getComputedStyle(document.querySelector('.native-leaderboard .leader-signed-out')).backgroundColor
    }));
-   assert.notEqual(light.page,'rgb(9, 10, 14)','Dark page palette must not leak into light mode');
-   assert.notEqual(light.surface,'rgb(16, 16, 21)','Dark leaderboard panel must not leak into light mode');
+   assert.notEqual(light.page,'rgb(7, 7, 9)','Dark page palette must not leak into light mode');
+   assert.notEqual(light.surface,'rgb(14, 14, 18)','Dark leaderboard panel must not leak into light mode');
   }
   assert.deepEqual(errors,[],'Angular page exceptions');
   await page.close();
