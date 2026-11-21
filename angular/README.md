@@ -5,11 +5,11 @@ This is **phase 1**, not a production replacement. The existing ByteQuest applic
 ## What works in this preview
 
 - Angular **22** standalone components, strict TypeScript, lazy-loaded routes, Signals, hash-based routing, dark/light themes.
-- A read-only problem list derived at build time from the existing `dist/problems.js` catalog (no duplicated problem source of truth).
+- A live public problem list read from the current Supabase published-problem API with an offline starter snapshot from the existing `dist/problems.js` catalog (no duplicated problem source of truth).
 - A Java 17 editing surface with syntax colors, IntelliJ-style paired `{}` highlighting, auto-inserted brackets, four-space tab insertion, and device-local per-problem drafts.
-- A direct link from each problem to the **live ByteQuest** workspace for compilation, Run, Submit, Firebase sign-in, and profile credit.
+- A direct link from each problem to the **live ByteQuest** workspace for verified Submit, Firebase sign-in, and profile credit.
 
-The preview **does not** execute code, sign users in, write to Supabase, record solves, or claim verified results. Those features remain in the working legacy app until they can be migrated and validated in isolation.
+The preview **does run Java public test cases as guest practice** via the existing CheerpJ/JDK 17 bridge, without hidden tests or submission credit. It does not sign users in, write to Supabase, record solves, unlock editorial/rankings, or claim verified accepted submissions. Those features remain in the working legacy app until validated in isolation.
 
 ## Development
 
