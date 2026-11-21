@@ -1,4 +1,4 @@
-// Browser visual regression: screenshot-matched DARK catalog, unchanged LIGHT catalog.
+// Browser visual regression: editorial DARK catalog, unchanged LIGHT catalog.
 // Runs only against compiled Angular preview; no account tokens or production writes.
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
@@ -64,7 +64,7 @@ try{
     assert.equal(metrics.title,'Problem library');
     assert.equal(metrics.cells,5,'Missing screenshot reference table columns');
     assert.ok(metrics.navRadius>=30,'Dark glass header not rounded: '+JSON.stringify(metrics));
-    assert.equal(metrics.gridBackground,'rgb(16, 16, 20)','Dark table container palette mismatch');
+    assert.equal(metrics.gridBackground,'rgb(14, 14, 18)','Editorial dark table palette mismatch');
     assert.match(metrics.mainBackground,/linear-gradient/,'No subtle grid background');
     assert.equal(metrics.points,'inline','Points must remain visible next to difficulty');
     assert.ok(metrics.logos>0,'Bundled canonical catalog logos did not load');
@@ -83,7 +83,7 @@ try{
         navRadius:parseFloat(getComputedStyle(document.querySelector('.minimal-header')).borderTopLeftRadius)
       }));
       assert.equal(light.theme,'light');
-      assert.notEqual(light.table,'rgb(16, 16, 20)','Light mode must not inherit screenshot dark table');
+      assert.notEqual(light.table,'rgb(14, 14, 18)','Light mode must not inherit screenshot dark table');
     }
     await page.close();
   }
