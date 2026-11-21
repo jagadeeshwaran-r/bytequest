@@ -112,6 +112,46 @@ window.cheerpjRunLibrary=async()=>({quest:{JavaRunner:{run:async(source,tests)=>
  assert.ok(cases.length>=2,'Java runner did not return all public test cases');
  assert.ok(cases.every(c=>c.includes('Passed')),'Java returned a failing test: '+cases.join(' | '));
  assert.equal(await page.getByRole('button',{name:'Submit solution'}).isDisabled(),true);
+ // Regression: the exact Java failure reported on Duplicate Detective.
+ // In the browser, Set / HashSet must compile without explicit java.util imports,
+ // just as the verified Submit service does. Only the real JVM proves this.
+ if(!mocked){
+   const collections=`class Solution {
+ public boolean containsDuplicate(int[] nums) {
+  Set<Integer> bucket = new HashSet<>();
+  for (int n : nums) {
+   if (!bucket.add(n)) return true;
+  }
+  return false;
+ }
+}`;
+   await page.goto(origin+'/#/angular/problem/contains-duplicate',
+     {waitUntil:'domcontentloaded',timeout:30000});
+   await editor.waitFor({timeout:30000});
+   await editor.fill(collections);
+   const runCollections=page.getByRole('button',{name:'Run',exact:true});
+   await runCollections.click();
+   await page.getByRole('button',{name:'Running…'}).waitFor({timeout:10000});
+   await runCollections.waitFor({timeout:90000});
+   await page.waitForFunction(()=>{
+     const output=document.querySelector('.native-practice .result-output');
+     return output?.querySelector('.result-summary, .run-error');
+   },undefined,{timeout:90000});
+   const collectionOutput=await page.locator('.native-practice .result-output').innerText();
+   const collectionCases=await page.locator('.native-practice .native-result-line').allInnerTexts();
+   assert.match(collectionOutput,/Java public Run finished/,
+     'Missing Set/HashSet imports caused Java compilation failure: '+collectionOutput);
+   assert.equal(collectionCases.length,5,'Expected all five Contains Duplicate public cases');
+   assert.ok(collectionCases.every(c=>c.includes('Passed')),
+     'Duplicate Detective failed with auto-imported Java collections: '+collectionOutput);
+   assert.doesNotMatch(collectionOutput,/compile_error|cannot find symbol/,
+     'java.util imports were not available to the JVM');
+   assert.equal(await editor.inputValue(),collections,'The editor source must retain user-written code without injected imports');
+   console.log('PASS real Java: Set/HashSet compile without manual imports, 5/5 Contains Duplicate cases, untouched editor draft');
+   await page.goto(origin+'/#/angular/problem/two-sum',
+     {waitUntil:'domcontentloaded',timeout:30000});
+   await editor.waitFor({timeout:30000});
+ }
  // Real JVM negative-path regressions. The CDN-mocked contract intentionally
  // returns success for every case, so run these only against real Java 17.
  if(!mocked){
