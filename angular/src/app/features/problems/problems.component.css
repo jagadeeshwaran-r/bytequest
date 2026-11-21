@@ -1,0 +1,37 @@
+
+:host{display:block;min-height:60vh}
+.native-catalog{display:block!important}
+.native-catalog .catalog-search-wrap{display:flex;align-items:center;gap:8px}
+.native-catalog .problem-title{text-decoration:none;cursor:pointer}
+.native-catalog .problem-title:hover{color:var(--accent)}
+.native-catalog .catalog-refresh:disabled{opacity:.5;cursor:progress}
+.native-catalog .quest-grid{min-height:130px;overflow-x:auto}
+.native-catalog .native-company-list{display:flex;align-items:center;min-height:30px;gap:4px;flex-wrap:nowrap}
+.native-catalog .company-logo{display:inline-flex;align-items:center;justify-content:center;position:relative;flex:none;
+ width:30px;height:30px;margin:0;border:1px solid var(--border);border-radius:7px;background:#fff}
+.native-catalog .company-logo img{display:block;width:19px;height:19px;object-fit:contain}
+.native-catalog .company-unknown{font-size:13px;font-weight:700;color:#292c36}
+.native-catalog .catalog-number{font:11px/1.5 'JetBrains Mono',monospace;color:var(--muted);white-space:nowrap}
+.native-catalog .problem-status{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;font-size:11px}
+.native-catalog .catalog-solved{color:var(--accent);font-weight:650}
+.native-catalog .catalog-solved span{font-size:17px;font-weight:700}
+.native-catalog .catalog-unsolved,.native-catalog .catalog-unknown{color:var(--muted)}
+.native-catalog .problem-points{font:10px 'JetBrains Mono',monospace;color:var(--muted);white-space:nowrap;margin-left:8px}
+.native-catalog .catalog-user-progress{font-size:11px;color:var(--muted)}
+.native-catalog .catalog-progress-error{font-size:11px;color:var(--muted);padding:8px 0}
+.native-catalog .company-overflow{position:relative;display:inline-flex;align-items:center}
+.native-catalog .company-overflow-count{padding:4px 6px;font-size:11px;border:1px solid var(--border);
+ border-radius:6px;color:var(--muted);background:var(--surface-2)}
+.native-catalog .company-overflow-panel{position:absolute;top:calc(100% + 4px);left:-5px;z-index:30;
+ display:none;gap:5px;align-items:center;padding:8px;border:1px solid var(--border);
+ border-radius:9px;background:var(--surface);box-shadow:0 14px 28px #0004}
+.native-catalog .company-overflow:hover .company-overflow-panel,
+.native-catalog .company-overflow:focus-within .company-overflow-panel{display:flex}
+.native-catalog .problem-table td:nth-child(3){overflow:visible}
+.native-catalog .problem-table .problem-title.is-solved{text-decoration:underline;
+ text-decoration-color:color-mix(in srgb,var(--accent) 30%,transparent);text-underline-offset:4px}
+.native-catalog .catalog-sync-status[data-state=ready]{color:var(--accent)}
+.native-catalog .catalog-sync-status[data-state=error]{color:#eb8585}
+.native-catalog :is(input,button,select,a):focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media(max-width:900px){.native-catalog .filters{flex-wrap:wrap}.native-catalog .problem-table{min-width:650px}}
+@media(max-width:650px){.native-catalog .section-heading{flex-wrap:wrap}.native-catalog .catalog-meta-hint{display:none!important}}
