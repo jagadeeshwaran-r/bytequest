@@ -27,7 +27,14 @@ try{
  browser=await chromium.launch({headless:true,...binary?{executablePath:binary}:{},
   args:['--no-sandbox','--disable-dev-shm-usage']});
  const page=await browser.newPage({viewport:{width:1360,height:900}});
- const errors=[];const writes=[];const javaNetwork=[];const consoleErrors=[];
+ const errors=[];const writes=[];const blocked=[];const warnings=[];
+ page.on('console',m=>{if(m.type()==='error'||m.type()==='warning')warnings.push(m.text().slice(0,250));});
+ page.on('requestfailed',request=>{
+   blocked.push({url:request.url(),failure:request.failure()?.errorText||'unknown'});
+ });
+ page.on('response',response=>{
+   if(response.status()>=400)blocked.push({url:response.url(),status:response.status()});
+ });const javaNetwork=[];const consoleErrors=[];
  page.on('pageerror',e=>errors.push(e.message));
  page.on('console',m=>{if(m.type()==='error')consoleErrors.push(m.text().slice(0,260));});
  page.on('requestfailed',r=>{if(/leaningtech|java-runtime|runner-core/.test(r.url()))javaNetwork.push({url:r.url().split('?')[0],failure:r.failure()?.errorText});});
@@ -64,6 +71,10 @@ try{
   const frames=page.frames().map(frame=>frame.url().split('?')[0]).filter(url=>url.includes('java-runtime'));
   console.error('JAVA_BOOT_DIAGNOSTICS',JSON.stringify({status,frames,javaNetwork:javaNetwork.slice(-20),consoleErrors:consoleErrors.slice(-12),pageErrors:errors.slice(-8)}));
  }
+ const runtimeStatus=await page.locator('.native-run-status').innerText().catch(()=>'(missing runtime status)');
+ console.log('JAVA_DEBUG '+JSON.stringify({runtimeStatus,result,
+   failedRequests:blocked.slice(0,18),browserWarnings:warnings.slice(0,12),
+   pageErrors:errors.slice(0,12)}));
  assert.match(result,/Java public Run finished/i,'Java runtime did not finish: '+result);
  assert.doesNotMatch(result,/Failed|compile error|runtime error/i,'Java public tests did not pass: '+result);
  const cases=await page.locator('.native-practice .native-result-line').allInnerTexts();
