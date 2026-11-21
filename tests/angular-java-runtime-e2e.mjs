@@ -120,6 +120,8 @@ window.cheerpjRunLibrary=async()=>({quest:{JavaRunner:{run:async(source,tests)=>
    // Wrong answers must display red failed cases, not a false green success.
    await editor.fill('class Solution { public int[] twoSum(int[] nums,int target) { return new int[]{0,0}; } }');
    await runButton.click();
+   await page.getByRole('button',{name:'Running…'}).waitFor({timeout:10000});
+   await runButton.waitFor({timeout:90000});
    await page.waitForFunction(()=>document.querySelectorAll('.native-practice .native-result-line').length>0
      || !!document.querySelector('.native-practice .run-error'),undefined,{timeout:90000});
    const wrongCases=await page.locator('.native-practice .native-result-line').allInnerTexts();
@@ -129,6 +131,8 @@ window.cheerpjRunLibrary=async()=>({quest:{JavaRunner:{run:async(source,tests)=>
    // Compiler diagnostics must be visible, and must never unlock the solution.
    await editor.fill('class Solution { public int[] twoSum(int[] nums,int target) { this is invalid java; } }');
    await runButton.click();
+   await page.getByRole('button',{name:'Running…'}).waitFor({timeout:10000});
+   await runButton.waitFor({timeout:90000});
    await page.waitForFunction(()=>!!document.querySelector('.native-practice .result-summary')
      || !!document.querySelector('.native-practice .run-error'),undefined,{timeout:90000});
    const compileText=await output.innerText();
