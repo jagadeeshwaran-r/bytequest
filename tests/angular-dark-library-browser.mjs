@@ -31,7 +31,7 @@ try{
     args:['--no-sandbox','--disable-dev-shm-usage']});
   for(const viewport of [{width:1440,height:900},{width:390,height:844}]){
     const page=await browser.newPage({viewport,colorScheme:'dark'});
-    await page.addInitScript(()=>localStorage.setItem('bytequest.theme','dark'));
+    await page.addInitScript(()=>{if(!localStorage.getItem('bytequest.theme'))localStorage.setItem('bytequest.theme','dark');});
     const origin='http://127.0.0.1:'+server.address().port;
     await page.goto(origin+'/#/angular',{waitUntil:'domcontentloaded',timeout:35000});
     await page.locator('#mapView .problem-table tbody tr').first().waitFor({timeout:25000});
