@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy,Component,inject,OnInit,signal} from '@angular/core';
+import {ChangeDetectionStrategy,Component,effect,inject,signal} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {AuthService} from '../../core/auth.service';
 import {StagingActionService} from '../../core/staging-action.service';
@@ -90,7 +90,7 @@ type TextField=Exclude<keyof ProfileEdit,'discoverable'|'show_presence'>;
   .native-error{color:#e78b8b}.native-success{color:var(--accent)}
  `]
 })
-export class EditProfileComponent implements OnInit{
+export class EditProfileComponent{
  readonly auth=inject(AuthService);
  private readonly api=inject(StagingActionService);
  readonly form=signal<ProfileEdit>({...empty});
@@ -99,7 +99,10 @@ export class EditProfileComponent implements OnInit{
  readonly saving=signal(false);
  readonly error=signal('');
  readonly success=signal('');
- ngOnInit():void{void this.load();}
+ constructor(){effect(()=>{
+   if(this.auth.user())void this.load();
+   else{this.form.set({...empty});this.loading.set(false);}
+ });}
  private async load():Promise<void>{
    this.loading.set(true);
    const user=this.auth.user()?.id;
