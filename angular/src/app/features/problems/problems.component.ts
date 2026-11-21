@@ -48,10 +48,13 @@ const points:Record<string,number>={Easy:10,Medium:25,Hard:50};
      <span role="status" aria-live="polite">{{filtered().length===problems().length
        ?'Showing all '+problems().length+' problems'
        :'Showing '+filtered().length+' of '+problems().length+' problems'}}</span>
-     <span class="catalog-sync-status">{{loading()?'Loading published library…':'Published library'}}</span>
+     <span class="catalog-sync-status">{{loading()?'Loading problem catalog…':catalog.snapshot()?'Offline starter catalog':'Published test library'}}</span>
      <button type="button" class="catalog-refresh" (click)="refresh()" [disabled]="loading()">Refresh</button>
      <span class="catalog-meta-hint">Select a problem to open the editor</span>
    </div>
+   @if(catalog.snapshot()&&!loading()){
+     <p class="company-note" role="status">The isolated staging database is not connected. These are bundled starter problems, not the full ByteQuest library.</p>
+   }
    @if(error()){
      <p class="empty-state" role="alert">{{error()}}</p>
    }@else if(loading()){
@@ -94,7 +97,7 @@ const points:Record<string,number>={Easy:10,Medium:25,Hard:50};
  `]
 })
 export class ProblemsComponent implements OnInit {
- private readonly catalog=inject(CatalogService);
+ readonly catalog=inject(CatalogService);
  readonly view=inject(CatalogViewState);
  readonly loading=signal(true);
  readonly error=signal('');
