@@ -38,7 +38,7 @@ const STORAGE_PREFIX='bytequest.angular-preview.draft.java.';
             <button type="button" role="tab" [class.active]="pane()==='submissions'"
               [attr.aria-selected]="pane()==='submissions'" (click)="openPane('submissions')">Submissions</button>
           </div>
-          <div class="learning-content native-learning-content">
+          <div class="learning-content native-learning-content" [class.submissions-content]="pane()==='submissions'">
             @if(pane()==='problem'){
               <div class="problem-heading">
                 <p class="problem-eyebrow">Coding challenge</p>
@@ -215,6 +215,8 @@ Output: <b>{{format(example.expected)}}</b></code>
     .native-practice{display:block!important}
     .native-practice-navigation{display:flex;gap:18px;justify-content:space-between;padding:15px 0}
     .native-learning-content{min-height:580px;max-height:80dvh;overflow:auto}
+    .native-learning-content.submissions-content{padding:0!important}
+    .native-practice .problem-pane{min-width:0}
     .native-editor-area{height:440px;min-height:300px;overflow:hidden}
     .native-editor-area bq-editor{display:block;height:100%;min-height:0}
     .native-result-line{display:flex;align-items:center;gap:14px;margin-top:8px}
