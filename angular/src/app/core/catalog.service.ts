@@ -20,6 +20,7 @@ export interface Problem {
   readonly returns: string;
   readonly normalize?: string;
   readonly examples: readonly Example[];
+  readonly tests: readonly Example[];
 }
 
 function isProblem(value: unknown): value is Problem {
@@ -29,7 +30,7 @@ function isProblem(value: unknown): value is Problem {
     &&typeof p.title==='string'&&typeof p.description==='string'
     &&typeof p.starter==='string'&&typeof p.topic==='string'
     &&['Easy','Medium','Hard'].includes(p.difficulty||'')
-    &&Array.isArray(p.examples) &&Array.isArray(p.params)
+    &&Array.isArray(p.examples) &&Array.isArray(p.tests) &&Array.isArray(p.params)
     &&typeof p.method==='string' &&typeof p.returns==='string';
 }
 @Injectable({providedIn:'root'})
@@ -69,7 +70,8 @@ export class CatalogService {
           id:c['id'],title:c['title'],difficulty:c['difficulty'],topic:c['topic'],
           description:c['description'],constraints:c['constraints']||'',
           method,params,returns,normalize:c['normalize']||'',
-          starter,examples:Array.isArray(c['tests'])?(c['tests'] as Example[]).slice(0,2):[]
+          starter,examples:Array.isArray(c['tests'])?(c['tests'] as Example[]).slice(0,2):[],
+          tests:Array.isArray(c['tests'])?(c['tests'] as Example[]):[]
         };
         if(!isProblem(result))throw new Error('Invalid published problem contract');
         return result;
