@@ -20,6 +20,7 @@ type ThemeMode='light'|'dark'|'system';
       <a routerLink="/angular/leaderboard" routerLinkActive="active">Leaderboard</a>
       <a routerLink="/angular/find" routerLinkActive="active" aria-label="Find friends">Find friends</a>
     </nav>
+    <a class="native-compact-find" routerLink="/angular/find" aria-label="Find friends">Find friends...</a>
     <div class="native-shell-tools"><bq-chat/></div>
     <div class="profile-dropdown">
       <button type="button" class="native-profile-toggle" aria-label="Account menu" [attr.aria-expanded]="menuOpen()"
@@ -68,6 +69,7 @@ type ThemeMode='light'|'dark'|'system';
     :host{display:block;min-height:100dvh}
     .native-bytequest-content{max-width:1540px;margin:0 auto;padding:16px 22px 90px}
     .native-shell-tools{display:flex;align-items:center;margin-left:auto}
+    .native-compact-find{display:none}
     .native-profile-toggle{display:flex;align-items:center;gap:9px;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer}
     .native-avatar{display:grid;place-items:center;height:29px;width:29px;border-radius:50%;background:var(--surface,#183026);font-weight:600}
     .native-avatar img{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover}
