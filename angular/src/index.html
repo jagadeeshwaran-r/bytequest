@@ -2,11 +2,40 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>ByteQuest · Angular preview</title>
+    <title>ByteQuest — Angular staging</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark">
-    <meta name="description" content="ByteQuest Angular migration preview. The live site remains unchanged.">
+    <meta name="description" content="ByteQuest Java coding practice — isolated Angular test website.">
     <base href="./">
+    <link rel="icon" type="image/svg+xml" href="legacy/favicon.svg">
+    <style>
+      /* Keep a painted shell during lazy routing; never cover the app with a dark boot overlay. */
+      html,body{min-height:100%;margin:0}
+      html{background:#f7f9f7}
+      html[data-theme="dark"]{background:#0b0f0d}
+      bq-root{display:block;min-height:100dvh}
+    </style>
+    <script>
+      /* Apply theme before first paint and install canonical CSS only ONCE.
+         The script runs after the compiled Angular styles in the document head
+         and before bootstrap, so navigation never tears down or refetches CSS. */
+      (function(){
+        var mode='system';
+        try{mode=localStorage.getItem('bytequest.theme')||'system'}catch(e){}
+        var dark=mode==='dark'||(mode!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme=dark?'dark':'light';
+        document.documentElement.style.colorScheme=dark?'dark':'light';
+        var files=["style.css","theme.css","minimal.css","red.css","green.css","presence.css","gloss.css","verification-evidence.css","reference-style.css","community-next.css","profile-social.css","code-operators.css","brace-match.css","workbench.css","company-overflow.css","scroll-performance.css","problem-alignment.css","catalog-recovery.css","problem-statement-rich.css","workspace-premium.css","catalog-refined.css","editor-cleanup.css","run-shortcut.css","studio-access.css","premium-ui-polish.css","profile-compact.css","profile-unboxed.css","profile-reference.css","calendar-year.css","leaderboard-refined.css"];
+        for(var i=0;i<files.length;i++){
+          if(document.querySelector('[data-bq-static-style="'+files[i]+'"]'))continue;
+          var link=document.createElement('link');
+          link.rel='stylesheet';
+          link.href=new URL('legacy/'+files[i],document.baseURI).href;
+          link.dataset.bqStaticStyle=files[i];
+          document.head.appendChild(link);
+        }
+      })();
+    </script>
   </head>
   <body><bq-root></bq-root></body>
 </html>
