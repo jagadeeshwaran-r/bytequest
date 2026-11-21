@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {publicCatalog} from '../scripts/export-angular-catalog.mjs';
 import {companyLogo} from '../angular/src/app/features/problems/company-logos.ts';
+import {canonicalCompanyTags} from '../angular/src/app/core/public-company-tags.ts';
 
 test('Original problem and company metadata are retained without injecting private tests',()=>{
  const catalog=publicCatalog();
@@ -14,6 +15,9 @@ test('Original problem and company metadata are retained without injecting priva
  assert.equal(companyLogo('Amazon'),'legacy/assets/companies/amazon.svg');
  assert.equal(companyLogo('Apple'),'legacy/assets/companies/apple.svg');
  assert.equal(companyLogo('Not a real logo'),null);
+ assert.deepEqual(canonicalCompanyTags('two-sum','twoSum'),['Amazon','Google']);
+ assert.deepEqual(canonicalCompanyTags('contains-duplicate','containsDuplicate'),['Amazon']);
+ assert.deepEqual(canonicalCompanyTags('two-sum','someOtherMethod'),[],'Never tag an unrelated problem');
  assert.doesNotMatch(JSON.stringify(catalog),/privateCases|hidden_cases|service_role/i);
 });
 test('Angular library gets progress from authenticated staging backend; guest status is never claimed',async()=>{
