@@ -86,7 +86,8 @@ Output: <b>{{format(example.expected)}}</b></code>
               }
             } @else if(pane()==='submissions'){
               <bq-submissions [problemId]="problem()!.id" [revision]="problem()!.revision"
-                [hiddenCount]="problem()!.hiddenCount" [refreshKey]="submissionRefresh()"/>
+                [hiddenCount]="problem()!.hiddenCount" [refreshKey]="submissionRefresh()"
+                [initialView]="submissionInitialView()"/>
             } @else {
               <span class="pattern-tag">VISUALIZE</span>
               <h3>Java technique</h3>
@@ -174,9 +175,17 @@ Output: <b>{{format(example.expected)}}</b></code>
                   : 'Submission not accepted'}}</strong>
                 <span>{{verifiedVerdict()!.message}}</span>
                 @if(verifiedVerdict()!.accepted){
-                  <button type="button" class="native-submission-history-link" (click)="openPane('submissions')">
-                    View saved submission
-                  </button>
+                  <div class="native-result-links">
+                    <button type="button" class="native-submission-history-link" (click)="openCommunity()">
+                      View community rankings
+                    </button>
+                    <button type="button" class="native-submission-history-link" (click)="openPane('learn');readReference()">
+                      View unlocked Java answer
+                    </button>
+                    <button type="button" class="native-submission-history-link" (click)="openPane('submissions')">
+                      View saved submission
+                    </button>
+                  </div>
                 }
               }
             </div>
@@ -231,6 +240,7 @@ Output: <b>{{format(example.expected)}}</b></code>
     .native-submit-feedback.is-error{border-left:3px solid #e57979}
     .native-submit-feedback.is-error strong{color:#e57979}
     .native-submit-feedback span{overflow-wrap:anywhere}
+    .native-result-links{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
     .native-submission-history-link{align-self:flex-start;border:0;background:transparent;
       color:var(--accent);font-weight:600;font-size:11px;text-decoration:underline;padding:3px 0}
     .native-practice .runbar .native-run-status{min-width:0;overflow-wrap:anywhere}
@@ -256,6 +266,7 @@ export class PracticeComponent implements OnDestroy {
   readonly referenceCode=signal('');
   readonly referenceError=signal('');
   readonly submissionRefresh=signal(0);
+  readonly submissionInitialView=signal<'mine'|'community'>('mine');
   readonly auth=inject(AuthService);
   readonly verified=inject(VerifiedJavaService);
   readonly canVerify=signal(false);
@@ -324,7 +335,12 @@ export class PracticeComponent implements OnDestroy {
     }finally{this.verifying.set(false);}
   }
   openPane(pane:'problem'|'learn'|'visual'|'submissions'):void{
+    if(pane==='submissions')this.submissionInitialView.set('mine');
     this.pane.set(pane);
+  }
+  openCommunity():void{
+    this.submissionInitialView.set('community');
+    this.pane.set('submissions');
   }
   async readReference():Promise<void>{
     const problem=this.problem(),owner=this.auth.user()?.id;
