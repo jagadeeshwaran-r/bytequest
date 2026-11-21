@@ -189,7 +189,14 @@ type Panel='mine'|'community';
                     <td class="numeric-cell">{{memoryLabel(row.memory_bytes)}}</td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="5" class="empty-submissions">No shared accepted submissions on this board yet.</td></tr>
+                  <tr><td colspan="5" class="empty-submissions">
+                    {{board()==='full'
+                      ? 'No full-suite verified solutions yet. Public-test accepted solutions are on the Public tests tab.'
+                      : 'No public-test submissions have been showcased for this revision yet.'}}
+                    @if(board()==='full'){
+                      <button class="subtle-refresh" type="button" (click)="chooseBoard('public')">View public submissions</button>
+                    }
+                  </td></tr>
                 }
               </tbody>
             </table>
@@ -254,7 +261,8 @@ type Panel='mine'|'community';
     .submission-open small{font-size:10px;color:var(--muted);font-weight:400}
     .submission-open:hover strong{color:var(--accent)}
     .muted-cell{color:var(--subtle)}.numeric-cell{font:10px/1.5 'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
-    .empty-submissions{text-align:center;color:var(--muted);padding:22px!important}
+    .empty-submissions{text-align:center;color:var(--muted);padding:22px!important;line-height:1.6}
+    .empty-submissions .subtle-refresh{display:block;margin:6px auto 0}
     .publish-action{display:block;margin-top:5px;color:var(--accent);padding:5px 7px;font-size:10px;white-space:normal;text-align:left}
     .subtle-refresh{border:0;color:var(--accent);background:transparent;padding:12px 0;font-size:11px}
     .submission-message{padding:12px 0;color:var(--subtle);line-height:1.7}
@@ -319,7 +327,7 @@ export class SubmissionsComponent implements OnDestroy {
     effect(()=>{
       const id=this.problemId(),owner=this.auth.user()?.id,initialView=this.initialView();
       this.refreshKey();
-      const defaultBoard=this.hiddenCount()>0?'public':'full';
+      const defaultBoard:Board='public'; // Java verified submissions use the public-test board.
       untracked(()=>{
         if(!id||this.disposed)return;
         this.view.set(initialView);
