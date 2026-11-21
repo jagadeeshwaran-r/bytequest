@@ -165,6 +165,19 @@ try{
   assert.equal(await page.locator('.native-practice .reference-code').count(),0,
     'Guest must not see a private Java reference');
   await page.getByRole('tab',{name:'Submissions'}).click();
+  await page.getByRole('heading',{name:'My submissions'}).waitFor();
+  assert.equal(await page.locator('bq-submissions .submission-table thead th').count(),5,
+    'Submission history is not rendered as the five-column table from the reference');
+  await page.getByRole('button',{name:'Community rankings'}).click();
+  await page.getByRole('heading',{name:'Community submissions'}).waitFor();
+  await page.getByRole('button',{name:'Public tests'}).click();
+  await page.getByRole('button',{name:'Full-suite verified'}).click();
+  assert.equal(await page.getByText('Sign in to view community rankings.').count(),1,
+    'Guest user must not see protected community rankings');
+  await page.getByRole('button',{name:'My submissions'}).click();
+  await page.getByRole('heading',{name:'My submissions'}).waitFor();
+  assert.ok((await editor.inputValue()).includes(marker),
+    'Switching submission tabs destroyed the Java draft');
   assert.equal(await page.getByRole('button',{name:'Submit solution'}).isDisabled(),true,
     'Verified submission must remain unavailable without isolated staging');
   await page.getByRole('link',{name:'← Problems'}).click();
