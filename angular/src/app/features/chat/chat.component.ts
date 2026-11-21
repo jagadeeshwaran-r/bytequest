@@ -99,7 +99,7 @@ type Tab='messages'|'updates';
                      <article class="native-message" [class.own]="message.isOwn||message.is_own">
                        <p>{{message.body}}</p>
                        <small>{{message.created_at||''}}
-                         @if(message.isOwn||message.is_own){{{message.read?' · Seen':' · Sent'}}}
+                         @if(message.isOwn||message.is_own){ <span>{{message.read?' · Seen':' · Sent'}}</span> }
                        </small>
                      </article>
                    }@empty{
