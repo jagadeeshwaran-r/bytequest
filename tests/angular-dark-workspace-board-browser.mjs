@@ -67,10 +67,11 @@ try{
    assert.ok(state.left.right<=state.right.x,'Split panels overlap');
    assert.ok(state.left.width>=300,'Description pane too narrow');
    await page.getByRole('button',{name:'Expand editor'}).click();
-   const focus=await page.locator('.native-practice .lab.editor-focus').isVisible();
-   assert.equal(focus,true,'Editor expand control does not work');
+   await page.locator('.native-practice .lab.editor-focus').waitFor({state:'visible',timeout:8000});
+   const expanded=await page.locator('.native-practice .lab.editor-focus .editor-pane').isVisible();
+   assert.equal(expanded,true,'Expanded Java editor is not visible');
    await page.getByRole('button',{name:'Exit expanded editor'}).click();
-   assert.equal(await page.locator('.native-practice .lab.editor-focus').count(),0);
+   await page.locator('.native-practice .lab.editor-focus').waitFor({state:'detached',timeout:8000});
   }
   await page.goto(origin+'/#/angular/leaderboard',{waitUntil:'domcontentloaded'});
   await page.locator('.native-leaderboard .leader-heading').waitFor({timeout:15000});
