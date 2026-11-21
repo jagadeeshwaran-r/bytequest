@@ -15,6 +15,8 @@ export interface Problem {
   readonly description: string;
   readonly constraints: string;
   readonly starter: string;
+  readonly revision: number|null;
+  readonly hiddenCount: number;
   readonly method: string;
   readonly params: readonly Parameter[];
   readonly returns: string;
@@ -30,6 +32,8 @@ function isProblem(value: unknown): value is Problem {
     &&typeof p.title==='string'&&typeof p.description==='string'
     &&typeof p.starter==='string'&&typeof p.topic==='string'
     &&['Easy','Medium','Hard'].includes(p.difficulty||'')
+    &&(p.revision===null||(Number.isSafeInteger(p.revision)&&Number(p.revision)>0))
+    &&typeof p.hiddenCount==='number' && p.hiddenCount>=0
     &&Array.isArray(p.examples) &&Array.isArray(p.tests) &&Array.isArray(p.params)
     &&typeof p.method==='string' &&typeof p.returns==='string';
 }
@@ -58,7 +62,7 @@ export class CatalogService {
       if(!Array.isArray(data))throw new Error('Invalid catalog');
       const problems:Problem[]=data.map(row=>{
         if(!row||typeof row!=='object')throw new Error('Invalid public row');
-        const source=row as {content?:Record<string,unknown>};
+        const source=row as {content?:Record<string,unknown>;revision?:number};
         const c=source.content;
         if(!c||!Array.isArray(c['params']))throw new Error('Invalid published problem');
         const params=(c['params'] as Parameter[]);
@@ -70,6 +74,8 @@ export class CatalogService {
           id:c['id'],title:c['title'],difficulty:c['difficulty'],topic:c['topic'],
           description:c['description'],constraints:c['constraints']||'',
           method,params,returns,normalize:c['normalize']||'',
+          revision:Number.isSafeInteger(source.revision)?Number(source.revision):null,
+          hiddenCount:Number.isSafeInteger(c['hiddenCount'])?Number(c['hiddenCount']):0,
           starter,examples:Array.isArray(c['tests'])?(c['tests'] as Example[]).slice(0,2):[],
           tests:Array.isArray(c['tests'])?(c['tests'] as Example[]):[]
         };
