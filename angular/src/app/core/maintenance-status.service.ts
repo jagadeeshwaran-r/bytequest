@@ -1,7 +1,6 @@
 import {Injectable,OnDestroy,signal} from '@angular/core';
+import {validateStagingBackend,type StagingBackendConfig} from './staging-backend-contract';
 
-const api='https://zwubrziriuppkldrdoos.supabase.co/functions/v1/bytequest-firebase/maintenance';
-const publishableKey='sb_publishable_NpldkX3xQMLqThqaLlXJjg_v1q2quIn';
 export interface PublicMaintenance{
  readonly active:boolean;readonly upcoming:boolean;readonly message?:string;
  readonly startsAt?:string|null;readonly endsAt?:string|null;readonly serverTime?:string;
@@ -16,6 +15,11 @@ export class MaintenanceStatusService implements OnDestroy{
  private refreshTimer:number|undefined;
  private readonly onFocus=()=>{void this.refresh();};
  private request:Promise<void>|null=null;
+ private readonly staging=fetch(new URL('staging-backend.json',document.baseURI),{cache:'no-store'})
+   .then(async response=>{
+     if(!response.ok)throw new Error('Staging backend config unavailable.');
+     return await response.json() as StagingBackendConfig;
+   });
  constructor(){
    void this.refresh();
    this.refreshTimer=window.setInterval(()=>{
@@ -27,8 +31,19 @@ export class MaintenanceStatusService implements OnDestroy{
   if(this.request)return this.request;
   const work=async()=>{
     try{
-      const response=await fetch(api,{
-        method:'GET',headers:{apikey:publishableKey},
+      const config=await this.staging;
+      let endpoint:URL;
+      try{endpoint=validateStagingBackend(config);}
+      catch{
+        // In a public-only preview the maintenance service is not configured.
+        // Never poll production's Edge Function from a different origin, and
+        // never claim a real maintenance status was verified.
+        if(this.strict)throw new Error('Maintenance verification requires a configured ByteQuest backend.');
+        this.error.set('');this.upcoming.set(null);this.blocked.set(false);
+        return;
+      }
+      const response=await fetch(endpoint.href+'/maintenance',{
+        method:'GET',headers:{apikey:config.publishableKey},
         cache:'no-store',signal:AbortSignal.timeout(6000)
       });
       if(!response.ok)throw new Error('Status check failed ('+response.status+').');
@@ -39,7 +54,6 @@ export class MaintenanceStatusService implements OnDestroy{
       this.upcoming.set(result.upcoming?result:null);
       this.error.set('');
     }catch(error){
-      // No staging write capabilities are available when Origin is rejected.
       // Live GitHub Pages is strict: an unreadable maintenance status cannot
       // silently bypass a previously reported active maintenance window.
       this.error.set(error instanceof Error?error.message:'Status check unavailable.');
