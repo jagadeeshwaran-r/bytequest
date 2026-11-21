@@ -99,6 +99,7 @@ jobs:
           node tests/angular-feature-e2e.mjs
           node tests/angular-dark-library-browser.mjs
           node tests/angular-dark-workspace-board-browser.mjs
+          node tests/angular-dark-tablet-reference.mjs
       - name: Test Java iframe bridge independently of external CDN
         run: BQ_MOCK_JAVA=1 node tests/angular-java-runtime-e2e.mjs
       - name: Diagnose Java runtime CDN reachability
