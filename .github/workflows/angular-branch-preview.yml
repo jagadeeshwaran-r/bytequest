@@ -37,12 +37,19 @@ jobs:
           node-version: '24'
       - name: Install preview dependencies
         run: npm install --prefix angular --no-audit --no-fund
+      - name: Verify Angular migration invariants
+        run: |
+          node --test tests/angular-migration.mjs
+          node --experimental-strip-types --test tests/angular-editor.mjs
       - name: Compile Angular preview
         run: npm run build --prefix angular
       - name: Verify public-only preview
         run: |
           test -f angular/dist/angular-preview/index.html
           test -f angular/dist/angular-preview/catalog.json
+          test -f angular/dist/angular-preview/java-runtime/judge.js
+          test -f angular/dist/angular-preview/java-runtime/runner.html
+          test -s angular/dist/angular-preview/java-runtime/java-runner.jar
           if grep -R --include='*.html' 'service_role' angular/dist/angular-preview; then
             echo 'Unsafe secret reference in preview output' >&2; exit 1
           fi
