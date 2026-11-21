@@ -1,4 +1,5 @@
-import {Injectable} from '@angular/core';
+import {Injectable,signal} from '@angular/core';
+import {validateStagingBackend,type StagingBackendConfig} from './staging-backend-contract';
 
 export type Difficulty = 'Easy' | 'Medium' | 'Hard';
 export interface Parameter {readonly name:string;readonly type:string;}
@@ -40,8 +41,14 @@ function isProblem(value: unknown): value is Problem {
 @Injectable({providedIn:'root'})
 export class CatalogService {
   private pending: Promise<readonly Problem[]> | null=null;
-  private readonly publicApi='https://zwubrziriuppkldrdoos.supabase.co';
-  private readonly publishableKey='sb_publishable_NpldkX3xQMLqThqaLlXJjg_v1q2quIn';
+  // A bundled starter catalog is available until an isolated staging backend
+  // is provisioned. Never leak unpublished or hidden cases from production.
+  readonly snapshot=signal(false);
+  private readonly staging=fetch(new URL('staging-backend.json',document.baseURI),{cache:'no-store'})
+    .then(async response=>{
+      if(!response.ok)throw new Error('Staging config unavailable.');
+      return await response.json() as StagingBackendConfig;
+    });
 
   async all():Promise<readonly Problem[]>{
     if(!this.pending){
@@ -50,13 +57,14 @@ export class CatalogService {
     return this.pending;
   }
   private async load():Promise<readonly Problem[]>{
-    // Fresh published problems are read from the existing public read-only API.
-    // If staging is offline or the public endpoint is unavailable, load the
-    // bundled source-of-truth starter snapshot generated at build time.
-    const url=this.publicApi+'/rest/v1/bytequest_problems'
-      +'?select=id,content,revision,position&published=eq.true&order=position.asc,id.asc&limit=1000';
+    // Query only the separate staging Supabase project. When no staging DB
+    // exists, the bundled public starter catalog is explicitly a snapshot.
     try{
-      const response=await fetch(url,{headers:{apikey:this.publishableKey},signal:AbortSignal.timeout(9000)});
+      const config=await this.staging;
+      const endpoint=validateStagingBackend(config);
+      const url=endpoint.origin+'/rest/v1/bytequest_problems'
+        +'?select=id,content,revision,position&published=eq.true&order=position.asc,id.asc&limit=1000';
+      const response=await fetch(url,{headers:{apikey:config.publishableKey},signal:AbortSignal.timeout(9000)});
       if(!response.ok)throw new Error('Catalog unavailable');
       const data:unknown=await response.json();
       if(!Array.isArray(data))throw new Error('Invalid catalog');
@@ -82,8 +90,10 @@ export class CatalogService {
         if(!isProblem(result))throw new Error('Invalid published problem contract');
         return result;
       });
+      this.snapshot.set(false);
       return problems;
     }catch{
+      this.snapshot.set(true);
       const fallback=await fetch(new URL('catalog.json',document.baseURI),{cache:'no-cache'});
       if(!fallback.ok)throw new Error('Public problem catalog is unavailable ('+fallback.status+').');
       const payload:unknown=await fallback.json();
