@@ -22,6 +22,7 @@ on:
       - 'tests/angular-dark-library-browser.mjs'
       - 'tests/angular-dark-workspace-board.mjs'
       - 'tests/angular-dark-workspace-board-browser.mjs'
+      - 'tests/angular-dark-tablet-reference.mjs'
       - 'tests/angular-staging-isolation.mjs'
       - 'tests/angular-api-protocol-e2e.mjs'
       - 'tests/angular-native-shell.mjs'
