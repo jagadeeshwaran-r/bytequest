@@ -11,13 +11,13 @@ const STORAGE_PREFIX='bytequest.angular-preview.draft.java.';
   imports:[RouterLink,EditorComponent],
   template:`
     <div class="workspace-top">
-      <a routerLink="/" class="back-link">← All problems</a>
+      <a routerLink="/angular" class="back-link">← All problems</a>
       @if(problem()){<span class="workspace-pill">Java · editor preview</span>}
     </div>
     @if(loading()) {
       <p class="load-status" role="status">Opening problem…</p>
     } @else if(!problem()){
-      <div class="load-status error" role="alert">This problem was not found in the starter catalog. <a routerLink="/">Return to problems</a></div>
+      <div class="load-status error" role="alert">This problem was not found in the starter catalog. <a routerLink="/angular">Return to problems</a></div>
     } @else {
       <div class="workspace">
         <section class="statement" aria-label="Problem statement">
