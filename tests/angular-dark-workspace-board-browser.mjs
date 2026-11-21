@@ -93,8 +93,12 @@ try{
    await page.reload({waitUntil:'domcontentloaded'});
    await page.locator('.native-leaderboard .leader-heading').waitFor({timeout:12000});
    assert.equal(await page.evaluate(()=>document.documentElement.dataset.theme),'light');
-   const light=await page.evaluate(()=>getComputedStyle(document.querySelector('header.minimal-header')).borderTopLeftRadius);
-   assert.ok(parseFloat(light)<30,'Dark reference capsule should not leak into light mode');
+   const light=await page.evaluate(()=>({
+     page:getComputedStyle(document.querySelector('bq-root')).backgroundColor,
+     surface:getComputedStyle(document.querySelector('.native-leaderboard .leader-signed-out')).backgroundColor
+   }));
+   assert.notEqual(light.page,'rgb(9, 10, 14)','Dark page palette must not leak into light mode');
+   assert.notEqual(light.surface,'rgb(16, 16, 21)','Dark leaderboard panel must not leak into light mode');
   }
   assert.deepEqual(errors,[],'Angular page exceptions');
   await page.close();
