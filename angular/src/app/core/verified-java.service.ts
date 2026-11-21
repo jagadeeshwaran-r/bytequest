@@ -1,5 +1,6 @@
 import {Injectable,inject,signal} from '@angular/core';
 import {AuthService} from './auth.service';
+import {prepareJavaForJudge} from './java-source';
 import {validateStagingBackend,type StagingBackendConfig} from './staging-backend-contract';
 import {makeJavaSubmission,verifiedJavaVerdict,type JavaSubmissionProblem,
   type SuiteScope,type SubmissionNotes,type VerifiedVerdict} from './java-submission-contract';
@@ -30,7 +31,7 @@ export class VerifiedJavaService{
     const owner=this.auth.user()?.id;
     if(!owner)throw new Error('Sign in to submit a verified Java solution.');
     const nonce=crypto.randomUUID();
-    const payload=makeJavaSubmission(problem,source,scope,nonce,notes);
+    const payload=makeJavaSubmission(problem,prepareJavaForJudge(source),scope,nonce,notes);
     const action=async()=>{
       const config=await this.settings;
       const url=validatedUrl(config);
