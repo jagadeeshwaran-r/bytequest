@@ -195,7 +195,12 @@ try{
   // Guest accounts cannot silently edit profile, chat or Creator Studio.
   await nav.getByRole('link',{name:'Leaderboard'}).click();
   await page.getByText('Better, together.').waitFor();
-  await nav.getByRole('link',{name:'Find friends'}).click();
+  if(viewport.width<600){
+    await page.getByRole('button',{name:/Account/}).first().click();
+    await page.locator('#nativeAccountMenu').getByRole('link',{name:'Find friends'}).click();
+  }else{
+    await nav.getByRole('link',{name:'Find friends'}).click();
+  }
   await page.getByText('Sign in to discover learners.').waitFor();
   await page.getByRole('button',{name:/Account/}).first().click();
   await page.getByRole('link',{name:'Problem studio'}).click();
