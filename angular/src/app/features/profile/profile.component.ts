@@ -11,6 +11,7 @@ interface Profile {
 }
 interface Stats{readonly streak:number;readonly solved?:number;readonly days:readonly string[];readonly serverDay:string;}
 interface ProfileReply {
+  readonly isOwn?:boolean;
   readonly profile:Profile;readonly stats:Stats;
   readonly ranking?:{readonly rank:number;readonly points:number};
   readonly followers?:number;readonly following?:number;
@@ -67,7 +68,7 @@ interface ProfileReply {
                  </div>
                </div>
                @if(profile()!.profile.bio){<p class="profile-bio">{{profile()!.profile.bio}}</p>}
-               @if(profile()!.profile.username){
+               @if(profile()!.isOwn===true){
                  <a class="button secondary native-edit-profile" routerLink="/angular/profile/edit">Edit my profile</a>
                }
              </div>
