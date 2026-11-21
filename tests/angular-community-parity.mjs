@@ -55,7 +55,9 @@ test('All social writes are isolated from live ByteQuest Supabase',async()=>{
  assert.equal(config.enabled,false);
  assert.equal(config.apiUrl,'');
  assert.match(api,/const writeActions=new Set/);
- assert.match(api,/url\.hostname===liveProject\+'\.supabase\.co'/);
+ const isolation=await read('angular/src/app/core/staging-backend-contract.ts');
+ assert.match(isolation,/project===productionRef/);
+ assert.match(isolation,/url\.hostname!==project\+'\.supabase\.co'/);
  assert.match(api,/validateStagingBackend\(await this\.config\)/);
  assert.match(api,/body:JSON\.stringify\(\{\.\.\.body,action\}\)/);
  assert.match(shell,/<bq-chat\/>/);
