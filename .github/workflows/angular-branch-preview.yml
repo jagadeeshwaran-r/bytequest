@@ -14,6 +14,7 @@ on:
       - 'tests/angular-visual-parity.mjs'
       - 'tests/angular-java-submission.mjs'
       - 'tests/angular-java-collections.mjs'
+      - 'tests/angular-submit-feedback.mjs'
       - 'tests/angular-staging-isolation.mjs'
       - 'tests/angular-api-protocol-e2e.mjs'
       - 'tests/angular-native-shell.mjs'
@@ -59,6 +60,7 @@ jobs:
           node --test tests/angular-visual-parity.mjs
           node --experimental-strip-types --test tests/angular-java-submission.mjs
           node --experimental-strip-types --test tests/angular-java-collections.mjs
+          node --experimental-strip-types --test tests/angular-submit-feedback.mjs
           node --experimental-strip-types --test tests/angular-staging-isolation.mjs
           node --experimental-strip-types tests/angular-api-protocol-e2e.mjs
           node --test tests/angular-native-shell.mjs
