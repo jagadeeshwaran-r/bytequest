@@ -6,6 +6,7 @@ import {EditorComponent} from '../editor/editor.component';
 import {JavaGuestService} from '../../core/java-guest.service';
 import {AuthService} from '../../core/auth.service';
 import {VerifiedJavaService} from '../../core/verified-java.service';
+import {ReadonlyApiService} from '../../core/readonly-api.service';
 import type {SuiteScope,VerifiedVerdict} from '../../core/java-submission-contract';
 
 const STORAGE_PREFIX='bytequest.angular-preview.draft.java.';
@@ -28,13 +29,13 @@ const STORAGE_PREFIX='bytequest.angular-preview.draft.java.';
         <section class="problem-pane" aria-label="Problem and learning materials">
           <div class="pane-tabs" role="tablist" aria-label="Learning materials">
             <button type="button" role="tab" [class.active]="pane()==='problem'"
-              [attr.aria-selected]="pane()==='problem'" (click)="pane.set('problem')">Description</button>
+              [attr.aria-selected]="pane()==='problem'" (click)="openPane('problem')">Description</button>
             <button type="button" role="tab" [class.active]="pane()==='learn'"
-              [attr.aria-selected]="pane()==='learn'" (click)="pane.set('learn')">Editorial</button>
+              [attr.aria-selected]="pane()==='learn'" (click)="openPane('learn')">Editorial</button>
             <button type="button" role="tab" [class.active]="pane()==='visual'"
-              [attr.aria-selected]="pane()==='visual'" (click)="pane.set('visual')">Visualize</button>
+              [attr.aria-selected]="pane()==='visual'" (click)="openPane('visual')">Visualize</button>
             <button type="button" role="tab" [class.active]="pane()==='submissions'"
-              [attr.aria-selected]="pane()==='submissions'" (click)="pane.set('submissions')">Submissions</button>
+              [attr.aria-selected]="pane()==='submissions'" (click)="openPane('submissions')">Submissions</button>
           </div>
           <div class="learning-content native-learning-content">
             @if(pane()==='problem'){
@@ -71,17 +72,33 @@ Output: <b>{{format(example.expected)}}</b></code>
             } @else if(pane()==='learn') {
               <span class="pattern-tag">EDITORIAL</span>
               <h3>Approach</h3>
-              @if(verifiedVerdict()?.accepted){
-                <p class="body-copy">Your Java solution has a server-verified acceptance. Reference solutions require the authorized API and are never embedded in the public catalog.</p>
+              <p class="body-copy">The Java answer is released only after the server verifies your accepted submission. Browser Run never unlocks it.</p>
+              @if(referenceError()){<p class="run-error" role="alert">{{referenceError()}}</p>}
+              @if(referenceCode()){
+                <p class="reference-reveal-note">Your accepted Java submission unlocked this solution.</p>
+                <pre class="reference-code"><code>{{referenceCode()}}</code></pre>
               } @else{
-                <p class="body-copy">A verified Java submission is required to unlock the official solution. Guest Run cannot unlock editorials.</p>
+                <button type="button" class="reference-button" (click)="readReference()"
+                  [disabled]="!auth.user()||readingReference()||!problem()!.revision">
+                  {{readingReference()?'Checking verified access…':'Check Java answer access'}}
+                </button>
               }
             } @else if(pane()==='submissions'){
               <span class="pattern-tag">SUBMISSION HISTORY</span>
               <h3>Your Java submissions</h3>
-              <p class="body-copy">The staging account API is not connected for writes. Your live ByteQuest submission history remains untouched.</p>
-              @if(verifiedVerdict()){
-                <p>{{verifiedVerdict()!.message}}</p>
+              <p class="submission-view-note">Server-recorded submissions remain separate from browser practice.</p>
+              <button type="button" class="button secondary" (click)="loadHistory()" [disabled]="historyLoading()">
+                {{historyLoading()?'Loading…':'Refresh history'}}
+              </button>
+              @if(historyError()){<p class="run-error" role="alert">{{historyError()}}</p>}
+              @for(row of history();track row.id){
+                <article class="native-submission">
+                  <strong>Accepted · {{row.suite_kind==='public'?'Public suite':'Full suite'}}</strong>
+                  <span>{{row.language}} · {{row.created_at||'Date unavailable'}}</span>
+                  <span>{{row.runtime_ms===null?'—':row.runtime_ms+' ms'}} · {{row.shared?'Shared':'Private (earlier result)'}}</span>
+                </article>
+              }@empty{
+                @if(!historyLoading()&&!historyError()){<p class="body-copy">No server-recorded Java submissions found.</p>}
               }
             } @else {
               <span class="pattern-tag">VISUALIZE</span>
@@ -193,6 +210,13 @@ export class PracticeComponent implements OnDestroy {
   private readonly router=inject(Router);
   private readonly catalog=inject(CatalogService);
   readonly guest=inject(JavaGuestService);
+  private readonly api=inject(ReadonlyApiService);
+  readonly readingReference=signal(false);
+  readonly referenceCode=signal('');
+  readonly referenceError=signal('');
+  readonly historyLoading=signal(false);
+  readonly historyError=signal('');
+  readonly history=signal<readonly {id:string;language:string;created_at?:string;suite_kind?:string;shared?:boolean;runtime_ms?:number|null}[]>([]);
   readonly auth=inject(AuthService);
   readonly verified=inject(VerifiedJavaService);
   readonly canVerify=signal(false);
@@ -214,6 +238,7 @@ export class PracticeComponent implements OnDestroy {
   private async select(id:string|null):Promise<void>{
     this.loading.set(true);this.problem.set(null);this.result.set(null);this.resultError.set('');
     this.pane.set('problem');this.selectedCase.set(0);
+    this.referenceCode.set('');this.referenceError.set('');this.history.set([]);this.historyError.set('');
     this.verifiedVerdict.set(null);this.verificationError.set('');
     try {
       const found=(await this.catalog.all()).find(p=>p.id===id)||null;
@@ -257,6 +282,44 @@ export class PracticeComponent implements OnDestroy {
     }catch(error){
       if(this.problem()?.id===id)this.verificationError.set(error instanceof Error?error.message:'Server verification failed.');
     }finally{this.verifying.set(false);}
+  }
+  openPane(pane:'problem'|'learn'|'visual'|'submissions'):void{
+    this.pane.set(pane);
+    if(pane==='submissions')void this.loadHistory();
+  }
+  async loadHistory():Promise<void>{
+    const problem=this.problem(),owner=this.auth.user()?.id;
+    if(!problem||!owner||this.historyLoading())return;
+    this.historyLoading.set(true);this.historyError.set('');
+    try{
+      const reply=await this.api.request<{users?:unknown[];items?:unknown[]}>('submission-history',{problemId:problem.id});
+      if(this.problem()?.id!==problem.id||this.auth.user()?.id!==owner)return;
+      const rows=(reply.users||reply.items||[]).filter(row=>{
+        if(!row||typeof row!=='object')return false;
+        const item=row as {id?:unknown;language?:unknown};
+        return typeof item.id==='string'&&item.language==='java';
+      }) as {id:string;language:string;created_at?:string;suite_kind?:string;shared?:boolean;runtime_ms?:number|null}[];
+      this.history.set(rows.slice(0,25));
+    }catch(e){if(this.problem()?.id===problem.id)this.historyError.set(e instanceof Error?e.message:'Could not load submissions.');}
+    finally{this.historyLoading.set(false);}
+  }
+  async readReference():Promise<void>{
+    const problem=this.problem(),owner=this.auth.user()?.id;
+    if(!problem||!owner||!problem.revision||this.readingReference())return;
+    this.readingReference.set(true);this.referenceError.set('');
+    try{
+      const reply=await this.api.request<{reference?:unknown;revision?:unknown}>('reference-read',{
+        problemId:problem.id,revision:problem.revision
+      });
+      if(this.problem()?.id!==problem.id||this.auth.user()?.id!==owner
+        ||this.pane()!=='learn')return;
+      if(typeof reply.reference!=='string'||!reply.reference
+        ||reply.revision!==problem.revision)
+        throw new Error('The private Java reference response was invalid.');
+      this.referenceCode.set(reply.reference);
+    }catch(e){
+      if(this.problem()?.id===problem.id)this.referenceError.set(e instanceof Error?e.message:'The Java answer remains locked.');
+    }finally{this.readingReference.set(false);}
   }
   readonly pane=signal<'problem'|'learn'|'visual'|'submissions'>('problem');
   readonly selectedCase=signal(0);
