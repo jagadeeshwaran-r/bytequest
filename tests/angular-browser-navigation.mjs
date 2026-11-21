@@ -65,6 +65,21 @@ try{
     assert.equal(state.navigationCount,1,'Full document reload occurred on '+name);
   };
   await go('Leaderboard','/angular/leaderboard','.native-leaderboard');
+  await go('Find friends','/angular/find','.native-find');
+  await go('Problems','/angular','.native-catalog');
+  // The new messages/notifications UI is a native persistent Angular component,
+  // not a full document or page-level iframe.
+  await page.getByRole('button',{name:'Messages and updates'}).click();
+  await page.getByRole('dialog',{name:'ByteQuest messages and updates'}).waitFor({timeout:10000});
+  await page.getByRole('button',{name:'Close messages'}).click();
+  await page.getByRole('button',{name:/Account/}).first().click();
+  await page.getByRole('link',{name:'Problem studio'}).click();
+  await page.locator('.native-studio').waitFor({timeout:12000});
+  assert.equal(await page.locator('header.minimal-header').count(),1);
+  await page.getByRole('button',{name:/Account/}).first().click();
+  await page.getByRole('link',{name:'Edit profile'}).click();
+  await page.locator('.native-profile-edit').waitFor({timeout:12000});
+  assert.equal(await page.locator('header.minimal-header').count(),1);
   await go('Problems','/angular','.native-catalog');
   const problemLink=page.locator('.native-catalog a.problem-title').first();
   await problemLink.waitFor({timeout:25000});
@@ -83,7 +98,7 @@ try{
   assert.equal(after.links,30);
   assert.equal(after.hasEditor,true);
   assert.equal(after.hasIframe,false);
-  console.log('PASS: 3 Angular navigations, persistent header, zero iframe, zero CSS re-injection, visible Java editor');
+  console.log('PASS: 7 native Angular routes and chat overlay, persistent header, zero iframe/reload, visible Java editor');
 }finally{
   if(browser)await browser.close();
   await new Promise(resolveServer=>server.close(resolveServer));
