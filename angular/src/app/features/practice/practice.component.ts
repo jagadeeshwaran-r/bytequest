@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, inject, OnDestroy, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, effect, inject, OnDestroy, signal, untracked} from '@angular/core';
 import {RouterLink, ActivatedRoute, Router} from '@angular/router';
 import {Subscription} from 'rxjs';
 import {CatalogService, type Problem} from '../../core/catalog.service';
@@ -26,7 +26,7 @@ const STORAGE_PREFIX='bytequest.angular-preview.draft.java.';
       } @else if(!problem()){
         <p class="empty-state" role="alert">Problem not found. <a routerLink="/angular">Back to library</a></p>
       } @else {
-      <div class="lab">
+      <div class="lab" [class.editor-focus]="editorExpanded()">
         <section class="problem-pane" aria-label="Problem and learning materials">
           <div class="pane-tabs" role="tablist" aria-label="Learning materials">
             <button type="button" role="tab" [class.active]="pane()==='problem'"
@@ -43,11 +43,13 @@ const STORAGE_PREFIX='bytequest.angular-preview.draft.java.';
               <div class="problem-heading">
                 <p class="problem-eyebrow">Coding challenge</p>
                 <div class="problem-title-row">
-                  <h3>{{problem()!.title}}</h3>
+                  <h3>{{problemOrdinal()}}. {{problem()!.title}}</h3>
                   <div class="problem-badges">
                     <span class="problem-difficulty" [class]="problem()!.difficulty.toLowerCase()">{{problem()!.difficulty}}</span>
+                    @if(solved()||verifiedVerdict()?.accepted){<span class="native-solved-badge" aria-label="Solved challenge">✓ Solved</span>}
                   </div>
                 </div>
+                <p class="native-collection">ByteQuest collection</p>
               </div>
               <div class="problem-statement-copy">
                 <p class="body-copy">{{problem()!.description}}</p>
@@ -102,10 +104,11 @@ Output: <b>{{format(example.expected)}}</b></code>
         <div class="pane-resizer" role="separator" aria-label="Description and editor divider" aria-orientation="vertical"></div>
         <section class="editor-pane" aria-label="Java editor and test results">
           <div class="editor-top">
-            <span class="file-tab"><span class="java-dot">J</span>
+            <span class="file-tab"><span class="native-editor-index">#{{problemOrdinal()}}</span><span class="java-dot">J</span>
               <span>Solution.java</span><span class="file-dot"></span></span>
             <div class="editor-tools">
-              <button type="button" class="mini-icon" title="Reset to starter" (click)="resetDraft()">Reset</button>
+              <button type="button" class="mini-icon native-reset" aria-label="Reset to starter" title="Reset to starter" (click)="resetDraft()">↶</button>
+              <button type="button" class="native-expand-editor" [attr.aria-pressed]="editorExpanded()" (click)="editorExpanded.set(!editorExpanded())">{{editorExpanded()?'Exit expanded editor':'Expand editor'}}</button>
               <select aria-label="Programming language" disabled><option value="java">Java 17</option></select>
             </div>
           </div>
@@ -280,19 +283,35 @@ export class PracticeComponent implements OnDestroy {
   readonly problem=signal<Problem|null>(null);
   readonly code=signal('');
   readonly loading=signal(true);
+  readonly problemOrdinal=signal(0);
+  readonly solved=signal(false);
+  readonly editorExpanded=signal(false);
+  private progressGeneration=0;
 
   constructor(){
     this.subscription=this.route.paramMap.subscribe(params=>{void this.select(params.get('id'));});
     void this.verified.canSubmit().then(enabled=>this.canVerify.set(enabled));
+    effect(()=>{
+      const owner=this.auth.user()?.id,problemId=this.problem()?.id;
+      untracked(()=>{
+        const ticket=++this.progressGeneration;
+        this.solved.set(false);
+        if(owner&&problemId)void this.fetchSolved(owner,problemId,ticket);
+      });
+    });
   }
   private async select(id:string|null):Promise<void>{
     this.loading.set(true);this.problem.set(null);this.result.set(null);this.resultError.set('');
+    this.problemOrdinal.set(0);this.editorExpanded.set(false);
     this.pane.set('problem');this.selectedCase.set(0);
     this.referenceCode.set('');this.referenceError.set('');
     this.verifiedVerdict.set(null);this.verificationError.set('');
     try {
-      const found=(await this.catalog.all()).find(p=>p.id===id)||null;
+      const published=await this.catalog.all();
+      const index=published.findIndex(p=>p.id===id);
+      const found=index<0?null:published[index];
       if(this.route.snapshot.paramMap.get('id')!==id)return;
+      this.problemOrdinal.set(index+1);
       this.problem.set(found);
       if(found){
         let draft:string|null=null;
@@ -326,7 +345,7 @@ export class PracticeComponent implements OnDestroy {
       const verdict=await this.verified.submit(problem,code,scope);
       if(this.problem()?.id===id&&this.auth.user()?.id===owner&&this.code()===code){
         this.verifiedVerdict.set(verdict);
-        if(verdict.accepted)this.submissionRefresh.update(value=>value+1);
+        if(verdict.accepted){this.submissionRefresh.update(value=>value+1);this.solved.set(true);}
       }else{
         this.verificationError.set('The active problem, account or solution changed. Refresh your submission history.');
       }
@@ -359,6 +378,14 @@ export class PracticeComponent implements OnDestroy {
     }catch(e){
       if(this.problem()?.id===problem.id)this.referenceError.set(e instanceof Error?e.message:'The Java answer remains locked.');
     }finally{this.readingReference.set(false);}
+  }
+  private async fetchSolved(owner:string,problemId:string,ticket:number):Promise<void>{
+    try{
+      const progress=await this.api.request<{payload?:{solved?:Record<string,unknown>}}>('progress');
+      if(ticket!==this.progressGeneration||this.auth.user()?.id!==owner||this.problem()?.id!==problemId)return;
+      const value=progress.payload?.solved?.[problemId];
+      this.solved.set(typeof value==='number'&&Number.isFinite(value)&&value>0&&value<=Date.now());
+    }catch{/* Keep solved unknown rather than fabricating accepted status. */}
   }
   readonly pane=signal<'problem'|'learn'|'visual'|'submissions'>('problem');
   readonly selectedCase=signal(0);
@@ -394,5 +421,5 @@ export class PracticeComponent implements OnDestroy {
   }
   format(value:unknown):string {return JSON.stringify(value);}
   liveLink():string {return 'https://jagadeeshwaran-r.github.io/bytequest/?problem='+encodeURIComponent(this.problem()?.id||'two-sum');}
-  ngOnDestroy():void {this.subscription.unsubscribe();}
+  ngOnDestroy():void {++this.progressGeneration;this.subscription.unsubscribe();}
 }
