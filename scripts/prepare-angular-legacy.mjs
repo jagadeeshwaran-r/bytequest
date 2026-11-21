@@ -36,7 +36,7 @@ export async function prepareAngularLegacy(target=defaultTarget){
    'function setLanguage(v){if(v!=="java")return;',
    'Java-only language switching');
   js=replaceOne(js,
-   'const nativeJudge=new NativeJudge(message=>{$("runStatus").textContent=message;},cloud); const judge={run:(source,p,cases)=>language==="java"?javaJudge.run(source,p,cases):nativeJudge.run(source,p,cases,language),stop:()=>{javaJudge.stop();nativeJudge.stop();}};',
+   'const nativeJudge=new NativeJudge(message=>{$("runStatus").textContent=message;},cloud);\nconst judge={run:(source,p,cases)=>language==="java"?javaJudge.run(source,p,cases):nativeJudge.run(source,p,cases,language),stop:()=>{javaJudge.stop();nativeJudge.stop();}};',
    'const judge={run:(source,p,cases)=>javaJudge.run(source,p,cases),stop:()=>javaJudge.stop()};',
    'Java-only judge entrypoint');
   await writeFile(file,js,'utf8');
