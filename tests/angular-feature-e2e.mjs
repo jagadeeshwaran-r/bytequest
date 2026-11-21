@@ -10,6 +10,42 @@ const {chromium}=require('../angular/node_modules/playwright-core');
 const root=resolve('angular/dist/angular-preview');
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8',
  '.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml'};
+// Regression for the inherited legacy [data-theme=dark] textarea background,
+// which covered the syntax layer and made valid starter Java look blank.
+async function assertVisibleEditor(page,label){
+ const state=await page.evaluate(()=>{
+  const input=document.querySelector('bq-editor textarea.source-input');
+  const mirror=document.querySelector('bq-editor pre.syntax-layer');
+  const code=mirror?.querySelector('code');
+  if(!input||!mirror||!code)return null;
+  const inputStyle=getComputedStyle(input),mirrorStyle=getComputedStyle(mirror),
+    codeStyle=getComputedStyle(code),rect=mirror.getBoundingClientRect();
+  return{
+   content:input.value,
+   syntax:code.textContent||'',
+   inputBackground:inputStyle.backgroundColor,
+   inputTextFill:inputStyle.webkitTextFillColor,
+   mirrorColor:codeStyle.color,
+   mirrorDisplay:mirrorStyle.display,
+   mirrorVisibility:mirrorStyle.visibility,
+   mirrorOpacity:Number(mirrorStyle.opacity),
+   mirrorWidth:rect.width,mirrorHeight:rect.height,
+   theme:document.documentElement.getAttribute('data-theme')
+  };
+ });
+ assert.ok(state,label+': missing highlighted editor DOM');
+ assert.match(state.content,/class Solution/,label+': Java starter source missing');
+ assert.equal(state.syntax,state.content+'\n',label+': highlighted Java mirror is empty or stale');
+ assert.match(state.inputBackground,/^rgba\(0, 0, 0, 0\)$|^transparent$/,
+  label+': opaque textarea hides visible syntax layer: '+JSON.stringify(state));
+ assert.equal(state.mirrorDisplay,'block',label+': highlight layer is hidden');
+ assert.equal(state.mirrorVisibility,'visible',label+': highlight layer is invisible');
+ assert.equal(state.mirrorOpacity,1,label+': highlight layer is fully transparent');
+ assert.ok(state.mirrorWidth>100&&state.mirrorHeight>100,label+': highlight layer has no visible area');
+ assert.doesNotMatch(state.mirrorColor,/rgba\(.+, 0\)|transparent/,
+  label+': highlight text is transparent');
+ console.log('PASS visible Java starter in '+state.theme+' mode: '+label);
+}
 const server=createServer(async(req,res)=>{
  let pathname;try{pathname=decodeURIComponent(new URL(req.url||'/','http://localhost').pathname);}
  catch{res.writeHead(400);res.end();return;}
@@ -66,6 +102,19 @@ try{
   await editor.waitFor({timeout:20000});
   const starter=await editor.inputValue();
   assert.ok(starter.includes('class Solution')||starter.includes('Solution'),'Starter Java is missing');
+  await assertVisibleEditor(page,'initial problem on '+viewport.width+'px');
+  // Explicit regression for the problem where the user saw a blank code pane.
+  await page.goto(origin+'/#/angular/problem/contains-duplicate',{waitUntil:'domcontentloaded'});
+  await editor.waitFor({timeout:25000});
+  await page.waitForFunction(()=>{
+    const code=document.querySelector('bq-editor textarea.source-input');
+    return code?.value.includes('containsDuplicate');
+  },undefined,{timeout:20000});
+  await assertVisibleEditor(page,'Contains Duplicate on '+viewport.width+'px');
+  await page.goto(origin+'/#/angular/problem/two-sum',{waitUntil:'domcontentloaded'});
+  await editor.waitFor({timeout:20000});
+  await assertVisibleEditor(page,'Two Sum re-opened on '+viewport.width+'px');
+
   // Exercise actual editor keystrokes in Chromium: IntelliJ-style pair insertion,
   // pair highlight and paired backspace (unit tests alone cannot catch wiring issues).
   await editor.fill('');
@@ -122,6 +171,9 @@ try{
   await page.reload({waitUntil:'domcontentloaded'});
   await nav.getByRole('link',{name:'Problems'}).waitFor({timeout:15000});
   assert.equal(await page.locator('html').getAttribute('data-theme'),'light');
+  await page.goto(origin+'/#/angular/problem/contains-duplicate',{waitUntil:'domcontentloaded'});
+  await editor.waitFor({timeout:25000});
+  await assertVisibleEditor(page,'Contains Duplicate light theme on '+viewport.width+'px');
   const ui=await page.evaluate(()=>({
     app:!!document.querySelector('bq-root'),
     iframe:document.querySelectorAll('iframe').length,
