@@ -15,8 +15,26 @@ const server=createServer(async(req,res)=>{
  catch{res.writeHead(400);res.end();return;}
  const file=resolve(root,'.'+(path==='/'?'/index.html':path));
  if(!file.startsWith(root+sep)){res.writeHead(403);res.end();return;}
- try{const data=await readFile(file);res.writeHead(200,{'Content-Type':types[extname(file)]||'application/octet-stream'});
-  res.end(data);}catch{res.writeHead(404);res.end('Missing');}
+ try{
+   const data=await readFile(file);
+   const headers={'Content-Type':types[extname(file)]||'application/octet-stream','Accept-Ranges':'bytes'};
+   // CheerpJ expects byte-range support when loading JARs. The CI HTTP
+   // fixture must behave like the real Vercel static server, not return a
+   // full 200 body for every Range request.
+   const range=req.headers.range?.match(/^bytes=(\\d+)-(\\d*)$/);
+   if(range){
+     const start=Number(range[1]),end=range[2]?Number(range[2]):data.length-1;
+     if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start>end||start>=data.length){
+       res.writeHead(416,{...headers,'Content-Range':'bytes */'+data.length});res.end();return;
+     }
+     const last=Math.min(end,data.length-1);
+     const slice=data.subarray(start,last+1);
+     res.writeHead(206,{...headers,'Content-Range':'bytes '+start+'-'+last+'/'+data.length,
+       'Content-Length':String(slice.length)});
+     res.end(slice);return;
+   }
+   res.writeHead(200,{...headers,'Content-Length':String(data.length)});res.end(data);
+  }catch{res.writeHead(404);res.end('Missing');}
 });
 let browser;
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
