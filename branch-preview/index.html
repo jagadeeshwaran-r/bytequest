@@ -2,11 +2,42 @@
 <html lang="en" data-beasties-container>
   <head>
     <meta charset="utf-8">
-    <title>ByteQuest · Angular preview</title>
+    <title>ByteQuest — Angular staging</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark">
-    <meta name="description" content="ByteQuest Angular migration preview. The live site remains unchanged.">
+    <meta name="description" content="ByteQuest Java coding practice — isolated Angular test website.">
     <base href="./">
-  <style>@font-face{font-family:Inter;font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}@font-face{font-family:Inter;font-style:normal;font-weight:500;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}@font-face{font-family:Inter;font-style:normal;font-weight:600;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}@font-face{font-family:Inter;font-style:normal;font-weight:700;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}*{box-sizing:border-box}:root{font-family:Inter,system-ui,sans-serif;font-synthesis:none}body{margin:0}bq-root{display:block;min-height:100vh;background:var(--page);color:var(--text);color-scheme:var(--color-scheme);transition:background .16s,color .16s;--page:#0b0f0d;--panel:#121815;--panel-2:#151e19;--surface:#18211c;--line:#27342d;--text:#ecf1ed;--muted:#96a99a;--accent:#7cdda4;--subtle:#b5c2b8;--color-scheme:dark}@media(prefers-reduced-motion:reduce){bq-root{transition:none}}</style><link rel="stylesheet" href="styles-J3MCWRRS.css" media="print" data-beasties-media="all"><noscript><link rel="stylesheet" href="styles-J3MCWRRS.css"></noscript></head>
-  <body><bq-root></bq-root><script src="main-KK3NMJPI.js" type="module"></script><script>document.querySelectorAll('link[data-beasties-media]').forEach(function(l){l.media=l.getAttribute('data-beasties-media');l.removeAttribute('data-beasties-media')})</script></body>
+    <link rel="icon" type="image/svg+xml" href="legacy/favicon.svg">
+    <style>
+      /* Keep a painted shell during lazy routing; never cover the app with a dark boot overlay. */
+      html,body{min-height:100%;margin:0}
+      html{background:#f7f9f7}
+      html[data-theme="dark"]{background:#0b0f0d}
+      bq-root{display:block;min-height:100dvh}
+    </style>
+  <style>@font-face{font-family:Inter;font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}@font-face{font-family:Inter;font-style:normal;font-weight:500;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}@font-face{font-family:Inter;font-style:normal;font-weight:600;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}@font-face{font-family:Inter;font-style:normal;font-weight:700;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}*{box-sizing:border-box}:root{font-family:Inter,system-ui,sans-serif;font-synthesis:none}body{margin:0}bq-root{display:block;min-height:100vh;background:var(--page);color:var(--text);color-scheme:var(--color-scheme);transition:background .16s,color .16s;--page:#0b0f0d;--panel:#121815;--panel-2:#151e19;--surface:#18211c;--line:#27342d;--text:#ecf1ed;--muted:#96a99a;--accent:#7cdda4;--subtle:#b5c2b8;--color-scheme:dark}@media(prefers-reduced-motion:reduce){bq-root{transition:none}}</style><link rel="stylesheet" href="styles-QQVBB3R7.css" media="print" data-beasties-media="all"><noscript><link rel="stylesheet" href="styles-QQVBB3R7.css"></noscript></head>
+  <body>
+    <script>
+      /* Apply theme before first paint and install canonical CSS only ONCE.
+         The script runs in the body after Angular build CSS was inserted into
+         the head, but before Angular bootstrap. */
+      (function(){
+        var mode='system';
+        try{mode=localStorage.getItem('bytequest.theme')||'system'}catch(e){}
+        var dark=mode==='dark'||(mode!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme=dark?'dark':'light';
+        document.documentElement.style.colorScheme=dark?'dark':'light';
+        var files=["style.css","theme.css","minimal.css","red.css","green.css","presence.css","gloss.css","verification-evidence.css","reference-style.css","community-next.css","profile-social.css","code-operators.css","brace-match.css","workbench.css","company-overflow.css","scroll-performance.css","problem-alignment.css","catalog-recovery.css","problem-statement-rich.css","workspace-premium.css","catalog-refined.css","editor-cleanup.css","run-shortcut.css","studio-access.css","premium-ui-polish.css","profile-compact.css","profile-unboxed.css","profile-reference.css","calendar-year.css","leaderboard-refined.css"];
+        for(var i=0;i<files.length;i++){
+          if(document.querySelector('[data-bq-static-style="'+files[i]+'"]'))continue;
+          var link=document.createElement('link');
+          link.rel='stylesheet';
+          link.href=new URL('legacy/'+files[i],document.baseURI).href;
+          link.dataset.bqStaticStyle=files[i];
+          document.head.appendChild(link);
+        }
+      })();
+    </script>
+    <bq-root></bq-root>
+  <script src="main-XP5OYUPU.js" type="module"></script><script>document.querySelectorAll('link[data-beasties-media]').forEach(function(l){l.media=l.getAttribute('data-beasties-media');l.removeAttribute('data-beasties-media')})</script></body>
 </html>
