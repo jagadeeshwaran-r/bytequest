@@ -3,6 +3,7 @@ import {RouterLink, ActivatedRoute, Router} from '@angular/router';
 import {Subscription} from 'rxjs';
 import {CatalogService, type Problem} from '../../core/catalog.service';
 import {EditorComponent} from '../editor/editor.component';
+import {SubmissionsComponent} from './submissions.component';
 import {JavaGuestService} from '../../core/java-guest.service';
 import {AuthService} from '../../core/auth.service';
 import {VerifiedJavaService} from '../../core/verified-java.service';
@@ -12,7 +13,7 @@ import type {SuiteScope,VerifiedVerdict} from '../../core/java-submission-contra
 const STORAGE_PREFIX='bytequest.angular-preview.draft.java.';
 @Component({
   selector:'bq-practice',
-  imports:[RouterLink,EditorComponent],
+  imports:[RouterLink,EditorComponent,SubmissionsComponent],
   changeDetection:ChangeDetectionStrategy.OnPush,
   template:`
     <section class="view native-practice">
@@ -84,22 +85,8 @@ Output: <b>{{format(example.expected)}}</b></code>
                 </button>
               }
             } @else if(pane()==='submissions'){
-              <span class="pattern-tag">SUBMISSION HISTORY</span>
-              <h3>Your Java submissions</h3>
-              <p class="submission-view-note">Server-recorded submissions remain separate from browser practice.</p>
-              <button type="button" class="button secondary" (click)="loadHistory()" [disabled]="historyLoading()">
-                {{historyLoading()?'Loading…':'Refresh history'}}
-              </button>
-              @if(historyError()){<p class="run-error" role="alert">{{historyError()}}</p>}
-              @for(row of history();track row.id){
-                <article class="native-submission">
-                  <strong>Accepted · {{row.suite_kind==='public'?'Public suite':'Full suite'}}</strong>
-                  <span>{{row.language}} · {{row.created_at||'Date unavailable'}}</span>
-                  <span>{{row.runtime_ms===null?'—':row.runtime_ms+' ms'}} · {{row.shared?'Shared':'Private (earlier result)'}}</span>
-                </article>
-              }@empty{
-                @if(!historyLoading()&&!historyError()){<p class="body-copy">No server-recorded Java submissions found.</p>}
-              }
+              <bq-submissions [problemId]="problem()!.id" [revision]="problem()!.revision"
+                [hiddenCount]="problem()!.hiddenCount" [refreshKey]="submissionRefresh()"/>
             } @else {
               <span class="pattern-tag">VISUALIZE</span>
               <h3>Java technique</h3>
@@ -266,9 +253,7 @@ export class PracticeComponent implements OnDestroy {
   readonly readingReference=signal(false);
   readonly referenceCode=signal('');
   readonly referenceError=signal('');
-  readonly historyLoading=signal(false);
-  readonly historyError=signal('');
-  readonly history=signal<readonly {id:string;language:string;created_at?:string;suite_kind?:string;shared?:boolean;runtime_ms?:number|null}[]>([]);
+  readonly submissionRefresh=signal(0);
   readonly auth=inject(AuthService);
   readonly verified=inject(VerifiedJavaService);
   readonly canVerify=signal(false);
@@ -290,7 +275,7 @@ export class PracticeComponent implements OnDestroy {
   private async select(id:string|null):Promise<void>{
     this.loading.set(true);this.problem.set(null);this.result.set(null);this.resultError.set('');
     this.pane.set('problem');this.selectedCase.set(0);
-    this.referenceCode.set('');this.referenceError.set('');this.history.set([]);this.historyError.set('');
+    this.referenceCode.set('');this.referenceError.set('');
     this.verifiedVerdict.set(null);this.verificationError.set('');
     try {
       const found=(await this.catalog.all()).find(p=>p.id===id)||null;
@@ -328,6 +313,7 @@ export class PracticeComponent implements OnDestroy {
       const verdict=await this.verified.submit(problem,code,scope);
       if(this.problem()?.id===id&&this.auth.user()?.id===owner&&this.code()===code){
         this.verifiedVerdict.set(verdict);
+        if(verdict.accepted)this.submissionRefresh.update(value=>value+1);
       }else{
         this.verificationError.set('The active problem, account or solution changed. Refresh your submission history.');
       }
@@ -337,23 +323,6 @@ export class PracticeComponent implements OnDestroy {
   }
   openPane(pane:'problem'|'learn'|'visual'|'submissions'):void{
     this.pane.set(pane);
-    if(pane==='submissions')void this.loadHistory();
-  }
-  async loadHistory():Promise<void>{
-    const problem=this.problem(),owner=this.auth.user()?.id;
-    if(!problem||!owner||this.historyLoading())return;
-    this.historyLoading.set(true);this.historyError.set('');
-    try{
-      const reply=await this.api.request<{users?:unknown[];items?:unknown[]}>('submission-history',{problemId:problem.id});
-      if(this.problem()?.id!==problem.id||this.auth.user()?.id!==owner)return;
-      const rows=(reply.users||reply.items||[]).filter(row=>{
-        if(!row||typeof row!=='object')return false;
-        const item=row as {id?:unknown;language?:unknown};
-        return typeof item.id==='string'&&item.language==='java';
-      }) as {id:string;language:string;created_at?:string;suite_kind?:string;shared?:boolean;runtime_ms?:number|null}[];
-      this.history.set(rows.slice(0,25));
-    }catch(e){if(this.problem()?.id===problem.id)this.historyError.set(e instanceof Error?e.message:'Could not load submissions.');}
-    finally{this.historyLoading.set(false);}
   }
   async readReference():Promise<void>{
     const problem=this.problem(),owner=this.auth.user()?.id;
