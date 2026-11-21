@@ -291,6 +291,7 @@ export class SubmissionsComponent implements OnDestroy {
   readonly revision=input<number|null>(null);
   readonly hiddenCount=input(0);
   readonly refreshKey=input(0);
+  readonly initialView=input<Panel>('mine');
   readonly auth=inject(AuthService);
   private readonly api=inject(ReadonlyApiService);
   private readonly actions=inject(StagingActionService);
@@ -316,11 +317,12 @@ export class SubmissionsComponent implements OnDestroy {
 
   constructor(){
     effect(()=>{
-      const id=this.problemId(),owner=this.auth.user()?.id;
+      const id=this.problemId(),owner=this.auth.user()?.id,initialView=this.initialView();
       this.refreshKey();
       const defaultBoard=this.hiddenCount()>0?'public':'full';
       untracked(()=>{
         if(!id||this.disposed)return;
+        this.view.set(initialView);
         this.board.set(defaultBoard);
         this.page.set(0);
         this.history.set([]);this.rankings.set([]);
