@@ -1,6 +1,8 @@
 import {inject,Injectable,signal} from '@angular/core';
 import {AuthService} from './auth.service';
 import {ReadonlyApiService} from './readonly-api.service';
+import {validateStagingBackend,type StagingBackendConfig} from './staging-backend-contract';
+export {validateStagingBackend} from './staging-backend-contract';
 
 // This client never sends writes to the live Supabase project from staging.
 // A separate project must be provisioned, configured, and authorized first.
@@ -9,24 +11,6 @@ const writeActions=new Set([
   'notifications-read','role-set','studio-save','sync','submission-public-share',
   'maintenance-admin-save'
 ]);
-export interface StagingBackendConfig {
-  readonly enabled:boolean;readonly apiUrl:string;readonly publishableKey:string;
-}
-const liveProject='zwubrziriuppkldrdoos';
-export function validateStagingBackend(config:StagingBackendConfig):URL{
-  if(!config||config.enabled!==true)throw new Error('Account changes are disabled until the separate test database is ready.');
-  if(!config.apiUrl||!config.publishableKey)throw new Error('Staging backend credentials are incomplete.');
-  let url:URL;
-  try{url=new URL(config.apiUrl);}catch{throw new Error('Invalid staging API URL.');}
-  const project=url.hostname.split('.')[0];
-  if(url.protocol!=='https:'||!/^https:\/\/[a-z0-9-]+\.supabase\.co\/$/.test(url.origin+'/')
-    ||url.hostname===liveProject+'.supabase.co'||!/^([a-z0-9]{12,30})$/.test(project)
-    ||url.pathname!=='/functions/v1/bytequest-firebase'
-    ||url.username||url.password||url.search||url.hash){
-    throw new Error('Only a separate secure ByteQuest Supabase staging function may accept account changes.');
-  }
-  return url;
-}
 /** Common strongly guarded interface for native UI features.
  * Read actions still follow existing production-origin CORS rules.
  * Mutations are allowed exclusively against an isolated staging backend.
