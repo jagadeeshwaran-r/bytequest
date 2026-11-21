@@ -22,7 +22,7 @@ type ThemeMode='light'|'dark'|'system';
     </nav>
     <div class="native-shell-tools"><bq-chat/></div>
     <div class="profile-dropdown">
-      <button type="button" class="native-profile-toggle" [attr.aria-expanded]="menuOpen()"
+      <button type="button" class="native-profile-toggle" aria-label="Account menu" [attr.aria-expanded]="menuOpen()"
         aria-controls="nativeAccountMenu" (click)="menuOpen.set(!menuOpen())">
         <span class="native-avatar">
           @if(auth.user()?.avatarUrl){
