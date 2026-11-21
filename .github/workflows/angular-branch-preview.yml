@@ -1,0 +1,65 @@
+name: Angular isolated branch test preview
+
+on:
+  push:
+    branches:
+      - test/angular-migration
+    paths:
+      - 'angular/**'
+      - 'scripts/export-angular-catalog.mjs'
+      - '.github/workflows/angular-branch-preview.yml'
+  workflow_dispatch:
+
+# Deliberately no pages:write or id-token:write:
+# this workflow MUST NOT deploy over the live github-pages environment.
+permissions:
+  contents: write
+
+concurrency:
+  group: angular-branch-preview
+  cancel-in-progress: true
+
+jobs:
+  branch-build:
+    if: github.repository == 'jagadeeshwaran-r/bytequest'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the isolated test branch
+        uses: actions/checkout@v6
+        with:
+          ref: test/angular-migration
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install preview dependencies
+        run: npm install --prefix angular --no-audit --no-fund
+      - name: Compile Angular preview
+        run: npm run build --prefix angular
+      - name: Verify public-only preview
+        run: |
+          test -f angular/dist/angular-preview/index.html
+          test -f angular/dist/angular-preview/catalog.json
+          if grep -R --include='*.html' 'service_role' angular/dist/angular-preview; then
+            echo 'Unsafe secret reference in preview output' >&2; exit 1
+          fi
+      - name: Publish compiled assets back to test branch only
+        run: |
+          mkdir -p branch-preview
+          find branch-preview -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+          cp -a angular/dist/angular-preview/. branch-preview/
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add -f branch-preview
+          if git diff --cached --quiet; then
+            echo 'Preview unchanged.'
+          else
+            git commit -m "chore(test): update isolated Angular preview [skip ci]"
+            git push origin HEAD:test/angular-migration
+          fi
+      - name: Retain build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bytequest-angular-test-branch
+          path: branch-preview/
+          retention-days: 14
