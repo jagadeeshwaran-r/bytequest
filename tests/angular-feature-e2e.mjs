@@ -103,6 +103,33 @@ try{
   const starter=await editor.inputValue();
   assert.ok(starter.includes('class Solution')||starter.includes('Solution'),'Starter Java is missing');
   await assertVisibleEditor(page,'initial problem on '+viewport.width+'px');
+  // Insert a synthetic status banner solely to test the layout without
+  // forging an authenticated submission. The real banner is Angular-owned.
+  const layout=await page.evaluate(()=>{
+    const pane=document.querySelector('.native-practice .editor-pane');
+    const bar=pane?.querySelector('.runbar');
+    if(!pane||!bar)return null;
+    const banner=document.createElement('div');
+    banner.className='native-submit-feedback is-accepted';
+    banner.innerHTML='<strong>✓ Accepted — public tests verified</strong>'+
+      '<span>All 5 published cases passed. Your accepted solution is stored in staging.</span>';
+    bar.before(banner);
+    const rect=element=>{const r=element.getBoundingClientRect();
+      return {top:r.top,bottom:r.bottom,height:r.height};};
+    const result={pane:rect(pane),bar:rect(bar),banner:rect(banner)};
+    banner.remove();
+    return result;
+  });
+  assert.ok(layout,'No editable workspace geometry');
+  assert.ok(layout.banner.height>20,'Submission result banner collapsed');
+  assert.ok(layout.banner.bottom<=layout.bar.top+2,
+    'Result banner overlaps Submit buttons: '+JSON.stringify(layout));
+  assert.ok(layout.bar.bottom<=layout.pane.bottom+3,
+    'Submit buttons were clipped when a server verdict appeared: '+JSON.stringify(layout));
+  assert.ok(layout.banner.top>=layout.pane.top,
+    'Server verdict is outside the visible editor: '+JSON.stringify(layout));
+  console.log('PASS visible Submit feedback geometry at '+viewport.width+'px');
+
   // Explicit regression for the problem where the user saw a blank code pane.
   await page.goto(origin+'/#/angular/problem/contains-duplicate',{waitUntil:'domcontentloaded'});
   await editor.waitFor({timeout:25000});
