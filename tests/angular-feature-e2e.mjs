@@ -128,6 +128,35 @@ try{
   console.log('PASS guest '+viewport.width+'px: search, editor, draft persistence, routes, auth gates, theme, no API writes');
   await page.close();
  }
+ // Deliberately drop all Supabase traffic. The canonical public snapshot must
+ // still render usable navigation and never reveal private challenge material.
+ const bundled=JSON.parse(await readFile(resolve(root,'catalog.json'),'utf8'));
+ assert.ok(bundled.length>0,'No offline catalog is available');
+ assert.ok(bundled.every(problem=>!Object.hasOwn(problem,'hiddenTests')
+   &&!Object.hasOwn(problem,'reference')&&!Object.hasOwn(problem,'hidden')),
+   'Offline starter catalog accidentally includes protected tests or editorial code');
+ const disconnected=await browser.newPage({viewport:{width:390,height:844}});
+ const offlineFaults=[];
+ const unsafeWrites=[];
+ disconnected.on('pageerror',error=>offlineFaults.push(error.message));
+ disconnected.on('request',request=>{
+   if(request.method()!=='GET'&&/supabase\\.co/.test(request.url()))
+     unsafeWrites.push(request.url());
+ });
+ await disconnected.route(/supabase\\.co/,route=>route.abort('internetdisconnected'));
+ await disconnected.goto(origin+'/#/angular',{waitUntil:'domcontentloaded',timeout:30000});
+ await disconnected.locator('.native-catalog .problem-table tbody tr a.problem-title')
+   .first().waitFor({timeout:25000});
+ await disconnected.goto(origin+'/#/angular/problem/not-a-real-problem',
+   {waitUntil:'domcontentloaded',timeout:30000});
+ await disconnected.getByText('Problem not found.').waitFor({timeout:10000});
+ await disconnected.getByRole('link',{name:'Back to library'}).click();
+ await disconnected.locator('.native-catalog .problem-table tbody tr a.problem-title')
+   .first().waitFor({timeout:15000});
+ assert.deepEqual(unsafeWrites,[],'Offline guest traffic attempted a database write');
+ assert.deepEqual(offlineFaults,[],'Angular crashed without its remote API');
+ console.log('PASS offline API: safe starter catalog, missing route, recovered navigation, no data writes');
+ await disconnected.close();
 }finally{
  if(browser)await browser.close();
  await new Promise(done=>server.close(done));
