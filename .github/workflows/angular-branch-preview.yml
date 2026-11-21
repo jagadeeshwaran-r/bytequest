@@ -8,6 +8,9 @@ on:
       - 'angular/**'
       - 'scripts/export-angular-catalog.mjs'
       - 'scripts/prepare-angular-runtime.mjs'
+      - 'scripts/prepare-angular-legacy.mjs'
+      - 'dist/**'
+      - 'tests/angular-visual-parity.mjs'
       - 'dist/judge.js'
       - 'dist/runner-core.js'
       - '.github/workflows/angular-branch-preview.yml'
@@ -41,6 +44,7 @@ jobs:
         run: |
           node --test tests/angular-migration.mjs
           node --experimental-strip-types --test tests/angular-editor.mjs
+          node --test tests/angular-visual-parity.mjs
       - name: Compile Angular preview
         run: npm run build --prefix angular
       - name: Verify public-only preview
@@ -50,6 +54,12 @@ jobs:
           test -f angular/dist/angular-preview/java-runtime/judge.js
           test -f angular/dist/angular-preview/java-runtime/runner.html
           test -s angular/dist/angular-preview/java-runtime/java-runner.jar
+          test -f angular/dist/angular-preview/legacy/index.html
+          test -f angular/dist/angular-preview/legacy/community.html
+          test -f angular/dist/angular-preview/legacy/studio.html
+          test -f angular/dist/angular-preview/legacy/leaderboard.html
+          test -s angular/dist/angular-preview/legacy/java-runner.jar
+          ! test -e angular/dist/angular-preview/legacy/native-runner-core.js
           if grep -R --include='*.html' 'service_role' angular/dist/angular-preview; then
             echo 'Unsafe secret reference in preview output' >&2; exit 1
           fi
