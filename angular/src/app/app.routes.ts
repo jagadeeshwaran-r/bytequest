@@ -14,6 +14,9 @@ export const routes:Routes=[
   {path:'angular',loadComponent:()=>import('./native-shell.component').then(m=>m.NativeShellComponent),children:[
     {path:'',loadComponent:()=>import('./features/problems/problems.component').then(m=>m.ProblemsComponent),title:'Angular problems · ByteQuest'},
     {path:'problem/:id',loadComponent:()=>import('./features/practice/practice.component').then(m=>m.PracticeComponent),title:'Angular practice · ByteQuest'},
+    {path:'profile/edit',loadComponent:()=>import('./features/profile/edit-profile.component').then(m=>m.EditProfileComponent),title:'Edit ByteQuest profile'},
+    {path:'find',loadComponent:()=>import('./features/search/search.component').then(m=>m.SearchComponent),title:'Find ByteQuest friends'},
+    {path:'studio',loadComponent:()=>import('./features/studio/studio.component').then(m=>m.StudioComponent),title:'ByteQuest Java Studio'},
     {path:'profile/:target',loadComponent:()=>import('./features/profile/profile.component').then(m=>m.ProfileComponent),title:'Angular profile · ByteQuest'},
     {path:'leaderboard',loadComponent:()=>import('./features/leaderboard/leaderboard.component').then(m=>m.LeaderboardComponent),title:'Angular leaderboard · ByteQuest'}
   ]},
