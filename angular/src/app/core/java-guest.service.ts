@@ -1,5 +1,6 @@
 import {Injectable, OnDestroy, signal} from '@angular/core';
 import type {Problem, Example} from './catalog.service';
+import {prepareJavaForJudge} from './java-source';
 
 interface JavaCase{readonly passed:boolean;readonly label?:string;readonly actual?:unknown;readonly expected?:unknown;readonly error?:string;}
 interface JavaResult{
@@ -23,7 +24,7 @@ export class JavaGuestService implements OnDestroy{
   const judge=await this.getJudge();
   // Guest Run executes only the existing public tests. No hidden tests,
   // Firebase claims, database writes, leaderboard credit or submission unlocks.
-  return judge.run(source,{
+  return judge.run(prepareJavaForJudge(source),{
     id:problem.id,method:problem.method,params:problem.params,returns:problem.returns,
     normalize:problem.normalize||''
   },problem.tests);
