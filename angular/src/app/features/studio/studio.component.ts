@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy,Component,inject,OnInit,signal} from '@angular/core';
+import {ChangeDetectionStrategy,Component,effect,inject,OnInit,signal} from '@angular/core';
 import {AuthService} from '../../core/auth.service';
 import {StagingActionService} from '../../core/staging-action.service';
 import {JavaGuestService} from '../../core/java-guest.service';
@@ -113,10 +113,11 @@ export class StudioComponent implements OnInit{
  readonly error=signal('');
  readonly success=signal('');
  private validatedFingerprint='';
- ngOnInit():void{
-  void this.api.canWrite().then(enabled=>this.canWrite.set(enabled));
+ ngOnInit():void{void this.api.canWrite().then(enabled=>this.canWrite.set(enabled));}
+ constructor(){effect(()=>{
   if(this.auth.user())void this.reload();
- }
+  else this.rows.set([]);
+ });}
  async reload():Promise<void>{
   if(!this.auth.user())return;
   this.loading.set(true);this.error.set('');
