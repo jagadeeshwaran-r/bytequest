@@ -1,0 +1,14 @@
+/* Server acceptance and browser practice must never look equivalent. */
+.submission-verification-unavailable{
+  padding:16px 18px;margin:14px 0;border:1px solid var(--border,#34383a);
+  border-radius:12px;background:var(--surface,#111416);color:var(--text,#f1f4f2);
+  font:13px/1.55 Inter,system-ui,sans-serif;
+}
+.submission-verification-unavailable strong{font-size:14px;font-weight:600;display:block;margin:0 0 6px}
+.submission-verification-unavailable p{margin:7px 0;color:var(--muted,#abb3af);line-height:1.6}
+.submission-verification-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:15px}
+.submission-locked [data-verify-submit]{margin-top:12px}
+@media(max-width:600px){
+  .submission-verification-unavailable{padding:13px 14px}
+  .submission-verification-actions .button{max-width:100%;white-space:normal}
+}

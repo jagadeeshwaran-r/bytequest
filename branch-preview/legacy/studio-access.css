@@ -1,0 +1,32 @@
+/* Compact, account-aware Studio entry; avoid a giant empty login panel. */
+#studioView .studio-access-panel{
+ display:flex;align-items:flex-start;gap:22px;
+ max-width:780px;margin:26px auto 40px;padding:30px 34px;
+ border-radius:20px;border:1px solid rgba(112,137,124,.22);
+ text-align:left;box-shadow:0 15px 45px rgba(17,34,25,.045);
+ background:var(--surface, #fff);color:inherit;
+}
+#studioView .studio-access-icon{
+ display:grid;place-items:center;flex:0 0 52px;width:52px;height:52px;
+ border-radius:15px;background:rgba(34,117,76,.09);color:#288257;
+}
+#studioView .studio-access-icon svg{width:25px;height:25px}
+#studioView .studio-access-copy{min-width:0;flex:1}
+#studioView .studio-access-label{
+ display:block;margin-bottom:10px;color:var(--muted,#697c73);
+ letter-spacing:.12em;font-size:10px;font-weight:700;
+}
+#studioView .studio-access-panel h3{margin:0 0 9px;font-size:22px;line-height:1.25;letter-spacing:-.025em}
+#studioView .studio-access-panel p{margin:0;line-height:1.7;font-size:14px;max-width:520px;color:var(--muted,#697c73)}
+#studioView .studio-access-actions{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-top:20px}
+#studioView .studio-access-actions .button{min-height:42px}
+#studioView .studio-access-actions [hidden]{display:none!important}
+#studioView .studio-access-return{color:inherit;text-decoration:underline;text-underline-offset:4px;font-size:13px;font-weight:600}
+#studioView .studio-access-panel small{display:block;margin-top:19px;color:var(--muted,#697c73);font-size:12px}
+#studioView #newProblemBtn[hidden], [data-admin-link][hidden]{display:none!important}
+@media(max-width:640px){
+ #studioView .studio-access-panel{padding:22px 20px;gap:14px;margin:22px 0 30px;border-radius:16px}
+ #studioView .studio-access-icon{flex-basis:43px;width:43px;height:43px;border-radius:12px}
+ #studioView .studio-access-icon svg{width:22px;height:22px}
+ #studioView .studio-access-panel h3{font-size:19px}
+}

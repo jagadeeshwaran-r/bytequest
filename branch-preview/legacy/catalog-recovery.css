@@ -1,0 +1,10 @@
+/* Quiet library recovery feedback; no layout shift during refresh. */
+#mapView .catalog-meta{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+#mapView .catalog-sync-status{font-size:11px;color:var(--muted,#737b81);line-height:1.5}
+#mapView .catalog-sync-status[data-state="error"]{color:#bc694c}
+#mapView .catalog-sync-status[data-state="ready"]{color:#538271}
+#mapView .catalog-refresh{font:inherit;font-size:11px;font-weight:600;color:var(--text,#333);background:transparent;border:1px solid var(--line,rgba(125,125,125,.23));border-radius:7px;padding:5px 11px;cursor:pointer}
+#mapView .catalog-refresh:hover{border-color:#669d88}
+#mapView .catalog-refresh:disabled{opacity:.5;cursor:wait}
+#mapView .catalog-meta-hint{margin-left:auto}
+@media(max-width:620px){#mapView .catalog-meta-hint{margin-left:0;width:100%}}

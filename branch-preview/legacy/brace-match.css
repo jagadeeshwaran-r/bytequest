@@ -1,0 +1,13 @@
+/* Keep matched braces visible without moving glyphs or the caret in the overlay. */
+#practiceView #codeHighlight .matching-curly-brace{
+ color:#0a7547!important;
+ background:rgba(22,130,75,.20);
+ box-shadow:inset 0 0 0 1px rgba(22,130,75,.55);
+ border-radius:2px;
+ font:inherit;
+}
+:root[data-theme="dark"] #practiceView #codeHighlight .matching-curly-brace{
+ color:#b6ffce!important;
+ background:rgba(87,214,141,.22);
+ box-shadow:inset 0 0 0 1px rgba(87,214,141,.7);
+}

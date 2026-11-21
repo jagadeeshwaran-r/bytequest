@@ -1,0 +1,11 @@
+/* Quiet shortcut hint; never changes the editor's language or run behavior. */
+.runbar #runBtn{gap:7px}
+.runbar #runBtn .run-hotkey{
+ display:inline-flex;align-items:center;justify-content:center;
+ margin-left:2px;padding:2px 5px;
+ border:1px solid var(--border);border-radius:5px;
+ font:500 10px/1.3 var(--font-mono,monospace);
+ color:var(--muted);background:var(--surface-2);
+ letter-spacing:0;white-space:nowrap;
+}
+@media(max-width:680px){.runbar #runBtn .run-hotkey{display:none}}
