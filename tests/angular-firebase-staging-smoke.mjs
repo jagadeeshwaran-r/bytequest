@@ -3,7 +3,7 @@
 // NEVER supplies credentials or writes to Supabase or Firebase accounts.
 // Completion of an actual Google login still requires an interactive test user.
 import assert from 'node:assert/strict';
-import {readFile} from 'node:fs/promises';
+import {readFile,access} from 'node:fs/promises';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
 const {chromium}=require('../angular/node_modules/playwright-core');
@@ -57,7 +57,12 @@ console.log('PASS live website: index, public catalog, no hidden code, isolated 
 
 let browser;
 try{
- browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+ let executablePath;
+ for(const path of ['/usr/bin/google-chrome','/usr/bin/chromium','/usr/bin/chromium-browser']){
+  try{await access(path);executablePath=path;break;}catch{}
+ }
+ browser=await chromium.launch({headless:true,...(executablePath?{executablePath}:{}),
+  args:['--no-sandbox','--disable-dev-shm-usage']});
  const page=await browser.newPage({viewport:{width:1440,height:900}});
  const critical=[];
  page.on('pageerror',err=>critical.push(err.message));
