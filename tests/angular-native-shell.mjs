@@ -42,7 +42,21 @@ test('Native practice retains old split-pane classes and dedicated Java editor a
 });
 test('Classic original UI stays separately available while native workspace migrates',async()=>{
  const routes=await read('angular/src/app/app.routes.ts');
- assert.match(routes,/path:'',loadComponent:screen,data:\{screen:'index\.html'\}/);
+ assert.match(routes,/path:'',pathMatch:'full',redirectTo:'angular'/);
+ assert.match(routes,/path:'classic\\/problems',loadComponent:screen/);
  assert.match(routes,/path:'classic\/studio'/);
  assert.match(routes,/path:'angular',loadComponent:/);
+});
+
+test('Navigation does not replace the app with an iframe or a black theme placeholder',async()=>{
+ const routes=await read('angular/src/app/app.routes.ts');
+ const index=await read('angular/src/index.html');
+ const global=await read('angular/src/styles.css');
+ const bootstrap=await read('angular/src/main.ts');
+ assert.match(routes,/redirectTo:'angular'/);
+ assert.match(index,/<body>[\\s\\S]*<script>[\\s\\S]*bqStaticStyle[\\s\\S]*<bq-root>/);
+ assert.match(global,/html\\[data-theme="light"\\] bq-root/);
+ assert.match(global,/background:var\\(--page\\)/);
+ assert.match(bootstrap,/withPreloading\\(PreloadAllModules\\)/);
+ assert.doesNotMatch(index,/data-bq-maintenance-check="pending"/);
 });
