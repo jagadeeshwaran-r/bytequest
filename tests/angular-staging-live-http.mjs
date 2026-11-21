@@ -1,6 +1,7 @@
 // Live, no-credentials, READ-ONLY backend E2E against the isolated project.
 // Does not mutate any account, submit code, or touch the production service.
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
 const api='https://ainsxwxvfybhwdennsvh.supabase.co/functions/v1/bytequest-firebase';
 const origin='https://bytequest-angular-staging.vercel.app';
 const badOrigin='https://malicious-site.invalid';
@@ -29,4 +30,29 @@ const forged=await req('',{method:'POST',headers:{Origin:origin,'Content-Type':'
 assert.equal(forged.response.status,401,'Forged Firebase tokens must be rejected');
 const privateNoAuth=await req('',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({action:'account-delete',confirmation:'DELETE'})});
 assert.equal(privateNoAuth.response.status,401,'Account deletion must never accept anonymous calls');
+
+const cfg=JSON.parse(await readFile('angular/public/staging-backend.json','utf8'));
+assert.equal(cfg.enabled,true);
+assert.equal(cfg.apiUrl,api);
+assert.match(cfg.publishableKey,/^sb_publishable_/);
+const restBase='https://ainsxwxvfybhwdennsvh.supabase.co/rest/v1/';
+const readRest=async(table,query='?select=*&limit=1000')=>{
+ const response=await fetch(restBase+table+query,{headers:{apikey:cfg.publishableKey},
+   signal:AbortSignal.timeout(20000)});
+ const body=await response.json();return{response,body};
+};
+const catalog=await readRest('bytequest_problems','?select=id,content,revision&published=eq.true&limit=1000');
+assert.equal(catalog.response.status,200,'Public catalog not readable from real staging REST API: '+JSON.stringify(catalog.body).slice(0,250));
+assert.equal(catalog.body.length,16,'Unexpected seeded public catalog size');
+assert.ok(catalog.body.every(row=>!Object.hasOwn(row.content,'reference')
+  &&!Object.hasOwn(row.content,'hiddenTests')&&!Object.hasOwn(row.content,'hidden')),
+  'Public REST catalog leaked server-only Java information');
+for(const table of ['bytequest_problem_references','bytequest_problem_private',
+  'bytequest_submissions','bytequest_firebase_progress']){
+ const reply=await readRest(table);
+ assert.ok([401,403].includes(reply.response.status),
+   'Anonymous clients can read private table '+table+': '+reply.response.status);
+}
+console.log('PASS live staging PostgREST: 16 public published Java problems; references, hidden tests, submissions and private progress denied to anonymous clients');
 console.log('PASS live staging HTTP: Edge health, disabled maintenance, expected Firebase project, allowed/rejected CORS, authentication rejection and no account writes');
+
