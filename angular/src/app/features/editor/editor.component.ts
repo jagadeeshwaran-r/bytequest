@@ -75,7 +75,11 @@ export class EditorComponent {
   }
   private apply(el:HTMLTextAreaElement,next:string,start:number,end=start):void{
     this.value.set(next);this.caret.set(start);this.selectionEnd.set(end);
-    // Angular updates [value] after this event; selection is then restored.
-    queueMicrotask(()=>el.setSelectionRange(start,end));
+    // Angular's bound textarea value may render after the keydown microtask.
+    // Restore the caret after rendering; do not override later user input.
+    requestAnimationFrame(()=>{
+      if(this.value()===next && document.activeElement===el)
+        el.setSelectionRange(start,end);
+    });
   }
 }
