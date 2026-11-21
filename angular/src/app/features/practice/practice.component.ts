@@ -4,6 +4,9 @@ import {Subscription} from 'rxjs';
 import {CatalogService, type Problem} from '../../core/catalog.service';
 import {EditorComponent} from '../editor/editor.component';
 import {JavaGuestService} from '../../core/java-guest.service';
+import {AuthService} from '../../core/auth.service';
+import {VerifiedJavaService} from '../../core/verified-java.service';
+import type {SuiteScope,VerifiedVerdict} from '../../core/java-submission-contract';
 
 const STORAGE_PREFIX='bytequest.angular-preview.draft.java.';
 @Component({
@@ -47,8 +50,18 @@ Output: {{format(example.expected)}}</pre>
               {{running() ? 'Running Java…' : 'Run public tests'}}
             </button>
             <span class="helper">{{guest.status()}}</span>
+            <button class="secondary-link action-button" type="button"
+              [disabled]="running() || verifying() || !canVerify() || !auth.user() || !problem()!.revision"
+              (click)="submitVerified('public')" title="Only server verification can credit your submission">
+              {{verifying()?'Verifying Java…':'Submit public suite'}}
+            </button>
+            <button class="secondary-link action-button" type="button"
+              [disabled]="running() || verifying() || !canVerify() || !auth.user() || !problem()!.revision"
+              (click)="submitVerified('complete')" title="Private hidden suite requires a configured private judge">
+              Full-suite Submit
+            </button>
             <a class="secondary-link" [href]="liveLink()" target="_blank" rel="noopener noreferrer">
-              Open live Submit ↗</a>
+              Current ByteQuest ↗</a>
           </div>
           <div class="run-feedback" aria-live="polite">
             @if(resultError()){<p class="run-error">{{resultError()}}</p>}
@@ -62,7 +75,18 @@ Output: {{format(example.expected)}}</pre>
               }
               @if(result()!.stdout){<pre class="run-stdout">{{result()!.stdout}}</pre>}
             }
-            <p class="helper">Guest Run checks public cases only. It does not submit, unlock rankings, or increase your streak.</p>
+            @if(verificationError()){<p class="run-error" role="alert">{{verificationError()}}</p>}
+            @if(verifiedVerdict()){
+              <p class="run-heading" [class.is-pass]="verifiedVerdict()!.accepted" [class.is-fail]="!verifiedVerdict()!.accepted">
+                {{verifiedVerdict()!.accepted ? 'Server-verified '+verifiedVerdict()!.scope+' acceptance' : 'No verified acceptance'}}
+              </p>
+              <p class="helper">{{verifiedVerdict()!.message}}</p>
+            }
+            @if(!canVerify()){
+              <p class="helper">Verified Submit is disabled in staging until an isolated test backend is connected.
+                Existing account progress and rankings stay untouched.</p>
+            }
+            <p class="helper">Guest Run checks public cases only. It cannot unlock rankings or increase your streak.</p>
           </div>
         </section>
       </div>
@@ -73,6 +97,12 @@ export class PracticeComponent implements OnDestroy {
   private readonly route=inject(ActivatedRoute);
   private readonly catalog=inject(CatalogService);
   readonly guest=inject(JavaGuestService);
+  readonly auth=inject(AuthService);
+  readonly verified=inject(VerifiedJavaService);
+  readonly canVerify=signal(false);
+  readonly verifying=signal(false);
+  readonly verifiedVerdict=signal<VerifiedVerdict|null>(null);
+  readonly verificationError=signal('');
   readonly running=signal(false);
   readonly result=signal<{status:string;cases?:readonly {passed:boolean;label?:string}[];stdout?:string;message?:string}|null>(null);
   readonly resultError=signal('');
@@ -83,9 +113,11 @@ export class PracticeComponent implements OnDestroy {
 
   constructor(){
     this.subscription=this.route.paramMap.subscribe(params=>{void this.select(params.get('id'));});
+    void this.verified.canSubmit().then(enabled=>this.canVerify.set(enabled));
   }
   private async select(id:string|null):Promise<void>{
     this.loading.set(true);this.problem.set(null);this.result.set(null);this.resultError.set('');
+    this.verifiedVerdict.set(null);this.verificationError.set('');
     try {
       const found=(await this.catalog.all()).find(p=>p.id===id)||null;
       if(this.route.snapshot.paramMap.get('id')!==id)return;
@@ -110,6 +142,24 @@ export class PracticeComponent implements OnDestroy {
     }catch(error){
       if(this.problem()?.id===id)this.resultError.set(error instanceof Error?error.message:'Java execution failed. Retry.');
     }finally {this.running.set(false);}
+  }
+  async submitVerified(scope:SuiteScope):Promise<void>{
+    const problem=this.problem();
+    if(!problem||!this.canVerify()||this.verifying()||!this.auth.user())return;
+    this.verifying.set(true);
+    this.verifiedVerdict.set(null);
+    this.verificationError.set('');
+    const owner=this.auth.user()?.id,code=this.code(),id=problem.id;
+    try{
+      const verdict=await this.verified.submit(problem,code,scope);
+      if(this.problem()?.id===id&&this.auth.user()?.id===owner&&this.code()===code){
+        this.verifiedVerdict.set(verdict);
+      }else{
+        this.verificationError.set('The active problem, account or solution changed. Refresh your submission history.');
+      }
+    }catch(error){
+      if(this.problem()?.id===id)this.verificationError.set(error instanceof Error?error.message:'Server verification failed.');
+    }finally{this.verifying.set(false);}
   }
   saveCode(value:string):void {
     const id=this.problem()?.id;
