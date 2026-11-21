@@ -6,7 +6,7 @@ import {validateStagingBackend,type StagingBackendConfig} from './staging-backen
 // They are not truly read-only at the server: the request handler also touches
 // account metadata. NEVER send them to ByteQuest production from staging.
 const allowed=new Set([
-  'self','profile','leaderboard','search','notifications',
+  'self','profile','progress','leaderboard','search','notifications',
   'submission-history','submission-list','submission-read','submission-public-list',
   'chat-list','chat-thread','followers','following','profile-presence',
   'friend-presence','friend-analytics','studio-list','problem-authors',
