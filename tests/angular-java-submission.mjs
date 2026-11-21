@@ -45,15 +45,26 @@ test('Only a server-recorded accepted result credits the requested verification 
  assert.equal(verifiedJavaVerdict({...proof,verificationScope:'complete'},'public').accepted,false);
  assert.equal(verifiedJavaVerdict({...proof,accepted:false},'public').accepted,false);
  assert.equal(verifiedJavaVerdict({...proof,verificationScope:'public'},'complete').accepted,false);
+ for(const malformed of [undefined,null,'',0,'private','hidden','invalid']){
+  const response={...proof,verificationScope:malformed};
+  assert.equal(verifiedJavaVerdict(response,'complete').accepted,false,
+    'Malformed verification scope must never count as complete acceptance: '+String(malformed));
+ }
+ const complete={...proof,verificationScope:'complete'};
+ assert.equal(verifiedJavaVerdict(complete,'complete').accepted,true);
+ assert.equal(verifiedJavaVerdict({...complete,verificationScope:undefined},'complete').accepted,false,
+   'Missing scope used to default to full-suite verified acceptance');
  assert.equal(verifiedJavaVerdict({status:'ok',accepted:true},'public').accepted,false);
  assert.throws(()=>verifiedJavaVerdict(null,'public'),/invalid verdict/);
 });
 test('Staging submission endpoint starts disabled and rejects production Supabase',async()=>{
  const cfg=JSON.parse(await readFile('angular/public/staging-backend.json','utf8'));
  const service=await readFile('angular/src/app/core/verified-java.service.ts','utf8');
+ const isolation=await readFile('angular/src/app/core/staging-backend-contract.ts','utf8');
  assert.equal(cfg.enabled,false);
  assert.equal(cfg.apiUrl,'');
- assert.match(service,/zwubrziriuppkldrdoos\.supabase\.co/);
+ assert.match(isolation,/zwubrziriuppkldrdoos/);
  assert.match(service,/Submit requires a separate Supabase staging project/);
+ assert.match(service,/validateStagingBackend\(config\)/);
  assert.doesNotMatch(service,/\/\/\s*skip.*verify|unsafeAllowProduction/);
 });
