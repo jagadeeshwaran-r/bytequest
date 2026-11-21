@@ -52,8 +52,9 @@ test('All social writes are isolated from live ByteQuest Supabase',async()=>{
  const studio=await read('angular/src/app/features/studio/studio.component.ts');
  const chat=await read('angular/src/app/features/chat/chat.component.ts');
  const routes=await read('angular/src/app/app.routes.ts');
- assert.equal(config.enabled,false);
- assert.equal(config.apiUrl,'');
+ assert.equal(config.enabled,true);
+ assert.equal(config.apiUrl,'https://ainsxwxvfybhwdennsvh.supabase.co/functions/v1/bytequest-firebase');
+ assert.match(config.publishableKey,/^sb_publishable_/);
  assert.match(api,/const writeActions=new Set/);
  const isolation=await read('angular/src/app/core/staging-backend-contract.ts');
  assert.match(isolation,/project===productionRef/);
