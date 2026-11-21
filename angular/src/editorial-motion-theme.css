@@ -276,3 +276,24 @@ html[data-theme="dark"] bq-root :is(
  ){animation:none!important;transition:none!important;transform:none!important}
  html[data-theme="dark"] bq-root *{scroll-behavior:auto!important}
 }
+
+/* Mouse-following, non-interactive spotlight. Pointer properties are written
+   outside Angular's zone to keep navigation and the editor responsive. */
+@media(hover:hover) and (pointer:fine){
+ html[data-theme="dark"] bq-root :is(.bqp-panel,.person-card,.leader-summary,.studio-access-panel){
+   position:relative;
+ }
+ html[data-theme="dark"] bq-root :is(.bqp-panel,.person-card,.leader-summary,.studio-access-panel)::before{
+   content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+   background:radial-gradient(440px circle at var(--bq-pointer-x,50%) var(--bq-pointer-y,50%),rgba(255,255,255,.065),transparent 55%);
+   opacity:0;transition:opacity .3s ease;z-index:0;
+ }
+ html[data-theme="dark"] bq-root :is(.bqp-panel,.person-card,.leader-summary,.studio-access-panel):hover::before{
+   opacity:1;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ html[data-theme="dark"] bq-root :is(.bqp-panel,.person-card,.leader-summary,.studio-access-panel)::before{
+   transition:none!important;
+ }
+}
