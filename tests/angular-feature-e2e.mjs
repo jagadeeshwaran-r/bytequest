@@ -34,7 +34,12 @@ try{
   const page=await browser.newPage({viewport,colorScheme:'dark'});
   const faults=[];
   const writes=[];
+  const productionRequests=[];
   page.on('pageerror',error=>faults.push(error.message));
+  page.on('request',request=>{
+   if(request.url().includes('zwubrziriuppkldrdoos.supabase.co'))
+    productionRequests.push(request.method()+' '+request.url());
+  });
   page.on('request',request=>{
    if(request.method()!=='GET'&&/supabase\.co/.test(request.url()))
     writes.push({method:request.method(),url:request.url()});
@@ -124,6 +129,8 @@ try{
   }));
   assert.equal(ui.app,true);assert.equal(ui.iframe,0);assert.equal(ui.css,30);
   assert.deepEqual(writes,[],'Guest testing made unexpected production backend writes');
+  assert.deepEqual(productionRequests,[],
+    'Staging must not call live Supabase, including maintenance/status reads');
   assert.deepEqual(faults,[],'Angular runtime errors encountered: '+faults.join(' | '));
   console.log('PASS guest '+viewport.width+'px: search, editor, draft persistence, routes, auth gates, theme, no API writes');
   await page.close();
