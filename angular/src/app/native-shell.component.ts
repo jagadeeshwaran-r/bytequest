@@ -18,7 +18,7 @@ type ThemeMode='light'|'dark'|'system';
     <nav class="minimal-nav" aria-label="Main navigation">
       <a routerLink="/angular" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">Problems</a>
       <a routerLink="/angular/leaderboard" routerLinkActive="active">Leaderboard</a>
-      <a routerLink="/angular/find" routerLinkActive="active">Find friends</a>
+      <a routerLink="/angular/find" routerLinkActive="active" aria-label="Find friends">Find friends</a>
     </nav>
     <div class="native-shell-tools"><bq-chat/></div>
     <div class="profile-dropdown">
