@@ -29,10 +29,10 @@ import {CatalogService, type Problem} from '../../core/catalog.service';
             @for(problem of filtered(); track problem.id; let i=$index){
               <tr>
                 <td class="muted-cell">{{i+1}}</td>
-                <td><a class="problem-name" [routerLink]="['/problem',problem.id]">{{problem.title}}</a></td>
+                <td><a class="problem-name" [routerLink]="['/angular/problem',problem.id]">{{problem.title}}</a></td>
                 <td><span class="difficulty" [class]="problem.difficulty.toLowerCase()">{{problem.difficulty}}</span></td>
                 <td class="muted-cell">{{problem.topic}}</td>
-                <td class="open-cell"><a [routerLink]="['/problem',problem.id]" [attr.aria-label]="'Open '+problem.title">↗</a></td>
+                <td class="open-cell"><a [routerLink]="['/angular/problem',problem.id]" [attr.aria-label]="'Open '+problem.title">↗</a></td>
               </tr>
             } @empty {
               <tr><td colspan="5" class="empty-row">No problems match your search.</td></tr>
