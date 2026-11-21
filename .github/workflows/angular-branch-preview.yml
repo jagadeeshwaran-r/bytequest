@@ -17,6 +17,8 @@ on:
       - 'tests/angular-browser-navigation.mjs'
       - 'tests/angular-community-parity.mjs'
       - 'tests/angular-feature-e2e.mjs'
+      - 'tests/security-hardening.mjs'
+      - 'tests/fixtures/reference-solutions.mjs'
       - 'tests/angular-java-runtime-e2e.mjs'
       - 'dist/judge.js'
       - 'dist/runner-core.js'
