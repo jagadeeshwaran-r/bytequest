@@ -45,6 +45,17 @@ test('Both verified Java Submit and mutable account APIs use identical validated
  assert.match(readonly,/fetch\(endpoint\.href/);
  assert.doesNotMatch(readonly,/zwubrziriuppkldrdoos|https:\/\/.*supabase\.co\/functions\/v1/,
   'Authenticated staging reads may never POST to production Supabase');
+ const catalog=await readFile('angular/src/app/core/catalog.service.ts','utf8');
+ const maintenance=await readFile('angular/src/app/core/maintenance-status.service.ts','utf8');
+ assert.match(catalog,/validateStagingBackend\(config\)/,
+   'Catalog must read from the isolated staging project when available');
+ assert.match(maintenance,/validateStagingBackend\(config\)/,
+   'Maintenance state must come from the isolated staging project');
+ for(const [service,code] of [['Catalog',catalog],['Maintenance',maintenance]]){
+   assert.doesNotMatch(code,/zwubrziriuppkldrdoos|https:\/\/zwubrziriuppkldrdoos\.supabase\.co/,
+     service+' must not contact production from staging');
+ }
+
  assert.equal(settings.enabled,false,'Branch preview must remain non-writable before staging backend setup');
  assert.equal(settings.apiUrl,'');
  assert.equal(settings.publishableKey,'');
