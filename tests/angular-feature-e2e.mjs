@@ -61,6 +61,19 @@ try{
   await editor.waitFor({timeout:20000});
   const starter=await editor.inputValue();
   assert.ok(starter.includes('class Solution')||starter.includes('Solution'),'Starter Java is missing');
+  // Exercise actual editor keystrokes in Chromium: IntelliJ-style pair insertion,
+  // pair highlight and paired backspace (unit tests alone cannot catch wiring issues).
+  await editor.fill('');
+  await editor.press('{');
+  await page.waitForFunction(()=>document.querySelector('textarea[aria-label="Java solution code"]')?.value==='{}',
+    undefined,{timeout:5000});
+  assert.equal(await page.locator('.syntax-layer .matching-brace').count(),2,
+    'Typing an opening brace did not highlight the matching pair');
+  await editor.press('Backspace');
+  await page.waitForFunction(()=>document.querySelector('textarea[aria-label="Java solution code"]')?.value==='',
+    undefined,{timeout:5000});
+  assert.equal(await page.locator('.syntax-layer .matching-brace').count(),0,
+    'Pair highlight remained after deleting both braces');
   const marker='// staging browser test draft '+viewport.width;
   await editor.fill(starter+'\n'+marker);
   await page.getByRole('tab',{name:'Editorial'}).click();
