@@ -15,6 +15,8 @@ export function publicCatalog(source=problems) {
     used.add(p.id);
     return {
       id:p.id, title:String(p.title), difficulty:String(p.difficulty),
+      revision:Number.isSafeInteger(p.revision)&&p.revision>0?p.revision:null,
+      hiddenCount:Number.isSafeInteger(p.hiddenCount)&&p.hiddenCount>=0?p.hiddenCount:0,
       topic:String(p.topic), description:String(p.description), constraints:String(p.constraints||''),
       starter:String(p.starter||''), method:String(p.method||''),
       params:Array.isArray(p.params)?p.params.map(param=>({name:String(param.name),type:String(param.type)})):[],
