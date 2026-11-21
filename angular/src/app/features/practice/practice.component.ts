@@ -150,7 +150,6 @@ Output: <b>{{format(example.expected)}}</b></code>
             }
             <div class="result-output" aria-live="polite">
               @if(resultError()){<p class="run-error" role="alert">{{resultError()}}</p>}
-              @if(verificationError()){<p class="run-error" role="alert">{{verificationError()}}</p>}
               @if(result()){
                 <div class="result-summary" [class.failed]="result()!.status!=='ok'">
                   {{result()!.status==='ok'?'Java public Run finished':'Java '+result()!.status}}
@@ -163,18 +162,51 @@ Output: <b>{{format(example.expected)}}</b></code>
                   </div>
                 }
               }
-              @if(verifiedVerdict()){
-                <p class="result-summary" [class.failed]="!verifiedVerdict()!.accepted">
-                  {{verifiedVerdict()!.accepted?'✓ Server-verified':'No verified acceptance'}} · {{verifiedVerdict()!.message}}
-                </p>
-              }
               @if(!canVerify()){
                 <p class="native-validation-note">Verified Submit is unavailable until an isolated test backend is configured. Guest Run does not increase points or streak.</p>
               }
             </div>
           </div>
+          <!-- Keep submission feedback OUTSIDE the scrollable playground. The
+               prior verdict was below five Run cases, so successful Submit
+               looked like it never responded on a small laptop screen. -->
+          @if(verifying() || verifiedVerdict() || verificationError()){
+            <div class="native-submit-feedback"
+              [class.is-accepted]="verifiedVerdict()?.accepted"
+              [class.is-error]="!!verificationError() || (!!verifiedVerdict() && !verifiedVerdict()!.accepted)"
+              role="status" aria-live="polite" aria-atomic="true">
+              @if(verifying()){
+                <strong>Checking your submission on the staging server…</strong>
+                <span>This verifies published public cases, not private hidden tests.</span>
+              } @else if(verificationError()){
+                <strong>Submission was not confirmed</strong>
+                <span role="alert">{{verificationError()}}</span>
+              } @else if(verifiedVerdict()){
+                <strong>{{verifiedVerdict()!.accepted
+                  ? '✓ Accepted — '+(verifiedVerdict()!.scope==='public'?'public tests verified':'full suite verified')
+                  : 'Submission not accepted'}}</strong>
+                <span>{{verifiedVerdict()!.message}}</span>
+                @if(verifiedVerdict()!.accepted){
+                  <button type="button" class="native-submission-history-link" (click)="openPane('submissions')">
+                    View saved submission
+                  </button>
+                }
+              }
+            </div>
+          }
           <div class="runbar">
-            <span class="native-run-status"><span class="runtime-dot"></span>{{guest.status()||'Real Java. Right here.'}}</span>
+            <span class="native-run-status" role="status" aria-live="polite">
+              <span class="runtime-dot"></span>
+              @if(verifying()){
+                Submitting to ByteQuest staging…
+              } @else if(verificationError()){
+                Submission failed — see message above
+              } @else if(verifiedVerdict()){
+                {{verifiedVerdict()!.accepted?'✓ Accepted on staging':'Not accepted — see message above'}}
+              } @else {
+                {{running()?'Running public tests…':result()?'Java public Run finished':(guest.status()||'Real Java. Right here.')}}
+              }
+            </span>
             <button type="button" class="button secondary" [disabled]="running()||verifying()" (click)="runGuest()">
               {{running()?'Running…':'Run'}}
             </button>
@@ -201,6 +233,18 @@ Output: <b>{{format(example.expected)}}</b></code>
     .native-result-line{display:flex;align-items:center;gap:14px;margin-top:8px}
     .native-validation-note{font-size:11px;opacity:.75}
     .native-practice .runbar .button{min-width:86px}
+    .native-submit-feedback{display:flex;flex-direction:column;gap:5px;padding:12px 18px;
+      border-top:1px solid var(--line);background:var(--panel-2);color:var(--text);
+      font-size:12px;line-height:1.5;max-height:168px;overflow:auto;flex-shrink:0}
+    .native-submit-feedback strong{font-size:12px;font-weight:700;color:var(--text)}
+    .native-submit-feedback.is-accepted{border-left:3px solid var(--accent)}
+    .native-submit-feedback.is-accepted strong{color:var(--accent)}
+    .native-submit-feedback.is-error{border-left:3px solid #e57979}
+    .native-submit-feedback.is-error strong{color:#e57979}
+    .native-submit-feedback span{overflow-wrap:anywhere}
+    .native-submission-history-link{align-self:flex-start;border:0;background:transparent;
+      color:var(--accent);font-weight:600;font-size:11px;text-decoration:underline;padding:3px 0}
+    .native-practice .runbar .native-run-status{min-width:0;overflow-wrap:anywhere}
     @media(max-width:850px){.native-practice .lab{display:block}.native-learning-content{max-height:420px}}
   `]
 })
@@ -345,6 +389,11 @@ export class PracticeComponent implements OnDestroy {
   saveCode(value:string):void {
     const id=this.problem()?.id;
     if(!id)return;
+    if(value!==this.code()){
+      // Never display acceptance for an edited, unverified draft.
+      this.verifiedVerdict.set(null);
+      if(!this.verifying())this.verificationError.set('');
+    }
     this.code.set(value);
     try{localStorage.setItem(STORAGE_PREFIX+id,value);}catch{ /* Editing must still work with blocked or full storage. */ }
   }
