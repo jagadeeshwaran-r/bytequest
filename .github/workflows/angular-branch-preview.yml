@@ -13,6 +13,7 @@ on:
       - 'dist/**'
       - 'tests/angular-visual-parity.mjs'
       - 'tests/angular-java-submission.mjs'
+      - 'tests/angular-native-shell.mjs'
       - 'dist/judge.js'
       - 'dist/runner-core.js'
       - '.github/workflows/angular-branch-preview.yml'
@@ -48,6 +49,7 @@ jobs:
           node --experimental-strip-types --test tests/angular-editor.mjs
           node --test tests/angular-visual-parity.mjs
           node --experimental-strip-types --test tests/angular-java-submission.mjs
+          node --test tests/angular-native-shell.mjs
       - name: Compile Angular preview
         run: npm run build --prefix angular
       - name: Verify public-only preview
