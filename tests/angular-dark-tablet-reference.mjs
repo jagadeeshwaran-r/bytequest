@@ -28,7 +28,7 @@ try{
   }
   browser=await chromium.launch({headless:true,...binary?{executablePath:binary}:{},args:['--no-sandbox','--disable-dev-shm-usage']});
   const page=await browser.newPage({viewport:{width:794,height:920},colorScheme:'dark'});
-  await page.addInitScript(()=>localStorage.setItem('bytequest.theme','dark'));
+  await page.addInitScript(()=>{if(!localStorage.getItem('bytequest.theme'))localStorage.setItem('bytequest.theme','dark');});
   await page.goto('http://127.0.0.1:'+server.address().port+'/#/angular',{waitUntil:'domcontentloaded'});
   await page.locator('.native-catalog .problem-table tbody tr').first().waitFor({timeout:25000});
   const rect=s=>{const r=s.getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom};};
