@@ -61,8 +61,9 @@ test('Staging submission endpoint starts disabled and rejects production Supabas
  const cfg=JSON.parse(await readFile('angular/public/staging-backend.json','utf8'));
  const service=await readFile('angular/src/app/core/verified-java.service.ts','utf8');
  const isolation=await readFile('angular/src/app/core/staging-backend-contract.ts','utf8');
- assert.equal(cfg.enabled,false);
- assert.equal(cfg.apiUrl,'');
+ assert.equal(cfg.enabled,true);
+ assert.equal(cfg.apiUrl,'https://ainsxwxvfybhwdennsvh.supabase.co/functions/v1/bytequest-firebase');
+ assert.match(cfg.publishableKey,/^sb_publishable_/);
  assert.match(isolation,/zwubrziriuppkldrdoos/);
  assert.match(service,/Submit requires a separate Supabase staging project/);
  assert.match(service,/validateStagingBackend\(config\)/);
