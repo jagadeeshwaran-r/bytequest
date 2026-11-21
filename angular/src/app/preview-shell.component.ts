@@ -13,13 +13,13 @@ function initialTheme(): Theme {
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
   template: `
     <header class="shell-header">
-      <a class="brand" routerLink="/" aria-label="ByteQuest Angular preview home">
+      <a class="brand" routerLink="/angular" aria-label="ByteQuest Angular preview home">
         <span>Byte</span><span class="brand-accent">Quest</span>
       </a>
       <nav aria-label="Primary navigation">
-        <a routerLink="/" routerLinkActive="current" [routerLinkActiveOptions]="{exact:true}">Problems</a>
-        <a routerLink="/leaderboard" routerLinkActive="current">Leaderboard</a>
-        <a routerLink="/profile/me" routerLinkActive="current">Profile</a>
+        <a routerLink="/angular" routerLinkActive="current" [routerLinkActiveOptions]="{exact:true}">Problems</a>
+        <a routerLink="/angular/leaderboard" routerLinkActive="current">Leaderboard</a>
+        <a routerLink="/angular/profile/me" routerLinkActive="current">Profile</a>
         <a class="muted-link" [href]="liveUrl" target="_blank" rel="noopener noreferrer">Live ByteQuest ↗</a>
       </nav>
       <button class="theme-toggle" type="button" (click)="toggleTheme()"
