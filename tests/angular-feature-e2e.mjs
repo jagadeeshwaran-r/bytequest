@@ -69,6 +69,10 @@ try{
     undefined,{timeout:5000});
   assert.equal(await page.locator('.syntax-layer .matching-brace').count(),2,
     'Typing an opening brace did not highlight the matching pair');
+  await page.waitForFunction(()=>{
+    const el=document.querySelector('textarea[aria-label="Java solution code"]');
+    return el?.selectionStart===1 && el?.selectionEnd===1;
+  },undefined,{timeout:5000});
   await editor.press('Backspace');
   await page.waitForFunction(()=>document.querySelector('textarea[aria-label="Java solution code"]')?.value==='',
     undefined,{timeout:5000});
