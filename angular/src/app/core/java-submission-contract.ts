@@ -52,9 +52,12 @@ export function verifiedJavaVerdict(response:unknown,expected:SuiteScope):Verifi
   if(response===null||typeof response!=='object')throw new Error('Server returned an invalid verdict.');
   const v=response as RawVerdict;
   const status=typeof v.status==='string'?v.status:'invalid';
-  const scope:SuiteScope=v.verificationScope==='public'?'public':'complete';
+  const hasVerifiedScope=v.verificationScope==='public'||v.verificationScope==='complete';
+  // Missing or malformed verification scope is not proof of full-suite success.
+  const scope:SuiteScope=hasVerifiedScope?v.verificationScope as SuiteScope:expected;
   const submissionId=typeof v.submission?.id==='string'?v.submission.id:undefined;
-  const accepted=v.accepted===true && status==='accepted' && scope===expected && !!submissionId;
+  const accepted=v.accepted===true && status==='accepted' && hasVerifiedScope
+    && scope===expected && !!submissionId;
   // Always fail closed for responses with inconsistent scopes, missing proof,
   // or execution failure. Never unlock content on a local test verdict.
   const message=typeof v.message==='string'?v.message.slice(0,500):
