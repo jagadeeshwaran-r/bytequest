@@ -31,6 +31,12 @@ export class MaintenanceStatusService implements OnDestroy{
   if(this.request)return this.request;
   const work=async()=>{
     try{
+      // Local Chromium/Angular development has a randomized unapproved origin.
+      // Do not trigger misleading CORS errors against the real staging API.
+      if(location.hostname==='127.0.0.1'||location.hostname==='localhost'){
+        this.error.set('');this.upcoming.set(null);this.blocked.set(false);
+        return;
+      }
       const config=await this.staging;
       let endpoint:URL;
       try{endpoint=validateStagingBackend(config);}
