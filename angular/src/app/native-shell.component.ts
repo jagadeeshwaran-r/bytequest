@@ -1,13 +1,14 @@
 import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core';
 import {RouterLink, RouterLinkActive, RouterOutlet} from '@angular/router';
 import {AuthService} from './core/auth.service';
+import {ChatComponent} from './features/chat/chat.component';
 
 /** Persistent native Angular shell. Styles are installed once in index.html,
  * before bootstrap, not injected and torn down with routed components. */
 type ThemeMode='light'|'dark'|'system';
 @Component({
   selector:'bq-native-shell',
-  imports:[RouterOutlet,RouterLink,RouterLinkActive],
+  imports:[RouterOutlet,RouterLink,RouterLinkActive,ChatComponent],
   changeDetection:ChangeDetectionStrategy.OnPush,
   template:`
   <header class="minimal-header">
@@ -18,6 +19,7 @@ type ThemeMode='light'|'dark'|'system';
       <a routerLink="/angular" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">Problems</a>
       <a routerLink="/angular/leaderboard" routerLinkActive="active">Leaderboard</a>
     </nav>
+    <div class="native-shell-tools"><bq-chat/></div>
     <div class="profile-dropdown">
       <button type="button" class="native-profile-toggle" [attr.aria-expanded]="menuOpen()"
         aria-controls="nativeAccountMenu" (click)="menuOpen.set(!menuOpen())">
@@ -56,6 +58,7 @@ type ThemeMode='light'|'dark'|'system';
   styles:[`
     :host{display:block;min-height:100dvh}
     .native-bytequest-content{max-width:1540px;margin:0 auto;padding:16px 22px 90px}
+    .native-shell-tools{display:flex;align-items:center;margin-left:auto}
     .native-profile-toggle{display:flex;align-items:center;gap:9px;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer}
     .native-avatar{display:grid;place-items:center;height:29px;width:29px;border-radius:50%;background:var(--surface,#183026);font-weight:600}
     .native-account-menu{position:absolute;right:0;top:100%;z-index:50;display:grid;min-width:220px;padding:9px;background:var(--surface,#101916);border:1px solid var(--border,#283b32);border-radius:12px;box-shadow:0 20px 45px #0003}
