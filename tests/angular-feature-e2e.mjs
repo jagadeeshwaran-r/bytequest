@@ -53,6 +53,7 @@ try{
   const remaining=await page.locator('.native-catalog .problem-table tbody tr a.problem-title').allInnerTexts();
   assert.ok(remaining.some(x=>x.trim()===name),'Search loses its matching problem');
   await page.getByRole('button',{name:'Clear search'}).click();
+  await page.waitForFunction(()=>document.querySelector('input[aria-label="Search problems"]')?.value==='',undefined,{timeout:6000});
   assert.equal(await search.inputValue(),'');
   // Open and edit a real published problem. No server writes may follow.
   await firstLink.click();
