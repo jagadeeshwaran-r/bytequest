@@ -30,7 +30,7 @@ interface Ranking{readonly users:readonly Learner[];readonly total:number;
         @for(learner of ranking()?.users||[];track learner.username){
           <tr [class.is-your-ranking]="learner.isYou">
             <td class="muted-cell">#{{learner.rank}}</td>
-            <td><a class="problem-name" [routerLink]="['/profile',learner.username]">{{learner.display_name}}</a>
+            <td><a class="problem-name" [routerLink]="['/angular/profile',learner.username]">{{learner.display_name}}</a>
               <span class="leader-handle">&#64;{{learner.username}}</span></td>
             <td>{{learner.points}}</td><td>{{learner.solved}}</td>
           </tr>
