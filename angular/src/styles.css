@@ -978,3 +978,26 @@ html[data-theme="dark"] bq-root .native-leaderboard .leader-signed-out{
  html[data-theme="dark"] bq-root .native-leaderboard .leader-summary>div:nth-child(2){border:0!important}
  html[data-theme="dark"] bq-root .native-leaderboard .leader-heading h1{font-size:33px!important}
 }
+
+/* Final dark reference touches: differentiated podium names and compact mobile editor controls. */
+html[data-theme="dark"] bq-root .native-leaderboard .leader-table tbody tr:has(.leader-rank.gold) .leader-person strong{
+  color:#d6ad5d!important;
+}
+html[data-theme="dark"] bq-root .native-leaderboard .leader-table tbody tr:has(.leader-rank.silver) .leader-person strong{
+  color:#abc0d4!important;
+}
+html[data-theme="dark"] bq-root .native-leaderboard .leader-table tbody tr:has(.leader-rank.bronze) .leader-person strong{
+  color:#cda189!important;
+}
+@media(max-width:650px){
+  html[data-theme="dark"] bq-root .native-practice .native-expand-editor{
+    font-size:0!important;width:30px!important;min-width:30px!important;
+    padding:0!important;
+  }
+  html[data-theme="dark"] bq-root .native-practice .native-expand-editor:after{
+    content:'⛶';font:600 18px Inter,system-ui,sans-serif;
+  }
+  html[data-theme="dark"] bq-root .native-practice .native-editor-index{
+    display:none!important;
+  }
+}
