@@ -61,7 +61,6 @@ try{
     assert.equal(state.connected,true,'Persistent ByteQuest header was unmounted navigating to '+name);
     assert.equal(state.removals,0,'Header was removed even briefly navigating to '+name);
     assert.equal(state.frameCount,0,'Native navigation opened an iframe on '+name);
-    assert.equal(state.links,window.__neverUsed??state.links);
     assert.equal(state.links,30,'Canonical CSS was duplicated, lost or not fully installed');
     assert.equal(state.navigationCount,1,'Full document reload occurred on '+name);
   };
