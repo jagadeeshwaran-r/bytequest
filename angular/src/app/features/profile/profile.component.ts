@@ -67,6 +67,9 @@ interface ProfileReply {
                  </div>
                </div>
                @if(profile()!.profile.bio){<p class="profile-bio">{{profile()!.profile.bio}}</p>}
+               @if(profile()!.profile.username){
+                 <a class="button secondary native-edit-profile" routerLink="/angular/profile/edit">Edit my profile</a>
+               }
              </div>
              <div class="social-stats profile-metrics">
                <div class="social-stat metric-solved">
