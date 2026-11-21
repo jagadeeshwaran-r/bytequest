@@ -3,7 +3,7 @@ import {RouterLink} from '@angular/router';
 import {CatalogService, type Problem} from '../../core/catalog.service';
 import {CatalogViewState,type CatalogLevel} from '../../core/catalog-view-state.service';
 
-const points:Record<string,number>={Easy:10,Medium:30,Hard:60};
+const points:Record<string,number>={Easy:10,Medium:25,Hard:50};
 @Component({
  selector:'bq-problems',imports:[RouterLink],
  changeDetection:ChangeDetectionStrategy.OnPush,
