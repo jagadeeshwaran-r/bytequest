@@ -112,6 +112,35 @@ window.cheerpjRunLibrary=async()=>({quest:{JavaRunner:{run:async(source,tests)=>
  assert.ok(cases.length>=2,'Java runner did not return all public test cases');
  assert.ok(cases.every(c=>c.includes('Passed')),'Java returned a failing test: '+cases.join(' | '));
  assert.equal(await page.getByRole('button',{name:'Submit solution'}).isDisabled(),true);
+ // Real JVM negative-path regressions. The CDN-mocked contract intentionally
+ // returns success for every case, so run these only against real Java 17.
+ if(!mocked){
+   const runButton=page.getByRole('button',{name:'Run',exact:true});
+   const output=page.locator('.native-practice .result-output');
+   // Wrong answers must display red failed cases, not a false green success.
+   await editor.fill('class Solution { public int[] twoSum(int[] nums,int target) { return new int[]{0,0}; } }');
+   await runButton.click();
+   await page.waitForFunction(()=>document.querySelectorAll('.native-practice .native-result-line').length>0
+     || !!document.querySelector('.native-practice .run-error'),undefined,{timeout:90000});
+   const wrongCases=await page.locator('.native-practice .native-result-line').allInnerTexts();
+   assert.ok(wrongCases.some(c=>c.includes('Failed')),
+     'Wrong answer did not report failed public cases: '+(await output.innerText()));
+   assert.equal(await page.getByRole('button',{name:'Submit solution'}).isDisabled(),true);
+   // Compiler diagnostics must be visible, and must never unlock the solution.
+   await editor.fill('class Solution { public int[] twoSum(int[] nums,int target) { this is invalid java; } }');
+   await runButton.click();
+   await page.waitForFunction(()=>!!document.querySelector('.native-practice .result-summary')
+     || !!document.querySelector('.native-practice .run-error'),undefined,{timeout:90000});
+   const compileText=await output.innerText();
+   assert.match(compileText,/compile|error|invalid|failed|diagnostic/i,
+     'Invalid Java lacked visible compilation feedback: '+compileText);
+   assert.doesNotMatch(compileText,/✓ Passed/,'Compiler error reused stale passing cases');
+   assert.equal(await page.getByRole('button',{name:'Submit solution'}).isDisabled(),true);
+   // The editor must remain responsive after both failed runs.
+   await editor.fill(correct);
+   assert.equal(await editor.inputValue(),correct,'Editor became unusable after compilation failure');
+   console.log('PASS: real Java wrong-answer feedback, compile-error feedback, editable recovery, no verified credit');
+ }
  await page.getByRole('tab',{name:'Editorial'}).click();
  assert.equal(await page.locator('.reference-code').count(),0,'Guest Run leaked the private reference');
  assert.deepEqual(writes,[],'Guest Run wrote to production Supabase');
