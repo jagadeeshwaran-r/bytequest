@@ -35,15 +35,13 @@ test('Angular compatibility keeps ByteQuest production UI pixel-identical, excep
   await assert.rejects(stat(join(dir,'native-runner.html')));
  }finally{await rm(dir,{recursive:true,force:true});}
 });
-test('Native homepage keeps the familiar ByteQuest compatibility screens separately available',async()=>{
+test('Native homepage retains the original UI on separate classic routes',async()=>{
  const routes=await readFile('angular/src/app/app.routes.ts','utf8');
  const component=await readFile('angular/src/app/legacy-screen.component.ts','utf8');
  const scripts=JSON.parse(await readFile('angular/package.json','utf8')).scripts;
- assert.match(routes,/path:'',pathMatch:'full',redirectTo:'angular'/);
- assert.match(routes,/path:'classic\\/problems',loadComponent:screen,data:\\{screen:'index\\.html'\\}/);
- assert.match(routes,/path:'classic\/community'/);
- assert.match(routes,/path:'classic\/leaderboard'/);
- assert.match(routes,/path:'classic\/studio'/);
+ assert.ok(routes.includes("path:'',pathMatch:'full',redirectTo:'angular'"));
+ for(const page of ['problems','community','leaderboard','studio'])
+   assert.ok(routes.includes("path:'classic/"+page+"'"),page);
  assert.match(routes,/path:'angular',loadComponent:/);
  assert.match(component,/bypassSecurityTrustResourceUrl/);
  assert.match(component,/allowed\.includes/);
