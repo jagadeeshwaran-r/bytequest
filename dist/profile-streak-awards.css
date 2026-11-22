@@ -1,8 +1,8 @@
-/* ByteQuest lifetime achievements — premium, flat and intentionally quiet.
-   Only historically earned tiers render. Keep badges compact beside the calendar. */
+/* ByteQuest stamped lifetime achievements.
+   Circular, double-ring rubber ink with restrained distress like a real seal.
+   Presentation only: streak awards always come from verified UTC solve days. */
 .community-page #profileContent .streak-awards{
- display:flex;align-items:center;gap:12px 22px;
- justify-content:flex-start;flex-wrap:wrap;
+ display:flex;align-items:center;gap:12px 22px;justify-content:flex-start;flex-wrap:wrap;
  padding:12px 0 14px;border-top:1px solid var(--border);
 }
 .community-page #profileContent .streak-awards-heading{flex:0 1 220px;min-width:170px}
@@ -17,74 +17,98 @@
  margin:0;font-size:11px;color:var(--muted);line-height:1.55;max-width:32ch;
 }
 .community-page #profileContent .streak-awards-list{
- display:flex;align-items:center;justify-content:flex-start;
- flex-wrap:wrap;gap:8px 12px;min-width:0;flex:0 1 auto;
+ display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;
+ gap:8px 12px;min-width:0;flex:0 1 auto;
 }
 .community-page #profileContent .streak-award{
- --badge-dark:#101216;--badge-outline:#3b4451;
- --badge-metal:#8996a5;--badge-accent:#9ca9b6;
+ --stamp-ink:#c0cbd4;--stamp-soft:#8d9ca9;
  position:relative;display:flex;align-items:center;justify-content:center;
- width:clamp(74px,6.3vw,94px);
- flex:0 0 clamp(74px,6.3vw,94px);
- min-height:0;user-select:none;
+ width:clamp(88px,7.3vw,112px);flex:0 0 clamp(88px,7.3vw,112px);
+ min-height:0;user-select:none;color:var(--stamp-ink);
 }
 .community-page #profileContent .streak-award.tier-silver{
- --badge-metal:#b3bdca;--badge-accent:#a2adbb;--badge-outline:#4c5766;
+ --stamp-ink:#cad2db;--stamp-soft:#9daab8;
 }
 .community-page #profileContent .streak-award.tier-blue{
- --badge-metal:#8cacca;--badge-accent:#779ec6;--badge-outline:#3b526b;
+ --stamp-ink:#9abfd6;--stamp-soft:#6b9ebd;
 }
 .community-page #profileContent .streak-award.tier-gold{
- --badge-metal:#d7bd7e;--badge-accent:#d2af66;--badge-outline:#625338;
+ --stamp-ink:#dbbd7d;--stamp-soft:#bd9c57;
 }
 .community-page #profileContent .streak-award.tier-purple{
- --badge-metal:#b6a1d1;--badge-accent:#ad94cf;--badge-outline:#584c6a;
+ --stamp-ink:#bca5db;--stamp-soft:#9879bf;
 }
 .community-page #profileContent .streak-award.tier-red{
- --badge-metal:#d1a09b;--badge-accent:#cc817c;--badge-outline:#6b4648;
+ --stamp-ink:#dda39a;--stamp-soft:#bf7c76;
 }
 .community-page #profileContent .streak-award-art{
- display:block;width:100%;height:auto;overflow:visible;
- filter:drop-shadow(0 4px 12px #00000022);
+ width:100%;height:auto;display:block;overflow:visible;
+ transform:rotate(-7deg);transform-origin:center;
+ filter:drop-shadow(0 2px 5px #00000010);
  transition:transform .18s ease,filter .18s ease;
 }
 .community-page #profileContent .streak-award:hover .streak-award-art{
- transform:translateY(-2px);
- filter:drop-shadow(0 6px 14px #00000032);
+ transform:rotate(-4deg) translateY(-2px);
+ filter:drop-shadow(0 4px 8px #00000022);
 }
-.community-page #profileContent .streak-art-number{
- fill:#e9edf2;font:600 38px/1 var(--font-sans,Inter,sans-serif);
- letter-spacing:-2px;font-variant-numeric:tabular-nums lining-nums;
+.community-page #profileContent .stamp-ring{
+ fill:none;stroke:currentColor;stroke-linecap:round;
 }
-.community-page #profileContent .streak-art-days{
- fill:var(--badge-accent);font:600 8px var(--font-sans,Inter,sans-serif);
+.community-page #profileContent .stamp-ring-outer{stroke-width:5}
+.community-page #profileContent .stamp-ring-middle{stroke-width:2.2;opacity:.93}
+.community-page #profileContent .stamp-ring-inner{stroke-width:2.8;opacity:.96}
+.community-page #profileContent .stamp-curve-text{
+ fill:currentColor;font:800 11px var(--font-sans,Inter,sans-serif);
  letter-spacing:2px;
 }
-.community-page #profileContent .streak-art-name{
- fill:#b8c0ca;font:600 7.8px var(--font-sans,Inter,sans-serif);
- letter-spacing:.5px;
+.community-page #profileContent .stamp-curve-text.stamp-bottom{
+ font-size:10px;letter-spacing:1.65px;
 }
+.community-page #profileContent .stamp-stars{
+ fill:var(--stamp-soft);font:700 9px var(--font-sans,Inter,sans-serif);
+ letter-spacing:3px;
+}
+.community-page #profileContent .stamp-number{
+ fill:currentColor;font-family:var(--font-sans,Inter,sans-serif);
+ font-weight:850;letter-spacing:-3.5px;
+ font-variant-numeric:tabular-nums lining-nums;
+ paint-order:stroke;stroke:none;
+}
+.community-page #profileContent .stamp-rule{
+ fill:none;stroke:currentColor;stroke-width:1.4;
+}
+.community-page #profileContent .stamp-tier{
+ fill:var(--stamp-soft);font:800 8px var(--font-sans,Inter,sans-serif);
+ letter-spacing:1.2px;
+}
+.community-page #profileContent .stamp-mark{fill:currentColor}
 .community-page #profileContent .streak-award-multiplier{
- position:absolute;right:-4px;top:0;z-index:1;
+ position:absolute;right:-3px;top:2px;z-index:1;
  display:inline-flex;align-items:center;justify-content:center;
- min-width:25px;height:19px;padding:0 5px;
- border-radius:5px;background:var(--surface);
- border:1px solid var(--badge-outline);color:var(--text);
- box-shadow:0 2px 7px #00000012;
- font:600 10px/1 var(--font-mono,monospace);
- font-variant-numeric:tabular-nums;
+ min-width:26px;height:20px;padding:0 5px;border-radius:999px;
+ background:var(--surface);border:1px solid var(--stamp-soft);
+ color:var(--text);font:650 10px/1 var(--font-mono,monospace);
+ font-variant-numeric:tabular-nums;box-shadow:0 2px 6px #00000012;
 }
-/* Light mode uses the existing palette and retains legible text and borders. */
+/* Light theme: use dark, slightly faded printed ink on a pale background. */
 html[data-theme="light"] .community-page #profileContent .streak-award{
- --badge-dark:#f5f7f8;--badge-outline:#c2ccd6;
+ --stamp-ink:#4e5e70;--stamp-soft:#748292;
 }
-html[data-theme="light"] .community-page #profileContent .streak-award .streak-art-number{fill:#202b37}
-html[data-theme="light"] .community-page #profileContent .streak-award .streak-art-name{fill:#4b5866}
-html[data-theme="light"] .community-page #profileContent .streak-award.tier-silver{--badge-outline:#a0abb8}
-html[data-theme="light"] .community-page #profileContent .streak-award.tier-gold{--badge-outline:#b6a173}
-html[data-theme="light"] .community-page #profileContent .streak-award.tier-blue{--badge-outline:#7796b4}
-html[data-theme="light"] .community-page #profileContent .streak-award.tier-purple{--badge-outline:#a18bb5}
-html[data-theme="light"] .community-page #profileContent .streak-award.tier-red{--badge-outline:#b68d87}
+html[data-theme="light"] .community-page #profileContent .streak-award.tier-silver{
+ --stamp-ink:#4b5869;--stamp-soft:#758294;
+}
+html[data-theme="light"] .community-page #profileContent .streak-award.tier-blue{
+ --stamp-ink:#326386;--stamp-soft:#618ead;
+}
+html[data-theme="light"] .community-page #profileContent .streak-award.tier-gold{
+ --stamp-ink:#8d671f;--stamp-soft:#af8a48;
+}
+html[data-theme="light"] .community-page #profileContent .streak-award.tier-purple{
+ --stamp-ink:#674c8d;--stamp-soft:#8e74b1;
+}
+html[data-theme="light"] .community-page #profileContent .streak-award.tier-red{
+ --stamp-ink:#994c48;--stamp-soft:#ba7672;
+}
 .community-page #profileContent .streak-awards + .profile-calendar-section{
  margin-top:10px!important;
 }
@@ -97,10 +121,12 @@ html[data-theme="light"] .community-page #profileContent .streak-award.tier-red{
  .community-page #profileContent .streak-awards-heading{flex-basis:100%}
  .community-page #profileContent .streak-awards-list{gap:8px}
  .community-page #profileContent .streak-award{
-  width:clamp(70px,21vw,86px);flex-basis:clamp(70px,21vw,86px);
+  width:clamp(76px,22vw,98px);flex-basis:clamp(76px,22vw,98px);
  }
 }
 @media(prefers-reduced-motion:reduce){
  .community-page #profileContent .streak-award-art{transition:none}
- .community-page #profileContent .streak-award:hover .streak-award-art{transform:none}
+ .community-page #profileContent .streak-award:hover .streak-award-art{
+  transform:rotate(-7deg);filter:drop-shadow(0 2px 5px #00000010);
+ }
 }
