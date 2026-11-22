@@ -1,16 +1,11 @@
 import {cloudConfig} from "./config.js";
+import {validPublicConfig} from "./public-config.js";
 import {firebaseConfig} from "./firebase-config.js";
 import {FirebaseSession} from "./firebase-session.js?v=upgrade-2";
 import {createRequestCoordinator} from "./request-coordinator.js?v=profile-speed-1";
 import {validateProblem} from "./catalog.js?v=private-reference-1";
 import {blankProgress,validateProgress} from "./progress.js?v=next-1";
-export function validPublicConfig(config){
-  try{
-    const url=new URL(config.url);
-    if(url.protocol!=="https:"||url.username||url.password||url.search||url.hash||url.pathname!=="/")return false;
-    return /^sb_publishable_[A-Za-z0-9_-]+$/.test(config.publishableKey);
-  }catch{return false;}
-}
+export {validPublicConfig} from "./public-config.js";
 // Only published, public problem definitions are cached. Auth, progress, chat,
 // notifications, unread counts, rankings and presence always use live requests.
 export const PUBLIC_CATALOG_TTL_MS=5*60*1000;
