@@ -15,14 +15,14 @@ const loader=latestLeaderboard(async(action,query,owner)=>{
 function setMessage(text,error=false){$('leaderMessage').textContent=text;$('leaderMessage').classList.toggle('error',error);$('leaderAuthMessage').textContent=text;$('leaderAuthMessage').classList.toggle('error',error);}
 function selectScope(){for(const button of document.querySelectorAll('[data-board]')){const active=button.dataset.board===scope;button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;}const selected=document.querySelector('[data-board="'+scope+'"]');$('leaderPanel').setAttribute('aria-labelledby',selected.id);$('boardHeading').textContent=scope==='friends'?'Friends leaderboard':'Global leaderboard';$('boardDescription').textContent=scope==='friends'?'You and the people you follow, in one place.':'A shared place for every discoverable learner.';}
 function clearResults(){releaseAvatarObjectUrls();for(const id of ['yourRank','yourPoints','yourSolved','rankedLearners'])$(id).textContent='—';$('leaderRows').replaceChildren();$('leaderFindMe').hidden=true;$('leaderEmpty').hidden=true;$('leaderError').hidden=true;$('leaderPager').hidden=true;$('yourPosition').hidden=true;$('profileNudge').hidden=true;}
-function renderRankings(r,{cached=false,key}={}){
+function renderRankings(r,{cached=false,key,owner=cloud.user?.id}={}){
   // Keep existing results visible while revalidating; only replace the rows
   // after a fresh response is ready. Signed avatar URLs remain account-scoped.
   releaseAvatarObjectUrls();
   $('leaderRows').innerHTML=r.users.map(leaderboardRow).join('');
   $('leaderRows').querySelectorAll('img').forEach(img=>img.onerror=()=>img.remove());
   $('leaderFindMe').hidden=!$('leaderRows').querySelector('.your-ranking');
-  void hydrateLeaderboardAvatars($('leaderRows'),cloud.user?.id);
+  void hydrateLeaderboardAvatars($('leaderRows'),owner);
   $('yourRank').textContent=r.me?'#'+r.me.rank:'—';$('yourPoints').textContent=r.me?.points??'—';$('yourSolved').textContent=r.me?.solved??'—';$('rankedLearners').textContent=r.total;
   $('leaderEmpty').hidden=!!r.users.length;$('emptyTitle').textContent=scope==='friends'?'Build your practice circle.':'Be the first on the board.';$('emptyDescription').textContent=scope==='friends'?'Create a discoverable profile, then find and follow friends using the search above.':'Create a discoverable profile to join the leaderboard.';
   $('profileNudge').hidden=!!r.discoverable;$('profileNudgeText').textContent=r.hasProfile?'Make your profile discoverable to appear in the rankings.':'Create a profile to join the rankings and compare with friends.';
