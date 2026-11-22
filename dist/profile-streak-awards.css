@@ -124,3 +124,47 @@ html[data-theme="light"] .community-page #profileContent .streak-award.tier-red{
   transform:rotate(-7deg);filter:drop-shadow(0 2px 4px #00000016);
  }
 }
+
+
+/* Exact approved 7-day artwork (real transparent PNG), not a redrawn SVG. */
+.community-page #profileContent .streak-award.tier-silver{
+ width:clamp(176px,13vw,214px);
+ flex:0 0 clamp(176px,13vw,214px);
+}
+.community-page #profileContent .streak-award-png{
+ display:block;width:100%;height:auto;aspect-ratio:1;
+ transform:none;object-fit:contain;
+ filter:drop-shadow(0 1px 2px #00000018);
+}
+.community-page #profileContent .streak-award:hover .streak-award-png{
+ transform:translateY(-2px);
+ filter:drop-shadow(0 2px 5px #00000020);
+}
+/* Preserve ink opacity variations while turning white ink into dark charcoal on paper. */
+html[data-theme="light"] .community-page #profileContent .streak-award-png{
+ filter:brightness(0) opacity(.72);
+}
+html[data-theme="light"] .community-page #profileContent .streak-award:hover .streak-award-png{
+ filter:brightness(0) opacity(.78);
+}
+.community-page #profileContent .streak-award.tier-silver .streak-award-name{
+ display:flex;align-items:center;justify-content:center;gap:9px;
+ width:100%;margin-top:0;letter-spacing:.19em;
+}
+.community-page #profileContent .streak-award.tier-silver .streak-award-name::before,
+.community-page #profileContent .streak-award.tier-silver .streak-award-name::after{
+ content:"";display:block;flex:1 1 19px;max-width:24px;height:1px;
+ background:currentColor;opacity:.85;
+}
+@media(max-width:540px){
+ .community-page #profileContent .streak-award.tier-silver{
+  width:clamp(148px,43vw,184px);
+  flex-basis:clamp(148px,43vw,184px);
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ .community-page #profileContent .streak-award-png,
+ .community-page #profileContent .streak-award:hover .streak-award-png{
+  transition:none;transform:none;
+ }
+}

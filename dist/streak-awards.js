@@ -76,6 +76,11 @@ function stampWear(days){
  return chips+'</g>';
 }
 function awardArtwork(badge){
+ // The approved 7-day ink impression is a real transparent PNG. Higher tiers
+ // remain dynamic SVGs so no milestone ever displays the wrong number.
+ if(badge.days===7){
+  return '<img class="streak-award-art streak-award-png" src="./assets/streak/7-day-rubber-stamp.png" width="384" height="384" alt="" loading="lazy" decoding="async">';
+ }
  const id='bq-stamp-'+badge.days;
  const digits=String(badge.days),size=digits.length===1?95:digits.length===2?82:62;
  const wear=stampWear(badge.days);
