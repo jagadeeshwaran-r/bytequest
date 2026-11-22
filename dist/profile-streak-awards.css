@@ -128,8 +128,8 @@ html[data-theme="light"] .community-page #profileContent .streak-award.tier-red{
 
 /* Exact approved 7-day artwork (real transparent PNG), not a redrawn SVG. */
 .community-page #profileContent .streak-award.tier-silver{
- width:clamp(176px,13vw,214px);
- flex:0 0 clamp(176px,13vw,214px);
+ width:128px;
+ flex:0 0 128px;
 }
 .community-page #profileContent .streak-award-png{
  display:block;width:100%;height:auto;aspect-ratio:1;
@@ -147,19 +147,10 @@ html[data-theme="light"] .community-page #profileContent .streak-award-png{
 html[data-theme="light"] .community-page #profileContent .streak-award:hover .streak-award-png{
  filter:brightness(0) opacity(.78);
 }
-.community-page #profileContent .streak-award.tier-silver .streak-award-name{
- display:flex;align-items:center;justify-content:center;gap:9px;
- width:100%;margin-top:0;letter-spacing:.19em;
-}
-.community-page #profileContent .streak-award.tier-silver .streak-award-name::before,
-.community-page #profileContent .streak-award.tier-silver .streak-award-name::after{
- content:"";display:block;flex:1 1 19px;max-width:24px;height:1px;
- background:currentColor;opacity:.85;
-}
 @media(max-width:540px){
  .community-page #profileContent .streak-award.tier-silver{
-  width:clamp(148px,43vw,184px);
-  flex-basis:clamp(148px,43vw,184px);
+  width:108px;
+  flex-basis:108px;
  }
 }
 @media(prefers-reduced-motion:reduce){

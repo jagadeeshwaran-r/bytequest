@@ -120,7 +120,7 @@ export function earnedStreakBadgesMarkup(days,serverDay){
     (badge.count===1?' time':' times')+', last earned '+badge.lastEarned;
    return '<div class="streak-award tier-'+badge.color+'" role="listitem" data-days="'+badge.days+
     '" data-count="'+badge.count+'" aria-label="'+esc(description)+'" title="'+esc(description)+'">'+
-    awardArtwork(badge)+'<span class="streak-award-name" aria-hidden="true">'+badge.name+'</span>'+(badge.count>1?'<span class="streak-award-multiplier" aria-label="Earned '+badge.count+' times">×'+badge.count+'</span>':'')+
+    awardArtwork(badge)+(badge.days===7?'':'<span class="streak-award-name" aria-hidden="true">'+badge.name+'</span>')+(badge.count>1?'<span class="streak-award-multiplier" aria-label="Earned '+badge.count+' times">×'+badge.count+'</span>':'')+
     '</div>';
   }).join('')+'</div></section>';
 }
