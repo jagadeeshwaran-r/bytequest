@@ -37,8 +37,9 @@ async function load({force=false}={}){
  selectScope();loader.cancel(); // Invalidate an older request even for a cache hit.
  const query={scope,period:$('leaderPeriod').value,page};
  const key=JSON.stringify([owner,scope,query.period,page]);
- const stale=cache.board(owner,query,{allowStale:true});
- const fresh=cache.board(owner,query);
+ const filters=query;
+ const stale=cache.board(owner,filters,{allowStale:true});
+ const fresh=cache.board(owner,filters);
  const plan=rankingCachePlan({fresh,stale,force});
  if(renderedBoardKey!==key&&!plan.initial)clearResults();
  if(plan.initial){
