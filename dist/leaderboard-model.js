@@ -12,3 +12,8 @@ export function latestLeaderboard(request){
  let generation=0;
  return{cancel(){generation++;},async load(query,owner){const ticket=++generation;try{const result=await request('leaderboard',query,owner);return ticket===generation?{result}:null;}catch(error){if(ticket!==generation)return null;throw error;}}};
 }
+
+/** Plan a ranking read without allowing cached results to hide a needed refresh. */
+export function rankingCachePlan({fresh=null,stale=null,force=false}={}){
+  return {initial:stale||fresh||null,revalidate:force||!fresh};
+}
