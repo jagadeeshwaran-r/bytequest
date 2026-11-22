@@ -22,7 +22,9 @@ for(const tier of STREAK_BADGE_TIERS.filter(x=>x.days!==7)){
  const generated=earnedStreakBadgesMarkup(span('2025-01-01',tier.days),'2026-11-22');
  assert.ok(generated.includes('data-days="'+tier.days+'"'),'Milestones preserved');
  assert.ok(generated.includes('bq-stamp-'+tier.days+'-ink'),'Higher tiers retain dynamic SVG');
- assert.ok(!generated.includes('7-day-rubber-stamp.png'),'PNG must never be used for a different milestone');
+ const tierEntry=generated.split('data-days="'+tier.days+'"')[1]?.split('</div>')[0]||'';
+ assert.ok(tierEntry.includes('<svg'),'Higher tiers must use their own correct SVG');
+ assert.ok(!tierEntry.includes('7-day-rubber-stamp.png'),'A non-seven tier must not display the 7 PNG');
 }
 const css=readFileSync('dist/profile-streak-awards.css','utf8');
 assert.ok(css.includes('html[data-theme="light"] .community-page #profileContent .streak-award-png'));
