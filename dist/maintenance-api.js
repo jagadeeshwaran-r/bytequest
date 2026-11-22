@@ -1,5 +1,5 @@
 import {cloudConfig} from './config.js';
-import {validPublicConfig} from './cloud.js?v=outage-1';
+import {validPublicConfig} from './public-config.js';
 
 // Only the public status endpoint is read; this contains no Firebase tokens
 // or service-role keys and cannot expose disabled administrator drafts.
