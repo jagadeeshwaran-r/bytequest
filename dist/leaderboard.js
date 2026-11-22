@@ -1,38 +1,77 @@
 import {mountShell} from './shell.js?v=quiet-2&online-alerts=1';
 import {Cloud} from './cloud.js?v=outage-1';
-import {leaderboardRow,latestLeaderboard} from './leaderboard-model.js?v=avatar-1';
+import {leaderboardRow,latestLeaderboard,rankingCachePlan} from './leaderboard-model.js?v=avatar-1';
 import {createViewCache} from './view-cache.js?v=avatar-1';
 import {hydrateLeaderboardAvatars,releaseAvatarObjectUrls} from './avatar-cache.js?v=avatar-1';
-const $=id=>document.getElementById(id),shell=mountShell();let page=0,scope=location.hash==='#friends'?'friends':'global',accountGeneration=0,lastOwner=null;
+const $=id=>document.getElementById(id),shell=mountShell();let page=0,scope=location.hash==='#friends'?'friends':'global',accountGeneration=0,lastOwner=null,renderedBoardKey='';
 const cloud=new Cloud(()=>accountChanged());shell.connect(cloud);
 const cache=createViewCache();
 const loader=latestLeaderboard(async(action,query,owner)=>{
  const {force=false,...filters}=query;
- if(!force){const saved=cache.board(owner,filters,{allowStale:true});if(saved)return {...saved,_cached:true};}
  const fresh=await cloud.request(action,filters,owner);
  if(cloud.user?.id===owner)cache.saveBoard(owner,filters,fresh);
- return {...fresh,_cached:false};
+ return fresh;
 });
 function setMessage(text,error=false){$('leaderMessage').textContent=text;$('leaderMessage').classList.toggle('error',error);$('leaderAuthMessage').textContent=text;$('leaderAuthMessage').classList.toggle('error',error);}
 function selectScope(){for(const button of document.querySelectorAll('[data-board]')){const active=button.dataset.board===scope;button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;}const selected=document.querySelector('[data-board="'+scope+'"]');$('leaderPanel').setAttribute('aria-labelledby',selected.id);$('boardHeading').textContent=scope==='friends'?'Friends leaderboard':'Global leaderboard';$('boardDescription').textContent=scope==='friends'?'You and the people you follow, in one place.':'A shared place for every discoverable learner.';}
 function clearResults(){releaseAvatarObjectUrls();for(const id of ['yourRank','yourPoints','yourSolved','rankedLearners'])$(id).textContent='—';$('leaderRows').replaceChildren();$('leaderFindMe').hidden=true;$('leaderEmpty').hidden=true;$('leaderError').hidden=true;$('leaderPager').hidden=true;$('yourPosition').hidden=true;$('profileNudge').hidden=true;}
-async function load({force=false}={}){
- const owner=cloud.user?.id;if(!owner)return;selectScope();clearResults();$('leaderPanel').setAttribute('aria-busy','true');$('leaderLoading').hidden=false;$('leaderRefresh').disabled=true;setMessage('Loading rankings…');
- try{const response=await loader.load({scope,period:$('leaderPeriod').value,page,force},owner);if(!response)return;
-  const r=response.result;if(page>0&&!r.users.length){page=Math.max(0,Math.ceil(r.total/r.pageSize)-1);load();return;}
-  $('leaderRows').innerHTML=r.users.map(leaderboardRow).join('');$('leaderRows').querySelectorAll('img').forEach(img=>img.onerror=()=>img.remove());$('leaderFindMe').hidden=!$('leaderRows').querySelector('.your-ranking');
-  void hydrateLeaderboardAvatars($('leaderRows'),owner); // Rehydrate saved image bytes, even after signed URLs expire.
+function renderRankings(r,{cached=false,key,owner=cloud.user?.id}={}){
+  // Keep existing results visible while revalidating; only replace the rows
+  // after a fresh response is ready. Signed avatar URLs remain account-scoped.
+  releaseAvatarObjectUrls();
+  $('leaderRows').innerHTML=r.users.map(leaderboardRow).join('');
+  $('leaderRows').querySelectorAll('img').forEach(img=>img.onerror=()=>img.remove());
+  $('leaderFindMe').hidden=!$('leaderRows').querySelector('.your-ranking');
+  void hydrateLeaderboardAvatars($('leaderRows'),owner);
   $('yourRank').textContent=r.me?'#'+r.me.rank:'—';$('yourPoints').textContent=r.me?.points??'—';$('yourSolved').textContent=r.me?.solved??'—';$('rankedLearners').textContent=r.total;
   $('leaderEmpty').hidden=!!r.users.length;$('emptyTitle').textContent=scope==='friends'?'Build your practice circle.':'Be the first on the board.';$('emptyDescription').textContent=scope==='friends'?'Create a discoverable profile, then find and follow friends using the search above.':'Create a discoverable profile to join the leaderboard.';
   $('profileNudge').hidden=!!r.discoverable;$('profileNudgeText').textContent=r.hasProfile?'Make your profile discoverable to appear in the rankings.':'Create a profile to join the rankings and compare with friends.';
   $('friendHint').hidden=scope!=='friends'||r.total>1;
   const start=page*r.pageSize+1,end=Math.min((page+1)*r.pageSize,r.total);$('pageRange').textContent=r.total?start+'–'+end+' of '+r.total+' learners':'0 learners';$('leaderPager').hidden=r.total<=r.pageSize;$('leaderPrevious').disabled=page===0;$('leaderNext').disabled=end>=r.total;
   $('yourPosition').hidden=!r.me||r.users.some(p=>p.isYou);$('yourPosition').textContent=r.me?'Your position: #'+r.me.rank+' · '+r.me.points+' points · '+r.me.solved+' solved in this period.':'';
-  setMessage(r._cached?'Saved rankings · Press Refresh ranks for the latest positions.':'Rankings updated from the server.');$('leaderLoading').hidden=true;$('leaderPanel').setAttribute('aria-busy','false');$('leaderRefresh').disabled=false;
- }catch(e){if(cloud.user?.id!==owner)return;$('leaderLoading').hidden=true;$('leaderError').hidden=false;$('leaderErrorText').textContent=e.message;$('leaderPanel').setAttribute('aria-busy','false');$('leaderRefresh').disabled=false;setMessage('Rankings could not be loaded.',true);}
+  renderedBoardKey=key;
+  setMessage(cached?'Saved rankings · Refreshing when needed.':'Rankings updated from the server.');
+}
+async function load({force=false}={}){
+ const owner=cloud.user?.id;if(!owner)return;
+ selectScope();loader.cancel(); // Invalidate an older request even for a cache hit.
+ const query={scope,period:$('leaderPeriod').value,page};
+ const key=JSON.stringify([owner,scope,query.period,page]);
+ const filters=query;
+ const stale=cache.board(owner,filters,{allowStale:true});
+ const fresh=cache.board(owner,filters);
+ const plan=rankingCachePlan({fresh,stale,force});
+ if(renderedBoardKey!==key&&!plan.initial)clearResults();
+ if(plan.initial){
+   renderRankings(plan.initial,{cached:true,key});
+ }
+ if(!plan.revalidate){
+   $('leaderLoading').hidden=true;$('leaderPanel').setAttribute('aria-busy','false');$('leaderRefresh').disabled=false;
+   return;
+ }
+ // A refresh never blanks existing rows or forces a visible spinner over them.
+ $('leaderPanel').setAttribute('aria-busy','true');$('leaderLoading').hidden=!!plan.initial;
+ $('leaderRefresh').disabled=true;
+ if(plan.initial)setMessage('Checking for updated rankings…');
+ else setMessage('Loading rankings…');
+ try{
+   const response=await loader.load({...query,force},owner);
+   if(!response||cloud.user?.id!==owner)return;
+   const r=response.result;
+   if(page>0&&!r.users.length){page=Math.max(0,Math.ceil(r.total/r.pageSize)-1);void load();return;}
+   renderRankings(r,{key});
+ }catch(e){
+   if(cloud.user?.id!==owner)return;
+   if(plan.initial)setMessage('Saved rankings · Could not refresh right now.',true);
+   else{$('leaderError').hidden=false;$('leaderErrorText').textContent=e.message;setMessage('Rankings could not be loaded.',true);}
+ }finally{
+   if(cloud.user?.id===owner&&key===JSON.stringify([owner,scope,$('leaderPeriod').value,page])){
+     $('leaderLoading').hidden=true;$('leaderPanel').setAttribute('aria-busy','false');$('leaderRefresh').disabled=false;
+   }
+ }
 }
 async function accountChanged(){
- const ticket=++accountGeneration;loader.cancel();const nextOwner=cloud.user?.id||null;if(lastOwner&&lastOwner!==nextOwner)cache.clearOwner(lastOwner);lastOwner=nextOwner;shell.setAccount(cloud.user);shell.setAdmin(false);clearResults();const signedIn=!!cloud.user;
+ const ticket=++accountGeneration;loader.cancel();const nextOwner=cloud.user?.id||null;if(lastOwner&&lastOwner!==nextOwner)cache.clearOwner(lastOwner);lastOwner=nextOwner;renderedBoardKey='';shell.setAccount(cloud.user);shell.setAdmin(false);clearResults();const signedIn=!!cloud.user;
  $('leaderAuthMessage').hidden=signedIn;$('leaderSignedOut').hidden=signedIn;$('leaderSignedIn').hidden=!signedIn;$('communityAccount').textContent=signedIn?'Sign out':'Sign in with Google';
  if(!signedIn){setMessage('Sign in to see the community and your friends.');return;}
  // Show cached rankings immediately; load verified profile details independently.

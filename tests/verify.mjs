@@ -2,6 +2,7 @@ import './java-judge-failover.mjs';
 import './site-maintenance.mjs';
 import './legacy-navigation-preflight.mjs';
 import './legacy-performance-budget.mjs';
+import './profile-leaderboard-latency.mjs';
 import './quiet-editor-workspace.mjs';
 import './system-state.mjs';
 import './outage-offline-cache.mjs';

@@ -68,9 +68,33 @@ export function createDatabase(url,serviceKey,{fetchImpl=fetch}={}){
         data={...data,discoverable:data.discoverable??current?.discoverable??true,show_presence:data.show_presence??current?.show_presence??true};
       }
       const {data:result,error}=action==="profile-save"?await client.rpc("bytequest_save_profile",{owner_id:owner,data}):await client.rpc("bytequest_community",{owner_id:owner,action,data});rpcError(error);
-      if(result.profile&&['profile','follow'].includes(action)){const presence=await client.rpc("bytequest_read_presence",{viewer_id:owner,target:result.profile.public_id});rpcError(presence.error);result.presence=presence.data.presence;const ranking=await client.rpc("bytequest_profile_rank",{viewer_id:owner,target:result.profile.public_id});rpcError(ranking.error);result.ranking=ranking.data;result.profile.is_admin=ranking.data.isAdmin;result.stats.solved=ranking.data.solved;result.stats.points=ranking.data.points;const activity=await client.rpc("bytequest_profile_activity",{viewer_id:owner,target:result.profile.public_id});rpcError(activity.error);Object.assign(result.stats,activity.data);}
-      if(result.profile&&["self","profile-save"].includes(action))result.profile.is_admin=result.admin===true;
-      if(result.profile&&["self","profile-save","profile","follow"].includes(action)){const insights=await client.rpc("bytequest_profile_insights",{viewer_id:owner,target:result.profile.public_id});rpcError(insights.error);result.insights=insights.data;Object.assign(result.profile,insights.data.details);}
+      // Profile details are independent RPC reads. Execute them concurrently
+      // to avoid four serial Edge Function -> PostgREST round trips.
+      // Identity is always the token-verified owner, never a browser-supplied ID.
+      const hasProfile=!!result.profile;
+      const withSocial=hasProfile&&['profile','follow'].includes(action);
+      const withInsights=hasProfile&&['self','profile-save','profile','follow'].includes(action);
+      const target=result.profile?.public_id;
+      const [presence,ranking,activity,insights]=await Promise.all([
+        withSocial?client.rpc('bytequest_read_presence',{viewer_id:owner,target}):null,
+        withSocial?client.rpc('bytequest_profile_rank',{viewer_id:owner,target}):null,
+        withSocial?client.rpc('bytequest_profile_activity',{viewer_id:owner,target}):null,
+        withInsights?client.rpc('bytequest_profile_insights',{viewer_id:owner,target}):null
+      ]);
+      for(const response of [presence,ranking,activity,insights])if(response)rpcError(response.error);
+      if(withSocial){
+        result.presence=presence.data.presence;
+        result.ranking=ranking.data;
+        result.profile.is_admin=ranking.data.isAdmin;
+        result.stats.solved=ranking.data.solved;
+        result.stats.points=ranking.data.points;
+        Object.assign(result.stats,activity.data);
+      }
+      if(hasProfile&&['self','profile-save'].includes(action))result.profile.is_admin=result.admin===true;
+      if(withInsights){
+        result.insights=insights.data;
+        Object.assign(result.profile,insights.data.details);
+      }
       return enrich(result);
     },
     async sync(owner,payload,revision){const rows=checked(await client.rpc("sync_bytequest_firebase_progress",{owner_id:owner,new_payload:payload,expected_revision:revision}));if(!rows?.[0])throw new Error("Missing progress result");return rows[0];},
