@@ -22,7 +22,7 @@
 }
 .community-page #profileContent .streak-award{
  --stamp-ink:#e6edf3;--stamp-soft:#b7c7d5;
- position:relative;display:flex;align-items:center;justify-content:center;
+ position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
  width:clamp(116px,9.5vw,138px);flex:0 0 clamp(116px,9.5vw,138px);
  min-height:0;user-select:none;color:var(--stamp-ink);
 }
@@ -79,6 +79,13 @@
  opacity:1;
 }
 .community-page #profileContent .stamp-mark{fill:currentColor}
+.community-page #profileContent .streak-award-name{
+ display:block;margin-top:-1px;
+ color:var(--stamp-ink);
+ font:650 10px/1.35 var(--font-sans,Inter,sans-serif);
+ letter-spacing:.12em;text-align:center;
+ white-space:nowrap;
+}
 .community-page #profileContent .streak-award-multiplier{
  position:absolute;right:-3px;top:2px;z-index:1;
  display:inline-flex;align-items:center;justify-content:center;

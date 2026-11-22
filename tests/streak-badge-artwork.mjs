@@ -15,6 +15,7 @@ assert.ok(markup.includes('>7</text>'));
 assert.ok(markup.includes('>DAY STREAK</text>'));
 assert.ok(!markup.includes('rotate(-11 80 86)'),'Milestone digit must not be tilted independently');
 assert.ok(!markup.includes('stamp-stars')&&!markup.includes('stamp-tier'),'No central stars or overlapping tier text');
+assert.ok(markup.includes('<span class="streak-award-name" aria-hidden="true">STREAKER</span>'),'Earned tier title remains readable below, not inside, the seal');
 const clipped=markup.indexOf('mask="url(#bq-stamp-7-ink)"');
 const crisp=markup.indexOf('class="stamp-crisp-lettering"');
 assert.ok(clipped>=0&&crisp>clipped,'Ink wear must apply to rings only, not number or words');
