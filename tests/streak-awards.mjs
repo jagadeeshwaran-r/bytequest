@@ -35,7 +35,7 @@ assert.match(rendered,/STREAKER/);
 assert.ok(!rendered.includes('CONSISTENT'),'Locked tiers remain hidden');
 assert.ok(!rendered.includes('is-locked'));
 assert.ok(rendered.includes('src="./assets/streak/7-day-rubber-stamp.png"'),'Seven-day artwork uses approved PNG');
-assert.ok(!earnedStreakBadgesMarkup(span('2026-01-01',30),'2026-11-18').includes('<img'), 'Higher milestones remain dynamic SVGs');
+assert.ok(earnedStreakBadgesMarkup(span('2026-01-01',30),'2026-11-18').includes('bq-stamp-30-ink'), 'Higher milestones retain dynamic SVGs');
 const x3=earnedStreakBadgesMarkup(triple,'2026-11-18');
 assert.ok(x3.includes('×3'));
 assert.equal((x3.match(/class="streak-award tier-/g)||[]).length,1);
