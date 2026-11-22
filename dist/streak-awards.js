@@ -45,25 +45,42 @@ export function earnedStreakBadges(days=[],serverDay=new Date().toISOString().sl
  return awards.filter(badge=>badge.count>0);
 }
 const esc=value=>String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-// Compact premium digital emblem. No ribbons, shields-with-laurels, or fake 3D.
-// All tier artwork is inline SVG so it stays crisp at small sizes and needs no assets.
+// Ink-stamped circular seal inspired by real approval rubber stamps.
+// The mask has deterministic, tiny irregular gaps to suggest imperfect ink;
+// no image requests or randomly moving decorations are needed.
 function awardArtwork(badge){
- const id='bq-award-'+badge.days;
- const count=String(badge.days).padStart(2,'0');
- return '<svg viewBox="0 0 120 132" class="streak-award-art" aria-hidden="true" focusable="false">'+
-  '<defs><linearGradient id="'+id+'-metal" x1="0%" y1="0%" x2="100%" y2="100%">'+
-   '<stop offset="0%" stop-color="var(--badge-metal)"/>'+
-   '<stop offset="48%" stop-color="var(--badge-outline)"/>'+
-   '<stop offset="100%" stop-color="var(--badge-metal)"/></linearGradient></defs>'+
-  '<path class="streak-art-plate" d="M60 7 97 19 110 43 110 94 60 123 10 94 10 43 23 19Z" fill="var(--badge-dark)" stroke="url(#'+id+'-metal)" stroke-width="1.75" stroke-linejoin="round"/>'+
-  '<path class="streak-art-inset" d="M60 15 92 25 102 45 102 90 60 114 18 90 18 45 28 25Z" fill="none" stroke="var(--badge-outline)" stroke-width="1" stroke-linejoin="round"/>'+
-  '<path d="M43 35H77" fill="none" stroke="var(--badge-accent)" stroke-width="1.4" stroke-linecap="round" opacity=".85"/>'+
-  '<circle cx="60" cy="26" r="2.4" fill="var(--accent, #26c695)"/>'+
-  '<text x="60" y="79" class="streak-art-number" text-anchor="middle">'+count+'</text>'+
-  '<text x="60" y="95" class="streak-art-days" text-anchor="middle">DAYS</text>'+
-  '<path d="M35 103H85" fill="none" stroke="var(--badge-outline)" stroke-width="1"/>'+
-  '<text x="60" y="113" class="streak-art-name" text-anchor="middle">'+badge.name+'</text>'+
-  '</svg>';
+ const id='bq-stamp-'+badge.days;
+ const digits=String(badge.days);
+ const size=digits.length===1?69:digits.length===2?61:46;
+ const texture='<g fill="#000" stroke="#000" stroke-linecap="round">'+
+  '<path d="M18 39l7 2-2 3-8-3zM130 28l7-3 1 3-7 4zM17 101l7-1-1 3-7 1zM134 111l9 2-2 3-8-2z"/>'+
+  '<path d="M44 12l4 3-1 2-4-3zM108 146l6-2 1 2-5 3zM39 125l3 4-2 2-3-4z"/>'+
+  '<path d="M51 66l5 1-1 2-5-1zM104 90l4-2 1 2-4 3zM70 99l3 2-2 2-3-3z"/>'+
+  '<circle cx="106" cy="19" r="1.7"/><circle cx="32" cy="133" r="1.8"/>'+
+  '<circle cx="141" cy="65" r="1.5"/><circle cx="21" cy="73" r="1.1"/>'+
+  '</g>';
+ return '<svg viewBox="0 0 160 160" class="streak-award-art streak-award-stamp" aria-hidden="true" focusable="false">'+
+  '<defs>'+
+   '<path id="'+id+'-top" d="M30 80 A50 50 0 0 1 130 80"/>'+
+   '<path id="'+id+'-bottom" d="M27 80 A53 53 0 0 0 133 80"/>'+
+   '<mask id="'+id+'-ink" maskUnits="userSpaceOnUse" x="0" y="0" width="160" height="160">'+
+    '<rect width="160" height="160" fill="#fff"/>'+texture+
+   '</mask>'+
+  '</defs>'+
+  '<g mask="url(#'+id+'-ink)" class="stamp-impression">'+
+   '<circle class="stamp-ring stamp-ring-outer" cx="80" cy="80" r="71"/>'+
+   '<circle class="stamp-ring stamp-ring-middle" cx="80" cy="80" r="63"/>'+
+   '<circle class="stamp-ring stamp-ring-inner" cx="80" cy="80" r="47"/>'+
+   '<text class="stamp-curve-text"><textPath href="#'+id+'-top" startOffset="50%" text-anchor="middle">BYTEQUEST</textPath></text>'+
+   '<text class="stamp-curve-text stamp-bottom"><textPath href="#'+id+'-bottom" startOffset="50%" text-anchor="middle">DAY STREAK</textPath></text>'+
+   '<text class="stamp-stars" x="80" y="58" text-anchor="middle">&#9733; &#9733; &#9733;</text>'+
+   '<g transform="rotate(-11 80 86)">'+
+    '<text class="stamp-number" x="80" y="102" text-anchor="middle" style="font-size:'+size+'px">'+digits+'</text>'+
+   '</g>'+
+   '<path class="stamp-rule" d="M54 113H106"/>'+
+   '<text class="stamp-tier" x="80" y="125" text-anchor="middle">'+badge.name+'</text>'+
+   '<circle class="stamp-mark" cx="20" cy="80" r="2.4"/><circle class="stamp-mark" cx="140" cy="80" r="2.4"/>'+
+  '</g></svg>';
 }
 export function earnedStreakBadgesMarkup(days,serverDay){
  const earned=earnedStreakBadges(days,serverDay);
