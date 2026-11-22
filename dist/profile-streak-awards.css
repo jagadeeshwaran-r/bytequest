@@ -1,10 +1,9 @@
-/* Lifetime streak awards: earned only. Five podium-style medallions are
-   constructed from scalable SVG, not raster assets. */
+/* ByteQuest lifetime achievements — premium, flat and intentionally quiet.
+   Only historically earned tiers render. Keep badges compact beside the calendar. */
 .community-page #profileContent .streak-awards{
  display:flex;align-items:center;gap:12px 22px;
  justify-content:flex-start;flex-wrap:wrap;
- padding:12px 0 14px;
- border-top:1px solid var(--border);
+ padding:12px 0 14px;border-top:1px solid var(--border);
 }
 .community-page #profileContent .streak-awards-heading{flex:0 1 220px;min-width:170px}
 .community-page #profileContent .streak-awards-heading .eyebrow{
@@ -15,96 +14,86 @@
  letter-spacing:-.035em;margin:7px 0 5px;color:var(--text);
 }
 .community-page #profileContent .streak-awards-heading p{
- margin:0;font-size:11px;color:var(--muted);line-height:1.55;
- max-width:32ch;
+ margin:0;font-size:11px;color:var(--muted);line-height:1.55;max-width:32ch;
 }
 .community-page #profileContent .streak-awards-list{
  display:flex;align-items:center;justify-content:flex-start;
- flex-wrap:wrap;gap:8px 12px;
- min-width:0;flex:0 1 auto;
+ flex-wrap:wrap;gap:8px 12px;min-width:0;flex:0 1 auto;
 }
 .community-page #profileContent .streak-award{
- --badge-dark:#111820;
+ --badge-dark:#101216;--badge-outline:#3b4451;
+ --badge-metal:#8996a5;--badge-accent:#9ca9b6;
  position:relative;display:flex;align-items:center;justify-content:center;
  width:clamp(74px,6.3vw,94px);
  flex:0 0 clamp(74px,6.3vw,94px);
  min-height:0;user-select:none;
 }
 .community-page #profileContent .streak-award.tier-silver{
- --badge-light:#f1f5fa;--badge-edge:#a9b6c7;--badge-shadow:#6c7b8d;
- --badge-dark:#141c25;
+ --badge-metal:#b3bdca;--badge-accent:#a2adbb;--badge-outline:#4c5766;
 }
 .community-page #profileContent .streak-award.tier-blue{
- --badge-light:#87c9ff;--badge-edge:#3f94e8;--badge-shadow:#185ca8;
- --badge-dark:#0c1f35;
+ --badge-metal:#8cacca;--badge-accent:#779ec6;--badge-outline:#3b526b;
 }
 .community-page #profileContent .streak-award.tier-gold{
- --badge-light:#ffe495;--badge-edge:#f3b73d;--badge-shadow:#a87817;
- --badge-dark:#261c11;
+ --badge-metal:#d7bd7e;--badge-accent:#d2af66;--badge-outline:#625338;
 }
 .community-page #profileContent .streak-award.tier-purple{
- --badge-light:#dbadff;--badge-edge:#a76be6;--badge-shadow:#6b3b9c;
- --badge-dark:#22152f;
+ --badge-metal:#b6a1d1;--badge-accent:#ad94cf;--badge-outline:#584c6a;
 }
 .community-page #profileContent .streak-award.tier-red{
- --badge-light:#ffb07e;--badge-edge:#f15f52;--badge-shadow:#a7252d;
- --badge-dark:#2b141a;
+ --badge-metal:#d1a09b;--badge-accent:#cc817c;--badge-outline:#6b4648;
 }
 .community-page #profileContent .streak-award-art{
  display:block;width:100%;height:auto;overflow:visible;
- filter:drop-shadow(0 3px 5px #11182722);
+ filter:drop-shadow(0 4px 12px #00000022);
  transition:transform .18s ease,filter .18s ease;
 }
 .community-page #profileContent .streak-award:hover .streak-award-art{
  transform:translateY(-2px);
- filter:drop-shadow(0 5px 7px #11182738);
+ filter:drop-shadow(0 6px 14px #00000032);
 }
 .community-page #profileContent .streak-art-number{
- fill:#f8f9fb;font-family:var(--font-sans,Inter,sans-serif);
- font-weight:750;font-size:32px;letter-spacing:-1.2px;
- font-variant-numeric:tabular-nums;
+ fill:#e9edf2;font:600 38px/1 var(--font-sans,Inter,sans-serif);
+ letter-spacing:-2px;font-variant-numeric:tabular-nums lining-nums;
 }
 .community-page #profileContent .streak-art-days{
- fill:var(--badge-light);font:700 10px var(--font-sans,Inter,sans-serif);
- letter-spacing:1.5px;
+ fill:var(--badge-accent);font:600 8px var(--font-sans,Inter,sans-serif);
+ letter-spacing:2px;
 }
 .community-page #profileContent .streak-art-name{
- fill:var(--badge-dark);font:800 11px var(--font-sans,Inter,sans-serif);
- letter-spacing:.1px;
- paint-order:stroke;
-}
-.community-page #profileContent .streak-award.tier-silver .streak-art-name,
-.community-page #profileContent .streak-award.tier-blue .streak-art-name,
-.community-page #profileContent .streak-award.tier-red .streak-art-name{
- fill:#fcfdff;
+ fill:#b8c0ca;font:600 7.8px var(--font-sans,Inter,sans-serif);
+ letter-spacing:.5px;
 }
 .community-page #profileContent .streak-award-multiplier{
- position:absolute;right:-3px;top:1px;z-index:1;
+ position:absolute;right:-4px;top:0;z-index:1;
  display:inline-flex;align-items:center;justify-content:center;
- min-width:30px;height:24px;padding:0 7px;
- border-radius:999px;
- background:var(--surface);
- border:1.5px solid var(--badge-edge);
- color:var(--text);
- box-shadow:0 2px 7px #0a17201a;
- font:700 12px/1 var(--font-sans,Inter,sans-serif);
+ min-width:25px;height:19px;padding:0 5px;
+ border-radius:5px;background:var(--surface);
+ border:1px solid var(--badge-outline);color:var(--text);
+ box-shadow:0 2px 7px #00000012;
+ font:600 10px/1 var(--font-mono,monospace);
  font-variant-numeric:tabular-nums;
 }
-
-/* Keep the solving calendar close to the compact badge row, without altering
-   calendar spacing for profiles with no earned achievements. */
+/* Light mode uses the existing palette and retains legible text and borders. */
+html[data-theme="light"] .community-page #profileContent .streak-award{
+ --badge-dark:#f5f7f8;--badge-outline:#c2ccd6;
+}
+html[data-theme="light"] .community-page #profileContent .streak-award .streak-art-number{fill:#202b37}
+html[data-theme="light"] .community-page #profileContent .streak-award .streak-art-name{fill:#4b5866}
+html[data-theme="light"] .community-page #profileContent .streak-award.tier-silver{--badge-outline:#a0abb8}
+html[data-theme="light"] .community-page #profileContent .streak-award.tier-gold{--badge-outline:#b6a173}
+html[data-theme="light"] .community-page #profileContent .streak-award.tier-blue{--badge-outline:#7796b4}
+html[data-theme="light"] .community-page #profileContent .streak-award.tier-purple{--badge-outline:#a18bb5}
+html[data-theme="light"] .community-page #profileContent .streak-award.tier-red{--badge-outline:#b68d87}
 .community-page #profileContent .streak-awards + .profile-calendar-section{
  margin-top:10px!important;
 }
-
 @media(max-width:850px){
  .community-page #profileContent .streak-awards{gap:10px 16px}
  .community-page #profileContent .streak-awards-heading{flex-basis:190px}
 }
 @media(max-width:540px){
- .community-page #profileContent .streak-awards{
-  padding:12px 0 14px;gap:10px;
- }
+ .community-page #profileContent .streak-awards{padding:12px 0 14px;gap:10px}
  .community-page #profileContent .streak-awards-heading{flex-basis:100%}
  .community-page #profileContent .streak-awards-list{gap:8px}
  .community-page #profileContent .streak-award{

@@ -45,35 +45,24 @@ export function earnedStreakBadges(days=[],serverDay=new Date().toISOString().sl
  return awards.filter(badge=>badge.count>0);
 }
 const esc=value=>String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+// Compact premium digital emblem. No ribbons, shields-with-laurels, or fake 3D.
+// All tier artwork is inline SVG so it stays crisp at small sizes and needs no assets.
 function awardArtwork(badge){
  const id='bq-award-'+badge.days;
- return '<svg viewBox="0 0 136 174" class="streak-award-art" aria-hidden="true" focusable="false">'+
-  '<defs><linearGradient id="'+id+'-edge" x1="0" y1="0" x2="1" y2="1">'+
-   '<stop offset="0" stop-color="var(--badge-light)"/><stop offset=".55" stop-color="var(--badge-edge)"/><stop offset="1" stop-color="var(--badge-shadow)"/></linearGradient>'+
-   '<linearGradient id="'+id+'-ribbon" x1="0" y1="0" x2="1" y2="1">'+
-   '<stop offset="0" stop-color="var(--badge-light)"/><stop offset=".55" stop-color="var(--badge-edge)"/><stop offset="1" stop-color="var(--badge-shadow)"/></linearGradient></defs>'+
-  '<path d="M20 112 5 166 28 154 44 168 53 112Z" fill="var(--badge-shadow)" stroke="var(--badge-edge)" stroke-width="1.1"/>'+
-  '<path d="M83 112 92 168 108 154 131 166 116 112Z" fill="var(--badge-shadow)" stroke="var(--badge-edge)" stroke-width="1.1"/>'+
-  '<path d="M68 5 119 32 119 109 68 139 17 109 17 32Z" fill="var(--badge-dark)" stroke="url(#'+id+'-edge)" stroke-width="6" stroke-linejoin="round"/>'+
-  '<path d="M68 15 109 37 109 104 68 128 27 104 27 37Z" fill="none" stroke="var(--badge-light)" stroke-width="1" opacity=".45"/>'+
-  '<g fill="none" stroke="var(--badge-light)" stroke-width="2" stroke-linecap="round">'+
-   '<rect x="60" y="28" width="16" height="15" rx="1.5"/><path d="M60 33h16M64 26v5M72 26v5M64 37h2M69 37h2"/></g>'+
-  '<g fill="none" stroke="var(--badge-edge)" stroke-width="1.4" stroke-linecap="round" opacity=".8">'+
-   '<path d="M44 104Q26 87 34 56"/><path d="M92 104Q110 87 102 56"/></g>'+
-  '<g fill="var(--badge-light)" opacity=".87">'+
-   '<ellipse cx="31" cy="64" rx="2.2" ry="6" transform="rotate(-24 31 64)"/>'+
-   '<ellipse cx="35" cy="77" rx="2.2" ry="6" transform="rotate(-45 35 77)"/>'+
-   '<ellipse cx="40" cy="88" rx="2.2" ry="6" transform="rotate(-62 40 88)"/>'+
-   '<ellipse cx="43" cy="96" rx="2.2" ry="5" transform="rotate(-70 43 96)"/>'+
-   '<ellipse cx="105" cy="64" rx="2.2" ry="6" transform="rotate(24 105 64)"/>'+
-   '<ellipse cx="101" cy="77" rx="2.2" ry="6" transform="rotate(45 101 77)"/>'+
-   '<ellipse cx="96" cy="88" rx="2.2" ry="6" transform="rotate(62 96 88)"/>'+
-   '<ellipse cx="93" cy="96" rx="2.2" ry="5" transform="rotate(70 93 96)"/></g>'+
-  '<text x="68" y="81" class="streak-art-number" text-anchor="middle">'+badge.days+'</text>'+
-  '<text x="68" y="96" class="streak-art-days" text-anchor="middle">DAYS</text>'+
-  '<path d="M11 114H125L132 129 121 143H15L4 129Z" fill="url(#'+id+'-ribbon)" stroke="var(--badge-light)" stroke-width="1" stroke-linejoin="round"/>'+
-  '<text x="68" y="133" class="streak-art-name" text-anchor="middle">'+badge.name+'</text>'+
-  '<path d="m61 149 7 6 7-6" fill="none" stroke="var(--badge-light)" stroke-width="2" stroke-linecap="round" opacity=".8"/>'+
+ const count=String(badge.days).padStart(2,'0');
+ return '<svg viewBox="0 0 120 132" class="streak-award-art" aria-hidden="true" focusable="false">'+
+  '<defs><linearGradient id="'+id+'-metal" x1="0%" y1="0%" x2="100%" y2="100%">'+
+   '<stop offset="0%" stop-color="var(--badge-metal)"/>'+
+   '<stop offset="48%" stop-color="var(--badge-outline)"/>'+
+   '<stop offset="100%" stop-color="var(--badge-metal)"/></linearGradient></defs>'+
+  '<path class="streak-art-plate" d="M60 7 97 19 110 43 110 94 60 123 10 94 10 43 23 19Z" fill="var(--badge-dark)" stroke="url(#'+id+'-metal)" stroke-width="1.75" stroke-linejoin="round"/>'+
+  '<path class="streak-art-inset" d="M60 15 92 25 102 45 102 90 60 114 18 90 18 45 28 25Z" fill="none" stroke="var(--badge-outline)" stroke-width="1" stroke-linejoin="round"/>'+
+  '<path d="M43 35H77" fill="none" stroke="var(--badge-accent)" stroke-width="1.4" stroke-linecap="round" opacity=".85"/>'+
+  '<circle cx="60" cy="26" r="2.4" fill="var(--accent, #26c695)"/>'+
+  '<text x="60" y="79" class="streak-art-number" text-anchor="middle">'+count+'</text>'+
+  '<text x="60" y="95" class="streak-art-days" text-anchor="middle">DAYS</text>'+
+  '<path d="M35 103H85" fill="none" stroke="var(--badge-outline)" stroke-width="1"/>'+
+  '<text x="60" y="113" class="streak-art-name" text-anchor="middle">'+badge.name+'</text>'+
   '</svg>';
 }
 export function earnedStreakBadgesMarkup(days,serverDay){
