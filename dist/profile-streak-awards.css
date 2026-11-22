@@ -56,13 +56,9 @@
 }
 .community-page #profileContent .stamp-ring-outer{stroke-width:4.2}
 .community-page #profileContent .stamp-ring-middle{stroke-width:2;opacity:.88}
-.community-page #profileContent .stamp-ring-inner{stroke-width:2.5;opacity:.94}
 .community-page #profileContent .stamp-curve-text{
  fill:currentColor;font:800 12px var(--font-sans,Inter,sans-serif);
  letter-spacing:1.3px;
-}
-.community-page #profileContent .stamp-curve-text.stamp-bottom{
- font-size:11px;letter-spacing:1.1px;
 }
 .community-page #profileContent .stamp-number{
  fill:currentColor;font-family:var(--font-sans,Inter,sans-serif);
@@ -72,8 +68,8 @@
 }
 /* The center caption is a single, sharp horizontal line under the number. */
 .community-page #profileContent .stamp-day-label{
- fill:currentColor;font:800 12px var(--font-sans,Inter,sans-serif);
- letter-spacing:1.2px;
+ fill:currentColor;font:750 11px var(--font-sans,Inter,sans-serif);
+ letter-spacing:1.15px;
 }
 .community-page #profileContent .stamp-crisp-lettering{
  opacity:1;
