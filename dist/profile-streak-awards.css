@@ -21,65 +21,62 @@
  gap:8px 12px;min-width:0;flex:0 1 auto;
 }
 .community-page #profileContent .streak-award{
- --stamp-ink:#c0cbd4;--stamp-soft:#8d9ca9;
+ --stamp-ink:#e6edf3;--stamp-soft:#b7c7d5;
  position:relative;display:flex;align-items:center;justify-content:center;
- width:clamp(88px,7.3vw,112px);flex:0 0 clamp(88px,7.3vw,112px);
+ width:clamp(116px,9.5vw,138px);flex:0 0 clamp(116px,9.5vw,138px);
  min-height:0;user-select:none;color:var(--stamp-ink);
 }
 .community-page #profileContent .streak-award.tier-silver{
- --stamp-ink:#cad2db;--stamp-soft:#9daab8;
+ --stamp-ink:#e6edf3;--stamp-soft:#bac8d5;
 }
 .community-page #profileContent .streak-award.tier-blue{
- --stamp-ink:#9abfd6;--stamp-soft:#6b9ebd;
+ --stamp-ink:#b7dcfa;--stamp-soft:#91beda;
 }
 .community-page #profileContent .streak-award.tier-gold{
- --stamp-ink:#dbbd7d;--stamp-soft:#bd9c57;
+ --stamp-ink:#f4d999;--stamp-soft:#d8b86e;
 }
 .community-page #profileContent .streak-award.tier-purple{
- --stamp-ink:#bca5db;--stamp-soft:#9879bf;
+ --stamp-ink:#d9c2f6;--stamp-soft:#b9a0dc;
 }
 .community-page #profileContent .streak-award.tier-red{
- --stamp-ink:#dda39a;--stamp-soft:#bf7c76;
+ --stamp-ink:#f2b7ad;--stamp-soft:#d89c91;
 }
 .community-page #profileContent .streak-award-art{
  width:100%;height:auto;display:block;overflow:visible;
- transform:rotate(-7deg);transform-origin:center;
+ transform:rotate(-3deg);transform-origin:center;
  filter:drop-shadow(0 2px 5px #00000010);
  transition:transform .18s ease,filter .18s ease;
 }
 .community-page #profileContent .streak-award:hover .streak-award-art{
- transform:rotate(-4deg) translateY(-2px);
+ transform:rotate(-2deg) translateY(-2px);
  filter:drop-shadow(0 4px 8px #00000022);
 }
 .community-page #profileContent .stamp-ring{
  fill:none;stroke:currentColor;stroke-linecap:round;
 }
-.community-page #profileContent .stamp-ring-outer{stroke-width:5}
-.community-page #profileContent .stamp-ring-middle{stroke-width:2.2;opacity:.93}
-.community-page #profileContent .stamp-ring-inner{stroke-width:2.8;opacity:.96}
+.community-page #profileContent .stamp-ring-outer{stroke-width:4.2}
+.community-page #profileContent .stamp-ring-middle{stroke-width:2;opacity:.88}
+.community-page #profileContent .stamp-ring-inner{stroke-width:2.5;opacity:.94}
 .community-page #profileContent .stamp-curve-text{
- fill:currentColor;font:800 11px var(--font-sans,Inter,sans-serif);
- letter-spacing:2px;
+ fill:currentColor;font:800 12px var(--font-sans,Inter,sans-serif);
+ letter-spacing:1.3px;
 }
 .community-page #profileContent .stamp-curve-text.stamp-bottom{
- font-size:10px;letter-spacing:1.65px;
-}
-.community-page #profileContent .stamp-stars{
- fill:var(--stamp-soft);font:700 9px var(--font-sans,Inter,sans-serif);
- letter-spacing:3px;
+ font-size:11px;letter-spacing:1.1px;
 }
 .community-page #profileContent .stamp-number{
  fill:currentColor;font-family:var(--font-sans,Inter,sans-serif);
- font-weight:850;letter-spacing:-3.5px;
+ font-weight:800;letter-spacing:-1px;
  font-variant-numeric:tabular-nums lining-nums;
  paint-order:stroke;stroke:none;
 }
-.community-page #profileContent .stamp-rule{
- fill:none;stroke:currentColor;stroke-width:1.4;
-}
-.community-page #profileContent .stamp-tier{
- fill:var(--stamp-soft);font:800 8px var(--font-sans,Inter,sans-serif);
+/* The center caption is a single, sharp horizontal line under the number. */
+.community-page #profileContent .stamp-day-label{
+ fill:currentColor;font:800 12px var(--font-sans,Inter,sans-serif);
  letter-spacing:1.2px;
+}
+.community-page #profileContent .stamp-crisp-lettering{
+ opacity:1;
 }
 .community-page #profileContent .stamp-mark{fill:currentColor}
 .community-page #profileContent .streak-award-multiplier{
@@ -121,12 +118,12 @@ html[data-theme="light"] .community-page #profileContent .streak-award.tier-red{
  .community-page #profileContent .streak-awards-heading{flex-basis:100%}
  .community-page #profileContent .streak-awards-list{gap:8px}
  .community-page #profileContent .streak-award{
-  width:clamp(76px,22vw,98px);flex-basis:clamp(76px,22vw,98px);
+  width:clamp(104px,28vw,120px);flex-basis:clamp(104px,28vw,120px);
  }
 }
 @media(prefers-reduced-motion:reduce){
  .community-page #profileContent .streak-award-art{transition:none}
  .community-page #profileContent .streak-award:hover .streak-award-art{
-  transform:rotate(-7deg);filter:drop-shadow(0 2px 5px #00000010);
+  transform:rotate(-3deg);filter:drop-shadow(0 2px 5px #00000010);
  }
 }

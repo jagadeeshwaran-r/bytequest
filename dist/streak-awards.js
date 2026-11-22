@@ -45,41 +45,37 @@ export function earnedStreakBadges(days=[],serverDay=new Date().toISOString().sl
  return awards.filter(badge=>badge.count>0);
 }
 const esc=value=>String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-// Ink-stamped circular seal inspired by real approval rubber stamps.
-// The mask has deterministic, tiny irregular gaps to suggest imperfect ink;
-// no image requests or randomly moving decorations are needed.
+// Legible circular rubber stamp: curved wording stays in the rim, while the
+// large milestone number and its caption are kept crisp and unobstructed.
+// Minor distress is applied ONLY to the rings, never to text or digits.
 function awardArtwork(badge){
  const id='bq-stamp-'+badge.days;
  const digits=String(badge.days);
- const size=digits.length===1?69:digits.length===2?61:46;
- const texture='<g fill="#000" stroke="#000" stroke-linecap="round">'+
-  '<path d="M18 39l7 2-2 3-8-3zM130 28l7-3 1 3-7 4zM17 101l7-1-1 3-7 1zM134 111l9 2-2 3-8-2z"/>'+
-  '<path d="M44 12l4 3-1 2-4-3zM108 146l6-2 1 2-5 3zM39 125l3 4-2 2-3-4z"/>'+
-  '<path d="M51 66l5 1-1 2-5-1zM104 90l4-2 1 2-4 3zM70 99l3 2-2 2-3-3z"/>'+
-  '<circle cx="106" cy="19" r="1.7"/><circle cx="32" cy="133" r="1.8"/>'+
-  '<circle cx="141" cy="65" r="1.5"/><circle cx="21" cy="73" r="1.1"/>'+
+ const size=digits.length===1?73:digits.length===2?62:45;
+ const inkGaps='<g fill="#000">'+
+  '<path d="M17 39l5 2-1 2-6-2zM135 40l6-2 1 2-6 3zM22 115l5-1 1 2-6 2zM125 127l7 2-1 3-7-3z"/>'+
+  '<path d="M51 11l4 1-1 2-4-1zM101 148l4-2 1 2-4 2z"/>'+
+  '<circle cx="11" cy="78" r="1.1"/><circle cx="145" cy="74" r="1.5"/>'+
   '</g>';
  return '<svg viewBox="0 0 160 160" class="streak-award-art streak-award-stamp" aria-hidden="true" focusable="false">'+
   '<defs>'+
-   '<path id="'+id+'-top" d="M30 80 A50 50 0 0 1 130 80"/>'+
-   '<path id="'+id+'-bottom" d="M27 80 A53 53 0 0 0 133 80"/>'+
+   '<path id="'+id+'-top" d="M27 80 A53 53 0 0 1 133 80"/>'+
+   '<path id="'+id+'-bottom" d="M21 80 A59 59 0 0 0 139 80"/>'+
    '<mask id="'+id+'-ink" maskUnits="userSpaceOnUse" x="0" y="0" width="160" height="160">'+
-    '<rect width="160" height="160" fill="#fff"/>'+texture+
+    '<rect width="160" height="160" fill="#fff"/>'+inkGaps+
    '</mask>'+
   '</defs>'+
-  '<g mask="url(#'+id+'-ink)" class="stamp-impression">'+
-   '<circle class="stamp-ring stamp-ring-outer" cx="80" cy="80" r="71"/>'+
-   '<circle class="stamp-ring stamp-ring-middle" cx="80" cy="80" r="63"/>'+
+  '<g class="stamp-ink-rings" mask="url(#'+id+'-ink)">'+
+   '<circle class="stamp-ring stamp-ring-outer" cx="80" cy="80" r="72"/>'+
+   '<circle class="stamp-ring stamp-ring-middle" cx="80" cy="80" r="65"/>'+
    '<circle class="stamp-ring stamp-ring-inner" cx="80" cy="80" r="47"/>'+
+  '</g>'+
+  '<g class="stamp-crisp-lettering">'+
    '<text class="stamp-curve-text"><textPath href="#'+id+'-top" startOffset="50%" text-anchor="middle">BYTEQUEST</textPath></text>'+
-   '<text class="stamp-curve-text stamp-bottom"><textPath href="#'+id+'-bottom" startOffset="50%" text-anchor="middle">DAY STREAK</textPath></text>'+
-   '<text class="stamp-stars" x="80" y="58" text-anchor="middle">&#9733; &#9733; &#9733;</text>'+
-   '<g transform="rotate(-11 80 86)">'+
-    '<text class="stamp-number" x="80" y="102" text-anchor="middle" style="font-size:'+size+'px">'+digits+'</text>'+
-   '</g>'+
-   '<path class="stamp-rule" d="M54 113H106"/>'+
-   '<text class="stamp-tier" x="80" y="125" text-anchor="middle">'+badge.name+'</text>'+
-   '<circle class="stamp-mark" cx="20" cy="80" r="2.4"/><circle class="stamp-mark" cx="140" cy="80" r="2.4"/>'+
+   '<text class="stamp-curve-text stamp-bottom"><textPath href="#'+id+'-bottom" startOffset="50%" text-anchor="middle">ACHIEVEMENT</textPath></text>'+
+   '<circle class="stamp-mark" cx="24" cy="80" r="2"/><circle class="stamp-mark" cx="136" cy="80" r="2"/>'+
+   '<text class="stamp-number" x="80" y="104" text-anchor="middle" style="font-size:'+size+'px">'+digits+'</text>'+
+   '<text class="stamp-day-label" x="80" y="120" text-anchor="middle">DAY STREAK</text>'+
   '</g></svg>';
 }
 export function earnedStreakBadgesMarkup(days,serverDay){
