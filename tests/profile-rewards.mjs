@@ -8,7 +8,7 @@ import {presenceOnline} from "../dist/presence-model.js";
 assert.deepEqual(earnedStreakBadges([]),[]);
 assert.equal(earnedStreakBadgesMarkup([], '2026-11-18'),'');
 const seven=Array.from({length:7},(_,i)=>new Date(Date.UTC(2026,0,i+1)).toISOString().slice(0,10));
-assert.ok(earnedStreakBadgesMarkup(seven,'2026-11-18').includes('STREAKER'));
+assert.ok(earnedStreakBadgesMarkup(seven,'2026-11-18').includes('aria-label="7-day streaker streak badge'),'Earned tier remains labeled for assistive technology');
 assert.ok(!earnedStreakBadgesMarkup(seven,'2026-11-18').includes('CONSISTENT'));
 const markup=profileMetrics({solved:22,total:31,streak:4},250,31);
 assert.ok(markup.includes('22<small> / 31</small>'),"Solved values unchanged");
