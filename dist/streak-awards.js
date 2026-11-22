@@ -45,35 +45,63 @@ export function earnedStreakBadges(days=[],serverDay=new Date().toISOString().sl
  return awards.filter(badge=>badge.count>0);
 }
 const esc=value=>String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-// Clean rubber-stamp seal: only outer rings carry ink wear. Curved lettering
-// stays in the top rim; the center day number and caption never cross a ring.
-// Avoid competing curved text or a third inner circle below the number.
+// Recreate a tactile rubber stamp using self-contained, theme-aware vector ink.
+// Seeded abrasion creates imperfect physical impressions without network assets.
+// Rendered SVG remains lightweight, accessible, and dynamic for every earned tier.
+function stampWear(days){
+ let seed=(0x9e3779b9^days)>>>0;
+ const rnd=()=>{seed^=seed<<13;seed^=seed>>>17;seed^=seed<<5;return(seed>>>0)/4294967296;};
+ const fixed=x=>x.toFixed(1);
+ let chips='<g fill="#000">';
+ // Torn, inconsistently printed edges around the two circular borders.
+ for(let i=0;i<32;i++){
+  const angle=rnd()*Math.PI*2,radius=(i%2?82:91)+(rnd()-.5)*5;
+  const x=100+radius*Math.cos(angle),y=100+radius*Math.sin(angle);
+  const width=1.6+rnd()*6.2,height=.5+rnd()*2.5;
+  chips+='<ellipse cx="'+fixed(x)+'" cy="'+fixed(y)+'" rx="'+fixed(width)+'" ry="'+fixed(height)+'" transform="rotate('+fixed(angle*180/Math.PI)+' '+fixed(x)+' '+fixed(y)+')"/>';
+ }
+ // Fine ink loss; deterministic to avoid re-render flicker.
+ for(let i=0;i<124;i++){
+  const x=9+rnd()*182,y=9+rnd()*182;
+  if(Math.hypot(x-100,y-100)>96)continue;
+  chips+='<circle cx="'+fixed(x)+'" cy="'+fixed(y)+'" r="'+fixed(.25+rnd()*.88)+'"/>';
+ }
+ // Uneven pressure along the angled DAY impression.
+ for(let i=0;i<18;i++){
+  const x=48+rnd()*104,y=(i%2?110:139)+(rnd()-.5)*4;
+  chips+='<ellipse cx="'+fixed(x)+'" cy="'+fixed(y)+'" rx="'+fixed(.5+rnd()*2)+'" ry="'+fixed(.5+rnd()*1.2)+'"/>';
+ }
+ // Clear room for the bottom lettering without cutting the outer circumference.
+ chips+='<rect x="54" y="157" width="92" height="22"/>';
+ return chips+'</g>';
+}
 function awardArtwork(badge){
  const id='bq-stamp-'+badge.days;
- const digits=String(badge.days);
- const size=digits.length===1?74:digits.length===2?62:45;
- const inkGaps='<g fill="#000">'+
-  '<path d="M17 39l5 2-1 2-6-2zM135 40l6-2 1 2-6 3zM22 115l5-1 1 2-6 2zM125 127l7 2-1 3-7-3z"/>'+
-  '<path d="M51 11l4 1-1 2-4-1zM101 148l4-2 1 2-4 2z"/>'+
-  '<circle cx="11" cy="78" r="1.1"/><circle cx="145" cy="74" r="1.5"/>'+
-  '</g>';
- return '<svg viewBox="0 0 160 160" class="streak-award-art streak-award-stamp" aria-hidden="true" focusable="false">'+
+ const digits=String(badge.days),size=digits.length===1?95:digits.length===2?82:62;
+ const wear=stampWear(badge.days);
+ return '<svg viewBox="0 0 200 200" class="streak-award-art streak-award-stamp" aria-hidden="true" focusable="false">'+
   '<defs>'+
-   '<path id="'+id+'-top" d="M27 80 A53 53 0 0 1 133 80"/>'+
-   '<mask id="'+id+'-ink" maskUnits="userSpaceOnUse" x="0" y="0" width="160" height="160">'+
-    '<rect width="160" height="160" fill="#fff"/>'+inkGaps+
+   '<path id="'+id+'-arc" d="M37 100 A63 63 0 0 1 163 100"/>'+
+   '<mask id="'+id+'-ink" maskUnits="userSpaceOnUse" x="0" y="0" width="200" height="200">'+
+    '<rect width="200" height="200" fill="#fff"/>'+wear+
    '</mask>'+
   '</defs>'+
   '<g class="stamp-ink-rings" mask="url(#'+id+'-ink)">'+
-   '<circle class="stamp-ring stamp-ring-outer" cx="80" cy="80" r="72"/>'+
-   '<circle class="stamp-ring stamp-ring-middle" cx="80" cy="80" r="64"/>'+
+   '<circle class="stamp-ring stamp-ring-outer" cx="100" cy="100" r="91"/>'+
+   '<circle class="stamp-ring stamp-ring-inner" cx="100" cy="100" r="82"/>'+
   '</g>'+
-  '<g class="stamp-crisp-lettering">'+
-   '<text class="stamp-curve-text"><textPath href="#'+id+'-top" startOffset="50%" text-anchor="middle">BYTEQUEST</textPath></text>'+
-   '<circle class="stamp-mark" cx="21" cy="80" r="1.8"/><circle class="stamp-mark" cx="139" cy="80" r="1.8"/>'+
-   '<text class="stamp-number" x="80" y="103" text-anchor="middle" style="font-size:'+size+'px">'+digits+'</text>'+
-   '<text class="stamp-day-label" x="80" y="127" text-anchor="middle">DAY STREAK</text>'+
-  '</g></svg>';
+  '<g class="stamp-impression" mask="url(#'+id+'-ink)">'+
+   '<text class="stamp-curve-text"><textPath href="#'+id+'-arc" startOffset="50%" text-anchor="middle">BYTEQUEST</textPath></text>'+
+   '<text class="stamp-number" x="100" y="120" text-anchor="middle" style="font-size:'+size+'px">'+digits+'</text>'+
+   '<text class="stamp-star" x="35" y="109" text-anchor="middle">★</text>'+
+   '<text class="stamp-star" x="165" y="109" text-anchor="middle">★</text>'+
+  '</g>'+
+  '<g class="stamp-day-band" transform="rotate(-9 100 124)">'+
+   '<rect class="stamp-day-ink" x="48" y="110" width="104" height="29" rx="1" mask="url(#'+id+'-ink)"/>'+
+   '<text class="stamp-day-text" x="100" y="132" text-anchor="middle">DAY</text>'+
+  '</g>'+
+  '<text class="stamp-bottom-word" x="100" y="176" text-anchor="middle">STREAK</text>'+
+  '</svg>';
 }
 export function earnedStreakBadgesMarkup(days,serverDay){
  const earned=earnedStreakBadges(days,serverDay);

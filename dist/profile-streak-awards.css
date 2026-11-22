@@ -1,6 +1,5 @@
-/* ByteQuest stamped lifetime achievements.
-   Circular, double-ring rubber ink with restrained distress like a real seal.
-   Presentation only: streak awards always come from verified UTC solve days. */
+/* Authentic rubber-stamp impression for verified lifetime streak milestones.
+   The SVG is self-contained: distressed ink, no images, no external fonts. */
 .community-page #profileContent .streak-awards{
  display:flex;align-items:center;gap:12px 22px;justify-content:flex-start;flex-wrap:wrap;
  padding:12px 0 14px;border-top:1px solid var(--border);
@@ -21,66 +20,63 @@
  gap:8px 12px;min-width:0;flex:0 1 auto;
 }
 .community-page #profileContent .streak-award{
- --stamp-ink:#e6edf3;--stamp-soft:#b7c7d5;
+ --stamp-ink:#e5e3dc;--stamp-soft:#c4c4bd;--stamp-paper:#08090b;
  position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
- width:clamp(116px,9.5vw,138px);flex:0 0 clamp(116px,9.5vw,138px);
+ width:clamp(142px,10.5vw,176px);flex:0 0 clamp(142px,10.5vw,176px);
  min-height:0;user-select:none;color:var(--stamp-ink);
 }
 .community-page #profileContent .streak-award.tier-silver{
- --stamp-ink:#e6edf3;--stamp-soft:#bac8d5;
+ --stamp-ink:#e5e3dc;--stamp-soft:#c4c4bd;
 }
 .community-page #profileContent .streak-award.tier-blue{
- --stamp-ink:#b7dcfa;--stamp-soft:#91beda;
+ --stamp-ink:#b1cce0;--stamp-soft:#88b4d0;
 }
 .community-page #profileContent .streak-award.tier-gold{
- --stamp-ink:#f4d999;--stamp-soft:#d8b86e;
+ --stamp-ink:#e6d09c;--stamp-soft:#cdb175;
 }
 .community-page #profileContent .streak-award.tier-purple{
- --stamp-ink:#d9c2f6;--stamp-soft:#b9a0dc;
+ --stamp-ink:#d1bee8;--stamp-soft:#b49ad5;
 }
 .community-page #profileContent .streak-award.tier-red{
- --stamp-ink:#f2b7ad;--stamp-soft:#d89c91;
+ --stamp-ink:#e5b5ae;--stamp-soft:#cd8e89;
 }
 .community-page #profileContent .streak-award-art{
  width:100%;height:auto;display:block;overflow:visible;
- transform:rotate(-3deg);transform-origin:center;
- filter:drop-shadow(0 2px 5px #00000010);
+ transform:rotate(-7deg);transform-origin:center;
+ filter:drop-shadow(0 2px 4px #00000016);
  transition:transform .18s ease,filter .18s ease;
 }
 .community-page #profileContent .streak-award:hover .streak-award-art{
- transform:rotate(-2deg) translateY(-2px);
- filter:drop-shadow(0 4px 8px #00000022);
+ transform:rotate(-5deg) translateY(-2px);
+ filter:drop-shadow(0 4px 8px #00000024);
 }
-.community-page #profileContent .stamp-ring{
- fill:none;stroke:currentColor;stroke-linecap:round;
-}
-.community-page #profileContent .stamp-ring-outer{stroke-width:4.2}
-.community-page #profileContent .stamp-ring-middle{stroke-width:2;opacity:.88}
+.community-page #profileContent .stamp-ring{fill:none;stroke:currentColor;stroke-linecap:round}
+.community-page #profileContent .stamp-ring-outer{stroke-width:6}
+.community-page #profileContent .stamp-ring-inner{stroke-width:2.7}
 .community-page #profileContent .stamp-curve-text{
- fill:currentColor;font:800 12px var(--font-sans,Inter,sans-serif);
- letter-spacing:1.3px;
+ fill:currentColor;font:900 16px Impact,"Arial Narrow",Arial,sans-serif;letter-spacing:1.5px;
 }
 .community-page #profileContent .stamp-number{
- fill:currentColor;font-family:var(--font-sans,Inter,sans-serif);
- font-weight:800;letter-spacing:-1px;
+ fill:currentColor;font-family:Impact,"Arial Black",Arial,sans-serif;
+ font-weight:900;letter-spacing:-4px;
  font-variant-numeric:tabular-nums lining-nums;
- paint-order:stroke;stroke:none;
 }
-/* The center caption is a single, sharp horizontal line under the number. */
-.community-page #profileContent .stamp-day-label{
- fill:currentColor;font:750 11px var(--font-sans,Inter,sans-serif);
- letter-spacing:1.15px;
+.community-page #profileContent .stamp-star{
+ fill:currentColor;font:800 16px Arial,sans-serif;
 }
-.community-page #profileContent .stamp-crisp-lettering{
- opacity:1;
+.community-page #profileContent .stamp-day-ink{fill:currentColor}
+.community-page #profileContent .stamp-day-text{
+ fill:var(--stamp-paper);font:900 29px Impact,"Arial Black",Arial,sans-serif;
+ letter-spacing:2px;
 }
-.community-page #profileContent .stamp-mark{fill:currentColor}
+.community-page #profileContent .stamp-bottom-word{
+ fill:currentColor;font:900 19px Impact,"Arial Black",Arial,sans-serif;
+ letter-spacing:2px;
+}
 .community-page #profileContent .streak-award-name{
- display:block;margin-top:-1px;
- color:var(--stamp-ink);
- font:650 10px/1.35 var(--font-sans,Inter,sans-serif);
- letter-spacing:.12em;text-align:center;
- white-space:nowrap;
+ display:block;margin-top:4px;color:var(--stamp-ink);
+ font:700 11px/1.3 var(--font-sans,Inter,sans-serif);
+ letter-spacing:.19em;text-align:center;white-space:nowrap;
 }
 .community-page #profileContent .streak-award-multiplier{
  position:absolute;right:-3px;top:2px;z-index:1;
@@ -90,28 +86,26 @@
  color:var(--text);font:650 10px/1 var(--font-mono,monospace);
  font-variant-numeric:tabular-nums;box-shadow:0 2px 6px #00000012;
 }
-/* Light theme: use dark, slightly faded printed ink on a pale background. */
+/* On light themes use charcoal/navy ink and a pale band knockout. */
 html[data-theme="light"] .community-page #profileContent .streak-award{
- --stamp-ink:#4e5e70;--stamp-soft:#748292;
+ --stamp-ink:#4b596a;--stamp-soft:#718092;--stamp-paper:#f6f8f7;
 }
 html[data-theme="light"] .community-page #profileContent .streak-award.tier-silver{
- --stamp-ink:#4b5869;--stamp-soft:#758294;
+ --stamp-ink:#4b596a;--stamp-soft:#718092;
 }
 html[data-theme="light"] .community-page #profileContent .streak-award.tier-blue{
- --stamp-ink:#326386;--stamp-soft:#618ead;
+ --stamp-ink:#326485;--stamp-soft:#5e91b0;
 }
 html[data-theme="light"] .community-page #profileContent .streak-award.tier-gold{
- --stamp-ink:#8d671f;--stamp-soft:#af8a48;
+ --stamp-ink:#8b681f;--stamp-soft:#b58f49;
 }
 html[data-theme="light"] .community-page #profileContent .streak-award.tier-purple{
- --stamp-ink:#674c8d;--stamp-soft:#8e74b1;
+ --stamp-ink:#674d8b;--stamp-soft:#9673b5;
 }
 html[data-theme="light"] .community-page #profileContent .streak-award.tier-red{
- --stamp-ink:#994c48;--stamp-soft:#ba7672;
+ --stamp-ink:#924943;--stamp-soft:#b77a73;
 }
-.community-page #profileContent .streak-awards + .profile-calendar-section{
- margin-top:10px!important;
-}
+.community-page #profileContent .streak-awards + .profile-calendar-section{margin-top:10px!important}
 @media(max-width:850px){
  .community-page #profileContent .streak-awards{gap:10px 16px}
  .community-page #profileContent .streak-awards-heading{flex-basis:190px}
@@ -121,12 +115,12 @@ html[data-theme="light"] .community-page #profileContent .streak-award.tier-red{
  .community-page #profileContent .streak-awards-heading{flex-basis:100%}
  .community-page #profileContent .streak-awards-list{gap:8px}
  .community-page #profileContent .streak-award{
-  width:clamp(104px,28vw,120px);flex-basis:clamp(104px,28vw,120px);
+  width:clamp(122px,36vw,154px);flex-basis:clamp(122px,36vw,154px);
  }
 }
 @media(prefers-reduced-motion:reduce){
  .community-page #profileContent .streak-award-art{transition:none}
  .community-page #profileContent .streak-award:hover .streak-award-art{
-  transform:rotate(-3deg);filter:drop-shadow(0 2px 5px #00000010);
+  transform:rotate(-7deg);filter:drop-shadow(0 2px 4px #00000016);
  }
 }
