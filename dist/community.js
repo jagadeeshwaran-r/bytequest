@@ -1,6 +1,6 @@
 import {mountCreatorAccess} from './creator-access.js?v=workbench-1';
 import {companies} from './companies.js?v=social-1';
-import {profileMarkup,profileAvatar,publicProfileHref} from './profile-view.js?v=lifetime-awards-1&github=1&streak-correction=1';
+import {profileMarkup,profileAvatar,publicProfileHref} from './profile-view.js?v=lifetime-awards-1&github=1&streak-correction=1&badge-refined=1';
 import {bindProfileCalendar,refreshProfileCalendar} from './profile-calendar.js?v=today-marker-1';
 import {bindStreakCountdown} from './streak-countdown.js?v=urgency-1';
 import {hydrateRecentProblemNumbers} from './profile-extras.js?v=profile-compact-1';

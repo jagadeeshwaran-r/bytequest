@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {earnedStreakBadgesMarkup,earnedStreakBadges} from '../dist/streak-awards.js';
+
+const days=Array.from({length:7},(_,i)=>new Date(Date.UTC(2026,0,i+1)).toISOString().slice(0,10));
+const markup=earnedStreakBadgesMarkup(days,'2026-11-22');
+assert.match(markup,/class="streak-award tier-silver"/);
+assert.match(markup,/viewBox="0 0 120 132"/,'Compact high-DPI emblem replaces large hanging ribbon');
+assert.ok(markup.includes('>07</text>')&&markup.includes('>DAYS</text>')&&markup.includes('>STREAKER</text>'));
+assert.ok(!markup.includes('-ribbon')&&!markup.includes('ellipse'),'Avoid decorative ribbons and laurel wreaths');
+assert.ok(markup.includes('var(--accent, #26c695)'),'Use subtle ByteQuest brand green accent');
+assert.equal(earnedStreakBadgesMarkup([],'2026-11-22'),'','No unearned badges');
+assert.deepEqual(earnedStreakBadges(days,'2026-11-22').map(b=>b.days),[7]);
+const css=readFileSync('dist/profile-streak-awards.css','utf8');
+assert.ok(css.includes('font-variant-numeric:tabular-nums lining-nums'));
+assert.ok(css.includes('html[data-theme="light"]'),'Light theme maintains contrast');
+assert.ok(css.includes('prefers-reduced-motion:reduce'),'No mandatory animations');
+assert.ok(css.includes('width:clamp(74px,6.3vw,94px)'),'Compact desktop dimensions retained');
+const page=readFileSync('dist/community.html','utf8');
+assert.ok(page.includes('badge-refined=1'),'Bypass cached styles and entrypoint');
+const script=readFileSync('dist/profile-view.js','utf8');
+assert.ok(script.includes("streak-awards.js?v=lifetime-1&badge-refined=1"),'Bypass stale badge renderer');
+console.log('PASS: minimalist streak emblem, tier integrity, dark/light contrast and cache refresh.');
