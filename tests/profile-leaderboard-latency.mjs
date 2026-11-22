@@ -37,7 +37,7 @@ const db=createDatabase('https://fixture.supabase.co','test-key',{fetchImpl:asyn
  return new Promise(resolve=>pending.push({path,resolve}));
 }});
 const flight=db.community('verified-owner','profile',{target:'profile1'});
-for(let i=0;i<12;i++)await Promise.resolve();
+for(let i=0;i<30&&pending.length<4;i++)await new Promise(resolve=>setImmediate(resolve));
 assert.equal(pending.length,4,'Presence, ranking, activity and insights must start concurrently');
 for(const job of pending){
  job.resolve(new Response(JSON.stringify(fixtures[job.path]),{headers:{'Content-Type':'application/json'}}));
