@@ -89,7 +89,7 @@ async function accountChanged(){
      shell.setAdmin(own.admin===true);
    }
  }catch(e){
-   if(ticket===accountGeneration)console.warn('ByteQuest administrator role could not be refreshed:',e.message);
+   if(ticket===accountGeneration)console.warn('ProSolver administrator role could not be refreshed:',e.message);
  }
  await rankings;
 }

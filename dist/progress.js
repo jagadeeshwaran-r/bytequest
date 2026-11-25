@@ -41,7 +41,7 @@ export function normalizePracticeSubmissions(rows){
 const time=value=>Number.isFinite(value)&&value>=0?value:0;
 export function blankProgress(){return{version:1,current:"two-sum",currentUpdated:0,drafts:{},solved:{},notes:{},confidence:{},activity:[],days:[],acceptedDays:[],reviews:{},attempts:{},modified:{},practiceSubmissions:[]};}
 export function validateProgress(value) {
-  if(!object(value)||value.version!==1)throw new Error("This is not a ByteQuest progress backup.");
+  if(!object(value)||value.version!==1)throw new Error("This is not a ProSolver progress backup.");
   const clean=blankProgress();
   const ids=new Set(maps.flatMap(m=>object(value[m])?Object.keys(value[m]):[]).filter(id=>idPattern.test(id)).slice(0,4000));
   for(const id of ids){
