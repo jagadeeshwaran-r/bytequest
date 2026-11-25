@@ -13,6 +13,7 @@ import {selectedProblemUrl} from './problem-navigation.js?v=1';
 import {readSafeProgress,writeSafeProgress} from './reliable-storage.js?v=reliability-1';
 import {pointsFor,totalPoints} from './rewards.js?v=upgrade-2';
 import {companyIcons} from './companies.js?v=company-tooltips-1';
+import {renderSolveLists,selectedSolveList} from './solve-lists.js?v=1';
 import {problemStatusMarkup} from './problem-status.js?v=auth-ready-1';
 import {canRevealEditorialSolution,editorialSolutionGateMarkup} from './editorial-access.js?v=editorial-1&public-unlock=2&quiet=2&cross-browser=1';
 import {mountWorkspace} from './workspace.js';
@@ -573,12 +574,13 @@ document.querySelectorAll("dialog").forEach(d=>d.addEventListener("click",event=
 $("aboutBtn").onclick=()=>$("aboutDialog").showModal();
 let previousView=null;
 function route(){
-  const view=document.body.dataset.page==="studio"?"studio":(["dashboard","practice","map","progress","studio"].includes(location.hash.slice(1))?location.hash.slice(1):"map");
+  const hash=location.hash.slice(1);
+  const view=document.body.dataset.page==="studio"?"studio":(hash.startsWith("solve-lists/")?"solve-lists":(["dashboard","practice","map","progress","studio","solve-lists"].includes(hash)?hash:"map"));
   if(view==="studio"&&document.body.dataset.page!=="studio"){location.href="./studio.html";return;}
-  ["dashboard","practice","map","progress","studio"].forEach(name=>$(name+"View").hidden=view!==name);
+  ["dashboard","practice","map","progress","studio","solve-lists"].forEach(name=>$(name+"View").hidden=view!==name);
   document.querySelectorAll("[data-view]").forEach(a=>a.classList.toggle("active",a.dataset.view===view));
-  $("breadcrumb").textContent=({dashboard:"Dashboard",practice:"Practice",map:"Problem library",progress:"My progress",studio:"Problem studio"})[view];
-  if(view!=="practice"){pauseTrace();if(busy)stopRun();}if(view!=="studio")studio.stop();if(view==="studio")studio.open();if(view==="dashboard"){location.hash="map";return;}if(view==="map"){if(previousView!==null&&previousView!=="map")$("questGrid").scrollLeft=0;renderMap();}if(view==="progress")renderProgress();
+  $("breadcrumb").textContent=({dashboard:"Dashboard",practice:"Practice",map:"Problem library",progress:"My progress",studio:"Problem studio","solve-lists":"Solve Lists"})[view];
+  if(view!=="practice"){pauseTrace();if(busy)stopRun();}if(view!=="studio")studio.stop();if(view==="studio")studio.open();if(view==="dashboard"){location.hash="map";return;}if(view==="map"){if(previousView!==null&&previousView!=="map")$("questGrid").scrollLeft=0;renderMap();}if(view==="progress")renderProgress();if(view==="solve-lists")refreshSolveLists();
   if(previousView!==null&&previousView!==view)window.scrollTo({top:0,left:0,behavior:"instant"});previousView=view;
 }
 addEventListener("hashchange",route);
@@ -602,7 +604,12 @@ document.addEventListener("keydown",event=>{
      event.target?.closest?.('input,textarea,select,[contenteditable="true"]'))return;
   event.preventDefault();search.focus();
 });
+function refreshSolveLists(){
+  if($("solve-listsView").hidden)return;
+  renderSolveLists($("solve-listsView"),problems,state.solved,accountHistoryStatus,changeProblem,selectedSolveList(location.hash));
+}
 function renderMap(){
+  refreshSolveLists();
   const pattern=$("patternFilter").value,technique=$("techniqueFilter").value;
   const query=$("searchInput").value.trim().toLowerCase(),topic=$("topicFilter").value,level=$("difficultyFilter").value,status=$("statusFilter").value;
   const list=problems.filter(p=>(p.title+" "+String(problems.indexOf(p)+1)).toLowerCase().includes(query)&&(!topic||p.topic===topic)&&(!pattern||(p.pattern||p.topic)===pattern)&&(!technique||(p.techniques||[]).includes(technique))&&(!level||p.difficulty===level)&&(!status||(status==="solved"?state.solved[p.id]:status==="new"?accountHistoryStatus==="ready"&&!state.solved[p.id]:due(p.id))));

@@ -1,3 +1,4 @@
+import './solve-lists.mjs';
 import './java-judge-failover.mjs';
 import './site-maintenance.mjs';
 import './legacy-navigation-preflight.mjs';
