@@ -10,13 +10,13 @@ export function firebaseIdentity(user,projectId){
 }
 export function firebaseAuthMessage(error){
   const messages={
-    "auth/popup-blocked":"Your browser blocked the Google window. Allow pop-ups for ByteQuest and try again. On mobile, open ByteQuest directly in Safari or Chrome.",
+    "auth/popup-blocked":"Your browser blocked the Google window. Allow pop-ups for ProSolver and try again. On mobile, open ProSolver directly in Safari or Chrome.",
     "auth/popup-closed-by-user":"The Google window was closed. Your local practice is saved; try again when you are ready.",
     "auth/cancelled-popup-request":"Another sign-in window is already open.",
     "auth/unauthorized-domain":"Google sign-in is not enabled for this website address yet. Guest practice is available.",
     "auth/operation-not-allowed":"Google sign-in is not activated yet. Guest practice is available.",
     "auth/network-request-failed":"Could not reach Google sign-in. Check your connection and try again.",
-    "auth/web-storage-unsupported":"This browser blocks the storage needed for sign-in. Open ByteQuest in a regular Safari or Chrome tab.",
+    "auth/web-storage-unsupported":"This browser blocks the storage needed for sign-in. Open ProSolver in a regular Safari or Chrome tab.",
     "auth/user-disabled":"This account is disabled. Contact the site owner.",
     "auth/invalid-api-key":"The sign-in connection needs attention from the site owner. Guest practice is available."
   };

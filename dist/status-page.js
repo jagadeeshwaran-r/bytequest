@@ -19,7 +19,7 @@ if(params.get('issue')!=='maintenance'){
 const state=outagePageContent(params.get('issue'));
 const from=safeReturnPage(params.get('from'));
 document.body.dataset.issue=state.kind;
-document.title=state.title.replace(/\.$/,'')+' · ByteQuest';
+document.title=state.title.replace(/\.$/,'')+' · ProSolver';
 const $=id=>document.getElementById(id);
 $('statusEyebrow').textContent=state.eyebrow;
 const headline=state.title;
@@ -62,7 +62,7 @@ retry.onclick=()=>{
   return;
  }
  retry.disabled=true;
- $('statusRetryLabel').textContent='Reopening ByteQuest…';
+ $('statusRetryLabel').textContent='Reopening ProSolver…';
  // Original pages perform their own authenticated reads and state merges.
  // A successful navigation is NOT proof that cloud progress has synced.
  location.assign(returnHref);
@@ -85,7 +85,7 @@ if(state.kind==='maintenance'){
       ]);
       const status=await fetchMaintenanceStatus();
       if(status.active||status.upcoming){
-        $('statusIntro').textContent=status.message||'ByteQuest is being upgraded.';
+        $('statusIntro').textContent=status.message||'ProSolver is being upgraded.';
         $('statusDetail').textContent='Existing local drafts remain on your device. Cloud writes and verified submissions are paused only during the active maintenance window.';
         timing.hidden=false;
         $('statusWindowLabel').textContent=status.active?'EXPECTED RETURN · IST':'PLANNED WINDOW · IST';
@@ -98,9 +98,9 @@ if(state.kind==='maintenance'){
         else feedbackArea.textContent='The schedule is based on server time, not your device clock.';
       }else{
         timing.hidden=true;
-        $('statusIntro').textContent='ByteQuest is not currently in maintenance mode.';
+        $('statusIntro').textContent='ProSolver is not currently in maintenance mode.';
         $('statusDetail').textContent='This is the maintenance page preview. The service has not reported an active or upcoming enabled window.';
-        $('statusRetryLabel').textContent='Return to ByteQuest';
+        $('statusRetryLabel').textContent='Return to ProSolver';
         feedbackArea.textContent='No maintenance window is active. You can return to your workspace.';
       }
     }catch{

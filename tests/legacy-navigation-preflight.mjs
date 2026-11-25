@@ -35,7 +35,7 @@ const pendingBodyRule='html[data-bq-maintenance-check="pending"] body{visibility
 for(const page of ['index','community','leaderboard','studio']){
   const html=readFileSync('dist/'+page+'.html','utf8');
   assert.ok(html.includes(pendingBodyRule),page+' must hide protected content until status approval');
-  assert.ok(html.includes('html[data-bq-maintenance-check="pending"]::before{content:"ByteQuest"'),
+  assert.ok(html.includes('html[data-bq-maintenance-check="pending"]::before{content:"ProSolver"'),
     page+' must show a branded, non-interactive placeholder instead of a blank screen');
   assert.ok(html.includes('prefers-reduced-motion:reduce'),page+' must respect reduced motion');
   assert.ok(html.includes('dataset.bqMaintenanceCheck="pending"'),page+' must initialize safely');

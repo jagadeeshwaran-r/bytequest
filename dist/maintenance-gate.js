@@ -63,7 +63,7 @@ async function launch(){
   try{
     await import(appSource);
   }catch(error){
-    console.error('ByteQuest application failed to load',error);
+    console.error('ProSolver application failed to load',error);
     blockAndRedirect(navigator.onLine===false?'offline':'unreachable');
   }
 }
@@ -100,7 +100,7 @@ async function check(force=false){
       // tab switches and laptop wakeups must never replace the workspace with
       // the full-page connection screen. Server-side maintenance still blocks
       // protected requests; keep the local draft usable and retry next poll.
-      console.info('ByteQuest maintenance heartbeat unavailable; editor remains usable.');
+      console.info('ProSolver maintenance heartbeat unavailable; editor remains usable.');
     }
   }finally{checking=false;}
 }

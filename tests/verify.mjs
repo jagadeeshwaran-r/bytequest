@@ -113,10 +113,10 @@ console.log("✓ Original optional Google sign-in restored without a loading or 
 // A consistent header brand across the practice, Studio and community pages.
 for (const page of ["index.html", "studio.html", "leaderboard.html", "community.html"]) {
   const html = readFileSync("dist/" + page, "utf8");
-  assert.ok(html.includes('<span class="wordmark-byte">Byte</span><span class="wordmark-quest">Quest</span>'), page + " must show the joined ByteQuest wordmark");
+  assert.ok(html.includes('<span class="wordmark-byte">Pro</span><span class="wordmark-quest">Solver</span>'), page + " must show the joined ProSolver wordmark");
   assert.ok(html.includes('reference-style.css?v=brand-20261116'), page + " must refresh branded styles");
 }
-console.log("✓ ByteQuest wordmark and branding styles across all four pages.");
+console.log("✓ ProSolver wordmark and branding styles across all four pages.");
 mkdirSync("build/tests", {recursive:true});
 function command(args) {
   const p=spawnSync("java",args,{encoding:"utf8",timeout:25000});

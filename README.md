@@ -1,12 +1,12 @@
-![ByteQuest — Deliberate practice. Measurable progress.](docs/bytequest-banner.svg)
+![ProSolver — Deliberate practice. Measurable progress.](docs/bytequest-banner.svg)
 
-# ByteQuest
+# ProSolver
 
 **A coding practice platform for building problem-solving confidence, one well-understood solution at a time.**
 
-ByteQuest combines executable problems, guided Java explanations, personal progress analytics and a community of learners. A compact, responsive workspace keeps the problem, editor and test results together, with monochrome accents, the “byte quest” wordmark, a floating glass navigation bar, editorial typography, subtle neutral grids, subtle reveal and spotlight animations, colorful acceptance confetti, and light, dark and system themes. Motion respects reduced-motion preferences.
+ProSolver combines executable problems, guided Java explanations, personal progress analytics and a community of learners. A compact, responsive workspace keeps the problem, editor and test results together, with monochrome accents, the “ProSolver” wordmark, a floating glass navigation bar, editorial typography, subtle neutral grids, subtle reveal and spotlight animations, colorful acceptance confetti, and light, dark and system themes. Motion respects reduced-motion preferences.
 
-[**Open ByteQuest**](https://jagadeeshwaran-r.github.io/bytequest/) · [Leaderboard](https://jagadeeshwaran-r.github.io/bytequest/leaderboard.html) · [Backend guide](DATABASE.md) · [Report an issue](https://github.com/jagadeeshwaran-r/bytequest/issues)
+[**Open ProSolver**](https://jagadeeshwaran-r.github.io/bytequest/) · [Leaderboard](https://jagadeeshwaran-r.github.io/bytequest/leaderboard.html) · [Backend guide](DATABASE.md) · [Report an issue](https://github.com/jagadeeshwaran-r/bytequest/issues)
 
 [![Build, test and deploy](https://github.com/jagadeeshwaran-r/bytequest/actions/workflows/pages.yml/badge.svg)](https://github.com/jagadeeshwaran-r/bytequest/actions/workflows/pages.yml)
 
@@ -24,7 +24,7 @@ ByteQuest combines executable problems, guided Java explanations, personal progr
 | Friend chat | Exchange private messages with mutual followers; see privacy-aware green online dots and Sent/Seen receipts; track unread messages and receive live in-site banners with the sender’s photo or initial. |
 | Submissions | Unlock shared solutions after a server-accepted answer for the current revision; view all languages by default, optionally filter one language, and rank each learner’s best shared result per language by runtime or peak memory. Sharing is off by default. |
 | Community updates | One Messages & updates dialog combines private chat and problem announcements. Receive live in-site new-problem and correction banners, catch up on unread updates, and see friend-online alerts with photo or initial avatars. |
-| Account control | Delete your ByteQuest account after recent Google verification. Private learning records and photos are removed; published community problems remain without account attribution. |
+| Account control | Delete your ProSolver account after recent Google verification. Private learning records and photos are removed; published community problems remain without account attribution. |
 | Problem authoring | Create and publish your own problems from the separate studio, attach private cases, use the company-logo picker, import problem packs and publish correction notes. Administrators can find creator accounts by username, profile ID or exact Firebase user ID before granting access. |
 
 The bundled starter catalog contains **16 original runnable problems across 9 topics, with 81 built-in Java checks**. The live database catalog can grow without redeploying the frontend. A 500-problem import workflow is available; 500 problems are not preloaded in this repository.
@@ -82,7 +82,7 @@ Create a discoverable profile to appear in rankings. New profiles default to dis
 
 ## Progress save reliability
 
-The Problems page preserves unreadable local progress rather than overwriting it with an empty backup. If the primary browser record is damaged or incompatible, new work is written under a separate owner-scoped `.recovery` key while the original stays untouched; an unreadable recovery copy also blocks overwriting. A storage failure is shown explicitly and cannot trigger a saved-solve celebration. When signing out, ByteQuest first tries to sync the latest work; if offline or another sync is pending, it warns about unsynced changes and requires explicit confirmation before signing out anyway. **Export a backup** regularly. These guards do not make a failed browser storage device durable or resurrect already lost code.
+The Problems page preserves unreadable local progress rather than overwriting it with an empty backup. If the primary browser record is damaged or incompatible, new work is written under a separate owner-scoped `.recovery` key while the original stays untouched; an unreadable recovery copy also blocks overwriting. A storage failure is shown explicitly and cannot trigger a saved-solve celebration. When signing out, ProSolver first tries to sync the latest work; if offline or another sync is pending, it warns about unsynced changes and requires explicit confirmation before signing out anyway. **Export a backup** regularly. These guards do not make a failed browser storage device durable or resurrect already lost code.
 
 ## Accepted submissions and benchmarks
 
@@ -92,7 +92,7 @@ Public Python/C/C++ benchmarks use one warm-up and three measured passes; Java u
 
 Java browser practice uses Java 17 for both Run and Submit; previously recorded server Java benchmarks used OpenJDK 21. Python uses CPython 3.11.10; C/C++ use GCC 13.2. Small suites, provider scheduling and in-process instrumentation make these practice estimates, not trusted contest scores or proof of Big-O. Complexity annotations are author-stated and do not determine rank. A configured private Java judge uses its own execution metrics for the complete public and hidden suite. Hidden inputs are **not** sent to Wandbox by default; setting the server-only `BYTEQUEST_ALLOW_EXTERNAL_HIDDEN_JUDGE=true` explicitly permits that third-party disclosure when the trusted private judge is unavailable.
 
-C++ keeps its normal compiler diagnostics and adds ByteQuest problem-contract checks. The declared result type must match the problem. For integer-returning problems, returning a boolean expression is rejected rather than silently converting it to 0/1; use an explicit `int` conversion when that is intentional. Boolean-returning problems require boolean values. Checks apply to the problem function's direct returns, preserve recursive calls and skip nested lambdas/local classes; macro-generated return statements are not a full C++ AST analysis. Ordinary comparisons and sorting predicates remain valid.
+C++ keeps its normal compiler diagnostics and adds ProSolver problem-contract checks. The declared result type must match the problem. For integer-returning problems, returning a boolean expression is rejected rather than silently converting it to 0/1; use an explicit `int` conversion when that is intentional. Boolean-returning problems require boolean values. Checks apply to the problem function's direct returns, preserve recursive calls and skip nested lambdas/local classes; macro-generated return statements are not a full C++ AST analysis. Ordinary comparisons and sorting predicates remain valid.
 
 
 ## Public showcase policy
@@ -101,7 +101,7 @@ Accepted server submissions are showcased by default after a clear notice in the
 
 ## Public Java runner resilience
 
-Authenticated Java public-suite submissions are checked on the server. ByteQuest first tries a **Judge0 JDK 17** endpoint and switches to **Wandbox** only on a provider-availability failure, not on a wrong answer or compilation error. Neither runner is sent private hidden cases by this public-only path. Full hidden suites still use the existing explicitly configured private judge path.
+Authenticated Java public-suite submissions are checked on the server. ProSolver first tries a **Judge0 JDK 17** endpoint and switches to **Wandbox** only on a provider-availability failure, not on a wrong answer or compilation error. Neither runner is sent private hidden cases by this public-only path. Full hidden suites still use the existing explicitly configured private judge path.
 
 The default `https://ce.judge0.com` endpoint is a **shared public demonstration** without a production availability guarantee. For reliable production traffic, provision a dedicated or managed Judge0 instance and configure its secret settings in Supabase: `BYTEQUEST_PUBLIC_JUDGE0_URL` (HTTPS base URL), optional `BYTEQUEST_PUBLIC_JUDGE0_KEY` (server only), and `BYTEQUEST_PUBLIC_JAVA_LANGUAGE_ID` (91 for the tested JDK 17 image; check your own instance's languages endpoint). Never embed the provider key in GitHub Pages, and restrict access to the judge behind network and token controls. The source is submitted by the existing authenticated, rate-limited backend, not directly from the browser.
 
@@ -120,7 +120,7 @@ A Firebase-authorized POST event stream delivers messages, online transitions an
 3. Validate the Java reference against the public cases.
 4. Save a draft or enable **Published** and save. Updates to a published problem require a correction note.
 
-Every verified learner can author and manage their own problems. Explicit library editors and administrators can manage the wider catalog; role permissions are enforced by the backend. Publishing updates the database catalog and creates an in-app announcement. Original authorship is stored independently of later editors and shown below the problem title with a profile link when the author is discoverable. The original bundled problems carry a ByteQuest collection credit.
+Every verified learner can author and manage their own problems. Explicit library editors and administrators can manage the wider catalog; role permissions are enforced by the backend. Publishing updates the database catalog and creates an in-app announcement. Original authorship is stored independently of later editors and shown below the problem title with a profile link when the author is discoverable. The original bundled problems carry a ProSolver collection credit.
 
 The current function protocol supports `int`, `int[]`, `boolean` and ASCII `String` parameters/results. See [DATABASE.md](DATABASE.md) for author ownership, private suites and deployment details.
 
@@ -129,7 +129,7 @@ The current function protocol supports `int`, `int[]`, `boolean` and ASCII `Stri
 1. Fork the repository and keep the default branch as `main`.
 2. In **Settings → Pages → Build and deployment**, select **GitHub Actions**.
 3. Configure your Firebase project, Supabase project and allowed origins as described in [DATABASE.md](DATABASE.md).
-4. Push to `main`, or run **Build, test and deploy ByteQuest** from the Actions tab.
+4. Push to `main`, or run **Build, test and deploy ProSolver** from the Actions tab.
 
 The workflow installs pinned dependencies, builds the Java bridge, runs the verification suite and deploys `dist/`. The frontend can use GitHub Pages' public-repository hosting; Firebase, Supabase, CheerpJ and compiler providers have their own terms and quotas.
 
@@ -174,7 +174,7 @@ The suite covers four-language benchmark harnesses, authenticated event streams,
 
 ## Compiler availability
 
-The public compiler may temporarily fail to start a sandbox (for example, an OCI/crun resource error). ByteQuest retries a recognized container-capacity or transient HTTP failure at most twice, using the same program and compiler within the original deadline. If it still cannot run, the site shows a compiler-availability message, keeps the draft, and records no solution verdict, failed practice attempt, points or ranking entry. Syntax errors and programs that already executed are not automatically retried. C++ allows 60 seconds for Run and 75 seconds for submission benchmarks, with longer browser request limits to leave room for authentication and database work. A timeout has a separate message from a provider outage. Redacted transport logs record compiler, failure category, HTTP status and timing; source code, tokens and profile data are excluded. Java **Run** remains available in the browser while the remote service is unavailable; hung Java runs reset the iframe after 90 seconds. Malformed or repeated benchmark markers are rejected without recording acceptance. The shared hosted compiler is for practice, not a hardened anti-cheat or isolation boundary for ranked contests.
+The public compiler may temporarily fail to start a sandbox (for example, an OCI/crun resource error). ProSolver retries a recognized container-capacity or transient HTTP failure at most twice, using the same program and compiler within the original deadline. If it still cannot run, the site shows a compiler-availability message, keeps the draft, and records no solution verdict, failed practice attempt, points or ranking entry. Syntax errors and programs that already executed are not automatically retried. C++ allows 60 seconds for Run and 75 seconds for submission benchmarks, with longer browser request limits to leave room for authentication and database work. A timeout has a separate message from a provider outage. Redacted transport logs record compiler, failure category, HTTP status and timing; source code, tokens and profile data are excluded. Java **Run** remains available in the browser while the remote service is unavailable; hung Java runs reset the iframe after 90 seconds. Malformed or repeated benchmark markers are rejected without recording acceptance. The shared hosted compiler is for practice, not a hardened anti-cheat or isolation boundary for ranked contests.
 
 ## Current limits
 
@@ -188,6 +188,6 @@ Open an issue with a reproducible example, expected behavior and relevant browse
 
 ## License and acknowledgments
 
-ByteQuest source is available under the [MIT License](LICENSE).
+ProSolver source is available under the [MIT License](LICENSE).
 
 Built with [CheerpJ](https://cheerpj.com/) by Leaning Technologies. CheerpJ is loaded from its official CDN and is governed by its [own licensing terms](https://cheerpj.com/docs/licensing). Firebase, Supabase, Wandbox and bundled fonts retain their respective terms. Company marks identify community-reported tags and do not imply endorsement; asset sources are recorded in [the company-logo notice](dist/assets/companies/NOTICE.md).

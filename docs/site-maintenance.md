@@ -1,4 +1,4 @@
-# ByteQuest scheduled maintenance — safe production rollout
+# ProSolver scheduled maintenance — safe production rollout
 
 ## Initial defaults (NOT ARMED)
 
@@ -12,7 +12,7 @@ The migration `database/site-maintenance.sql` seeds this **disabled** draft:
 | End (IST) | **20 November 2026, 02:00** |
 | Start (UTC) | 19 November 2026, 19:30Z |
 | End (UTC) | 19 November 2026, 20:30Z |
-| Message | We're upgrading ByteQuest to make your coding experience better. |
+| Message | We're upgrading ProSolver to make your coding experience better. |
 
 Never set `enabled=true` in the migration or assume that merging this PR turns maintenance on.
 The admin dashboard displays the draft; **Enable schedule** requires a confirmed
@@ -96,7 +96,7 @@ No update should touch user progress, previous submissions, drafts, or rankings.
   site bypass. New app pages start only after a successful status check.
 - **Tradeoff:** if the public status API cannot be reached, the main pages
   fail closed to the offline/unreachable recovery page rather than guessing
-  that maintenance is inactive. Do not rely on ByteQuest local practice to
+  that maintenance is inactive. Do not rely on ProSolver local practice to
   work during a status API outage in this strict mode.
 - An already-open editor is redirected once maintenance becomes active;
   the existing local draft storage is not cleared, but unconfirmed cloud
@@ -137,5 +137,5 @@ No update should touch user progress, previous submissions, drafts, or rankings.
 7. At the exact UTC end cutoff, public status switches to inactive and ordinary
    requests work again; no manual cron or job is required.
 8. Revoke admin role and verify the maintenance-control console cannot be used.
-9. After reconnecting, use the normal ByteQuest sync flow and confirm actual
+9. After reconnecting, use the normal ProSolver sync flow and confirm actual
    cloud progress. A redirected page alone is not confirmation of a cloud save.
