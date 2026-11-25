@@ -830,7 +830,7 @@ async function changeAccount(user){
     },100);
   }
   try{dashboard.accountChanged();}
-  catch(error){console.warn("ProSolver: noncritical dashboard initialization failed",error);}
+  catch(error){console.warn("ByteQuest: noncritical dashboard initialization failed",error);}
   try{
     renderPractice();
     $("codeEditor").readOnly=false;
@@ -838,7 +838,7 @@ async function changeAccount(user){
     refreshAccountUi();
     route();
   }catch(error){
-    console.error("ProSolver: account UI could not finish rendering",error);
+    console.error("ByteQuest: account UI could not finish rendering",error);
     $("authMessage").textContent="Account UI needs attention, but your local drafts are preserved and cloud progress recovery is running: "+String(error?.message||error);
   }
 
@@ -894,7 +894,7 @@ async function syncCloud(){
     // owner has enough information to restore owner-local progress immediately.
     try{await changeAccount(cloud.user);}
     catch(error){
-      console.error("ProSolver: account bootstrap recovery failed",error);
+      console.error("ByteQuest: account bootstrap recovery failed",error);
       $("authMessage").textContent="Account setup failed: "+String(error?.message||error)+". Your saved drafts are preserved; export a backup before reloading.";
     }
     if(!accountReady){
@@ -988,7 +988,7 @@ async function refreshCatalog({force=false}={}){
     return true;
   }catch(error){
     // Keep the last working catalog, even when the public endpoint is offline.
-    console.warn("ProSolver: published catalog refresh failed",error);
+    console.warn("ByteQuest: published catalog refresh failed",error);
     status.textContent="Showing saved problems · Refresh to retry";
     status.dataset.state="error";
     return false;
