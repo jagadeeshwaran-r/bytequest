@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {problemSkills,buildSolveLists} from '../dist/solve-lists-model.js';
+import {problemSkills,buildSolveLists,orderSolveRoadmap,collectionState,nextCollectionProblem} from '../dist/solve-lists-model.js';
 import {selectedSolveList} from '../dist/solve-lists.js';
 const problem=(id,topic,difficulty='Easy',extra={})=>({id,title:id,topic,difficulty,...extra});
 const two=problem('two-sum','Hash maps','Easy',{params:[{type:'int[]'}],techniques:['Hashing','hash maps']});
@@ -47,3 +47,15 @@ assert.ok(html.includes('id="questGrid"'),'Existing library remains');
 assert.ok(app.includes('state.solved,accountHistoryStatus,changeProblem'));
 for(const page of ['index','community','leaderboard','studio'])assert.ok(readFileSync('dist/'+page+'.html','utf8').includes('./index.html#solve-lists'));
 console.log('PASS: automatic Solve Lists, normalized topics, unique membership, shared progress and guarded legacy routing');
+
+assert.deepEqual(orderSolveRoadmap(lists).map(l=>l.name),['Mathematics','Arrays','Hash Maps & Sets','Linked Lists','Trees']);
+assert.equal(collectionState(get('Arrays'),true),'progress');
+assert.equal(collectionState(get('Mathematics'),true),'completed');
+assert.equal(collectionState(get('Linked Lists'),true),'new');
+assert.equal(collectionState(get('Mathematics'),false),'pending');
+assert.equal(nextCollectionProblem(get('Arrays'),{'two-sum':123},true).id,'easy');
+assert.equal(nextCollectionProblem(get('Arrays'),{},false),null);
+assert.equal(nextCollectionProblem(get('Mathematics'),{stairs:456},true),null);
+assert.ok(readFileSync('dist/solve-lists.js','utf8').includes("el('ol','solve-roadmap')"));
+assert.ok(readFileSync('dist/solve-lists.css','utf8').includes('prefers-reduced-motion'));
+console.log('PASS: suggested roadmap order, truthful completion states, unrestricted collections and next unsolved selection.');

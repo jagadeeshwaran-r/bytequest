@@ -14,7 +14,7 @@ import {selectedProblemUrl} from './problem-navigation.js?v=1';
 import {readSafeProgress,writeSafeProgress} from './reliable-storage.js?v=reliability-1';
 import {pointsFor,totalPoints} from './rewards.js?v=upgrade-2';
 import {companyIcons} from './companies.js?v=company-tooltips-1';
-import {renderSolveLists,selectedSolveList} from './solve-lists.js?v=2';
+import {renderSolveLists,selectedSolveList} from './solve-lists.js?v=2&roadmap=1';
 import {problemStatusMarkup} from './problem-status.js?v=auth-ready-1';
 import {canRevealEditorialSolution,editorialSolutionGateMarkup} from './editorial-access.js?v=editorial-1&public-unlock=2&quiet=2&cross-browser=1';
 import {mountWorkspace} from './workspace.js';

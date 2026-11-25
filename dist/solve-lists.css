@@ -1,20 +1,45 @@
-/* Scoped to the legacy Solve Lists view; theme follows existing variables. */
-#solve-listsView{max-width:1200px;margin:0 auto;padding:24px 0}
+/* ProSolver: compact learning roadmap, no locked collections. */
+#solve-listsView{max-width:1000px;margin:0 auto;padding:12px 0 24px}
 #solve-listsView[hidden]{display:none!important}
-.solve-list-heading{margin-bottom:22px}
-.solve-list-heading h2{margin:0 0 6px}
-.solve-list-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px}
-.solve-list-card{min-width:0;display:flex;flex-direction:column;gap:8px;padding:18px;border:1px solid var(--line,rgba(128,128,128,.24));border-radius:14px;background:var(--card,var(--panel,transparent));color:inherit;text-decoration:none;transition:border-color .15s}
-.solve-list-card:hover,.solve-list-card:focus-visible{border-color:var(--accent)}
-.solve-list-card strong{font-size:16px;overflow-wrap:anywhere}
-.solve-list-cover{display:grid;place-items:center;width:44px;height:44px;background:rgba(135,135,135,.12);color:var(--accent,#242424);border-radius:9px;font:600 18px/1 system-ui}
-.solve-list-progress{display:grid;gap:7px;margin-top:6px;font-size:12px}
-.solve-list-progress progress{width:100%;height:6px;accent-color:var(--accent);border:0;border-radius:5px;overflow:hidden}
-.solve-list-progress progress::-webkit-progress-bar{background:rgba(128,128,128,.2)}
-.solve-list-progress progress::-webkit-progress-value{background:var(--accent)}
-.solve-list-progress progress::-moz-progress-bar{background:var(--accent)}
-.solve-list-back{color:inherit;font-size:13px;text-decoration:underline;text-underline-offset:4px;white-space:nowrap}
-.solve-list-table-wrap{overflow-x:auto;margin-top:22px}
+#solve-listsView .solve-list-heading{display:flex!important;justify-content:space-between;align-items:center;gap:16px;margin:0 0 24px!important}
+#solve-listsView .solve-list-heading h2{margin:0 0 5px;font:650 clamp(25px,2.7vw,33px)/1.2 var(--font-sans);letter-spacing:-.045em;color:var(--text)}
+#solve-listsView .solve-list-heading p{font:400 12px/1.5 var(--font-sans);color:var(--muted);margin:0}
+.solve-roadmap-summary{display:grid;gap:4px;text-align:right;flex:none}
+.solve-roadmap-summary strong{font:600 23px/1.15 var(--font-sans);color:var(--text);font-variant-numeric:tabular-nums}
+.solve-roadmap-summary span{font-size:11px}
+.solve-roadmap{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.solve-roadmap-step{position:relative;display:grid;grid-template-columns:34px minmax(0,1fr);gap:14px;align-items:center;min-width:0}
+.solve-roadmap-step:not(:last-child)::after{content:'';position:absolute;left:16px;top:calc(50% + 17px);height:calc(100% - 24px);width:1px;background:var(--border);pointer-events:none}
+.solve-roadmap-marker{display:grid;place-items:center;width:34px;height:34px;border:1px solid var(--border-hover,var(--border));border-radius:50%;background:var(--page);color:var(--muted);font:500 11px var(--font-mono);position:relative;z-index:1}
+.solve-roadmap-step[data-state=completed] .solve-roadmap-marker{border-color:var(--roadmap-success);color:var(--roadmap-success);font:600 17px var(--font-sans)}
+#solve-listsView{--roadmap-success:#16794c}
+:root[data-theme=dark] #solve-listsView{--roadmap-success:#79d8aa}
+.solve-roadmap-card{min-width:0;display:grid;grid-template-columns:minmax(140px,1fr) minmax(130px,240px) 18px;gap:20px;align-items:center;padding:15px 18px;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text);text-decoration:none;transition:border-color .15s,background .15s}
+.solve-roadmap-card:hover{border-color:var(--border-hover);background:var(--surface-2)}
+.solve-roadmap-card:focus-visible,.solve-roadmap-continue:focus-visible,.solve-list-back:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.solve-roadmap-title{min-width:0;display:grid;gap:5px}
+.solve-roadmap-title strong{font:600 14px/1.4 var(--font-sans);overflow-wrap:anywhere}
+.solve-roadmap-status{font:400 11px var(--font-sans);color:var(--muted)}
+.solve-roadmap-step[data-state=completed] .solve-roadmap-status{color:var(--roadmap-success)}
+.solve-roadmap-arrow{color:var(--muted);font-size:22px;text-align:right}
+.solve-list-progress{display:grid;gap:7px;min-width:0;font-size:11px}
+.solve-list-progress-meta{display:flex;justify-content:space-between;gap:8px;align-items:center;font-variant-numeric:tabular-nums}
+.solve-list-percent{font-weight:600;color:var(--text)}
+.solve-list-progress progress{appearance:none;width:100%;height:5px;accent-color:var(--accent);border:0;border-radius:5px;overflow:hidden;background:var(--surface-2)}
+.solve-list-progress progress::-webkit-progress-bar{background:var(--surface-2)}
+.solve-list-progress progress::-webkit-progress-value{background:var(--accent);border-radius:5px}
+.solve-list-progress progress::-moz-progress-bar{background:var(--accent);border-radius:5px}
+.solve-roadmap-step[data-state=completed] progress::-webkit-progress-value{background:var(--roadmap-success)}
+.solve-roadmap-step[data-state=completed] progress::-moz-progress-bar{background:var(--roadmap-success)}
+.solve-roadmap-detail{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px 18px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+.solve-roadmap-detail .solve-list-progress{flex:1;max-width:360px}
+.solve-roadmap-continue{background:var(--primary-fill);color:var(--primary-ink);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font:500 12px var(--font-sans);cursor:pointer;white-space:nowrap}
+.solve-list-back{color:var(--muted);font-size:12px;text-decoration:none;white-space:nowrap}
+.solve-list-back:hover{color:var(--text)}
+.solve-list-table-wrap{overflow-x:auto;margin-top:16px}
 .solve-list-table-wrap .problem-table{width:100%;min-width:460px}
-@media(max-width:650px){#solve-listsView{padding:14px 0}.solve-list-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.solve-list-card{padding:12px}.solve-list-heading{flex-wrap:wrap;gap:10px}}
-@media(prefers-reduced-motion:reduce){.solve-list-card{transition:none}}
+.solve-list-table-wrap .problem-table td{height:44px;padding:8px 12px}
+.solve-list-table-wrap .problem-title.is-solved{text-decoration:none}
+body:has(#solve-listsView:not([hidden]))::before{opacity:.38}
+@media(max-width:620px){#solve-listsView{padding:10px 0 18px}.solve-roadmap-step{grid-template-columns:28px minmax(0,1fr);gap:9px}.solve-roadmap-marker{width:28px;height:28px}.solve-roadmap-step:not(:last-child)::after{left:13px;top:calc(50% + 14px);height:calc(100% - 18px)}.solve-roadmap-card{grid-template-columns:minmax(0,1fr) 14px;gap:9px;padding:12px}.solve-roadmap-title{grid-column:1}.solve-roadmap-card .solve-list-progress{grid-column:1;grid-row:2}.solve-roadmap-arrow{grid-column:2;grid-row:1/3}.solve-roadmap-detail{flex-wrap:wrap}.solve-roadmap-detail .solve-list-progress{min-width:150px}.solve-roadmap-summary strong{font-size:19px}}
+@media(prefers-reduced-motion:reduce){.solve-roadmap-card{transition:none}}
