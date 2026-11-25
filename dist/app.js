@@ -1,3 +1,4 @@
+import {sortCatalog,catalogPage,pickUnsolved,readBookmarks,recentAttempts} from './library-discovery.js?v=1';
 import {profileAvatar,publicProfileHref} from './profile-view.js?v=workbench-1';
 import {mountSubmissions,requestSubmission,runtimeLabel,memoryLabel} from './submissions.js?v=verification-evidence-1&public-unlock=2&public-default=1&community=1&showcase=1';
 import {launchCelebration} from './celebration.js?v=next-1';
@@ -586,18 +587,43 @@ function route(){
 addEventListener("hashchange",route);
 $("patternFilter").replaceChildren(new Option("All problem patterns",""),...[...new Set(problems.map(p=>p.pattern||p.topic))].sort().map(v=>new Option(v,v)));
 $("topicFilter").innerHTML+=[...topics].map(t=>'<option>'+html(t)+'</option>').join("");
-["topicFilter","patternFilter","techniqueFilter","difficultyFilter","statusFilter"].forEach(id=>$(id).onchange=renderMap);
-$("searchInput").oninput=renderMap;
+let libraryPage=1,bookmarkOwner=null,libraryBookmarks=new Set(),libraryCandidates=[];
+function resetLibrary(){libraryPage=1;renderMap();}
+["topicFilter","patternFilter","techniqueFilter","difficultyFilter","statusFilter","libraryCompany","librarySort"].forEach(id=>$(id).onchange=resetLibrary);
+$("searchInput").oninput=resetLibrary;
+$("libraryPrev").onclick=()=>{libraryPage--;renderMap();};
+$("libraryNext").onclick=()=>{libraryPage++;renderMap();};
+$("libraryPick").onclick=()=>{const p=pickUnsolved(libraryCandidates,state.solved,accountHistoryStatus==="ready");if(p)changeProblem(p.id);};
+$("libraryContinue").onclick=()=>{if(state.current)changeProblem(state.current);};
+function libraryBookmarkKey(){return "prosolver.bookmarks.v1:"+storageKey;}
+function loadLibraryBookmarks(){
+ if(bookmarkOwner===storageKey)return;
+ bookmarkOwner=storageKey;
+ try{libraryBookmarks=readBookmarks(localStorage,libraryBookmarkKey());}catch{libraryBookmarks=new Set();}
+}
+function toggleLibraryBookmark(id){
+ loadLibraryBookmarks();
+ if(libraryBookmarks.has(id))libraryBookmarks.delete(id);else libraryBookmarks.add(id);
+ try{localStorage.setItem(libraryBookmarkKey(),JSON.stringify([...libraryBookmarks]));}catch{notify("Bookmark kept for this session only; browser storage is unavailable.");}
+ renderMap();
+ [...$("questGrid").querySelectorAll("[data-bookmark]")].find(b=>b.dataset.bookmark===id)?.focus();
+}
+function refreshLibraryCompanies(){
+ const select=$("libraryCompany"),old=select.value;
+ const values=[...new Set(problems.flatMap(p=>Array.isArray(p.companies)?p.companies:[]).filter(v=>typeof v==="string"&&v.trim()))].sort((a,b)=>a.localeCompare(b));
+ const before=[...select.options].slice(1).map(o=>o.value);
+ if(JSON.stringify(values)!==JSON.stringify(before)){select.replaceChildren(new Option("All companies",""),...values.map(v=>new Option(v,v)));if(values.includes(old))select.value=old;}
+}
 $("clearProblemSearch").onclick=()=>{
   $("searchInput").value="";
-  renderMap();
+  resetLibrary();
   $("searchInput").focus();
 };
 // Quick '/' search works only in the catalog, never in the code editor or dialogs.
 document.addEventListener("keydown",event=>{
   const search=$("searchInput");
   if(event.key==="Escape"&&document.activeElement===search&&search.value){
-    event.preventDefault();search.value="";renderMap();return;
+    event.preventDefault();search.value="";resetLibrary();return;
   }
   if(event.key!=="/"||event.ctrlKey||event.metaKey||event.altKey||
      $("mapView").hidden||document.querySelector("dialog[open]")||
@@ -609,14 +635,28 @@ function refreshSolveLists(){
   renderSolveLists($("solve-listsView"),problems,state.solved,accountHistoryStatus,changeProblem,selectedSolveList(location.hash));
 }
 function renderMap(){
-  refreshSolveLists();
+  refreshSolveLists();loadLibraryBookmarks();refreshLibraryCompanies();
   const pattern=$("patternFilter").value,technique=$("techniqueFilter").value;
-  const query=$("searchInput").value.trim().toLowerCase(),topic=$("topicFilter").value,level=$("difficultyFilter").value,status=$("statusFilter").value;
-  const list=problems.filter(p=>(p.title+" "+String(problems.indexOf(p)+1)).toLowerCase().includes(query)&&(!topic||p.topic===topic)&&(!pattern||(p.pattern||p.topic)===pattern)&&(!technique||(p.techniques||[]).includes(technique))&&(!level||p.difficulty===level)&&(!status||(status==="solved"?state.solved[p.id]:status==="new"?accountHistoryStatus==="ready"&&!state.solved[p.id]:due(p.id))));
+  const query=$("searchInput").value.trim().toLowerCase(),topic=$("topicFilter").value,level=$("difficultyFilter").value,status=$("statusFilter").value,company=$("libraryCompany").value;
+  const numbers=new Map(problems.map((p,i)=>[p.id,i+1])),recent=recentAttempts(state.activity),attempted=new Set(recent);
+  const list=problems.filter(p=>(p.title+" "+String(numbers.get(p.id))).toLowerCase().includes(query)&&(!topic||p.topic===topic)&&(!pattern||(p.pattern||p.topic)===pattern)&&(!technique||(p.techniques||[]).includes(technique))&&(!level||p.difficulty===level)&&(!company||(p.companies||[]).includes(company))&&(!status||(status==="solved"?state.solved[p.id]:status==="new"?accountHistoryStatus==="ready"&&!state.solved[p.id]:status==="bookmarked"?libraryBookmarks.has(p.id):status==="recent"?attempted.has(p.id):due(p.id))));
+  libraryCandidates=list;
+  const page=catalogPage(sortCatalog(list,$("librarySort").value,numbers,recent),libraryPage);libraryPage=page.page;
+  const done=problems.filter(p=>state.solved[p.id]).length,ready=accountHistoryStatus==="ready";
+  $("librarySolved").textContent=ready?done+" / "+problems.length:done+" known solved";
+  $("libraryProgressNote").textContent=ready?"Solved":accountHistoryStatus==="failed"?"Sync unavailable":"Checking progress…";
+  $("libraryProgressBar").max=Math.max(1,problems.length);$("libraryProgressBar").value=done;
+  $("libraryPick").disabled=!ready||!list.some(p=>!state.solved[p.id]);
+  $("libraryContinue").hidden=!state.current||!problems.some(p=>p.id===state.current);
   $("clearProblemSearch").hidden=!$("searchInput").value;
   $("visibleProblemCount").textContent=list.length===problems.length?"Showing all "+problems.length+" problems":"Showing "+list.length+" of "+problems.length+" problems";
-  $("questGrid").innerHTML=list.length?'<table class="problem-table"><thead><tr><th>No.</th><th>Title</th><th>Companies</th><th>Difficulty</th><th>Status</th></tr></thead><tbody>'+list.map(p=>'<tr><td>'+String(problems.indexOf(p)+1).padStart(2,'0')+'</td><td><button class="problem-title'+(state.solved[p.id]?' is-solved':'')+'" data-problem="'+p.id+'">'+html(p.title)+'</button></td><td>'+(companyIcons(p.companies)||'<span class="muted">—</span>')+'</td><td><span class="difficulty '+p.difficulty.toLowerCase()+'">'+html(p.difficulty)+'</span><small class="problem-points">'+pointsFor(p.difficulty)+' pts</small></td><td>'+ problemStatusMarkup(Boolean(state.solved[p.id]),{complete:accountHistoryStatus==="ready",failed:accountHistoryStatus==="failed"})+'</td></tr>').join('')+'</tbody></table><p class="company-note">Company tags are community-reported historical associations, not employer endorsements. <a href="https://github.com/duanehutchins/leetcode-questions-by-company" target="_blank" rel="noopener">Tag source</a></p>':'<p class="empty-state">No matching problems.</p>';
+  $("libraryPageText").textContent=page.start+"–"+page.end+" of "+list.length;
+  $("libraryPageNumber").textContent=page.page+" / "+page.totalPages;
+  $("libraryPrev").disabled=page.page===1;$("libraryNext").disabled=page.page===page.totalPages;
+  $("libraryPager").hidden=!list.length;
+  $("questGrid").innerHTML=list.length?'<table class="problem-table"><thead><tr><th>No.</th><th>Title</th><th>Companies</th><th>Difficulty</th><th>Status</th><th class="library-save-col"><span class="sr-only">Bookmark</span></th></tr></thead><tbody>'+page.rows.map(p=>'<tr><td>'+String(numbers.get(p.id)).padStart(2,'0')+'</td><td><button class="problem-title'+(state.solved[p.id]?' is-solved':'')+'" data-problem="'+p.id+'">'+html(p.title)+'</button></td><td>'+(companyIcons(p.companies)||'<span class="muted">—</span>')+'</td><td><span class="difficulty '+p.difficulty.toLowerCase()+'">'+html(p.difficulty)+'</span><small class="problem-points">'+pointsFor(p.difficulty)+' pts</small></td><td>'+ problemStatusMarkup(Boolean(state.solved[p.id]),{complete:accountHistoryStatus==="ready",failed:accountHistoryStatus==="failed"})+'</td><td class="library-save-col"><button type="button" class="library-bookmark" data-bookmark="'+html(p.id)+'" aria-label="'+(libraryBookmarks.has(p.id)?'Remove bookmark: ':'Bookmark: ')+html(p.title)+'" aria-pressed="'+libraryBookmarks.has(p.id)+'"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v16l-6-4-6 4z"/></svg></button></td></tr>').join('')+'</tbody></table><p class="company-note">Company tags are community-reported historical associations, not employer endorsements. <a href="https://github.com/duanehutchins/leetcode-questions-by-company" target="_blank" rel="noopener">Tag source</a></p>':'<p class="empty-state">No matching problems.</p>';
   $("questGrid").querySelectorAll("[data-problem]").forEach(b=>b.onclick=()=>changeProblem(b.dataset.problem));
+  $("questGrid").querySelectorAll("[data-bookmark]").forEach(b=>b.onclick=()=>toggleLibraryBookmark(b.dataset.bookmark));
 }
 function renderProgress(){
   const solved=problems.filter(p=>state.solved[p.id]).length, dueCount=problems.filter(p=>due(p.id)).length;
@@ -976,7 +1016,7 @@ async function refreshCatalog({force=false}={}){
       if(values.includes(selected))$(id).value=selected;
     }
     const oldTopic=$("topicFilter").value;
-    $("topicFilter").replaceChildren(new Option("All patterns",""),...topics.map(t=>new Option(t,t)));
+    $("topicFilter").replaceChildren(new Option("All topics",""),...topics.map(t=>new Option(t,t)));
     if(topics.includes(oldTopic))$("topicFilter").value=oldTopic;
     current=problems.find(p=>p.id===selected)||problems.find(p=>p.id===current?.id)||problems[0]||null;
     if(current&&location.hash==='#practice'&&new URLSearchParams(location.search).get('problem')!==current.id){

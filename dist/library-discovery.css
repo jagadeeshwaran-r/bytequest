@@ -1,0 +1,45 @@
+/* ProSolver catalog only; retain existing workspace, shell and account styles. */
+#mapView .library-heading{margin:0 0 18px!important;padding:0!important;align-items:center!important}
+#mapView .library-heading h2{margin:0 0 4px!important}
+#mapView .library-total{font:400 12px/1.5 var(--font-sans);color:var(--muted)}
+#mapView .library-heading-actions{display:flex;align-items:center;gap:18px}
+#mapView .library-progress{width:156px;display:grid;gap:7px}
+#mapView .library-progress>div{display:flex;justify-content:space-between;gap:7px;align-items:baseline;font-size:11px;color:var(--muted)}
+#mapView .library-progress strong{font-size:13px;color:var(--text);white-space:nowrap}
+#mapView progress{appearance:none;width:100%;height:5px;border:0;border-radius:5px;background:var(--surface-2);accent-color:var(--accent);overflow:hidden}
+#mapView progress::-webkit-progress-bar{background:var(--surface-2)}
+#mapView progress::-webkit-progress-value{background:var(--accent);border-radius:5px}
+#mapView progress::-moz-progress-bar{background:var(--accent);border-radius:5px}
+#mapView .filters{gap:8px!important;flex-wrap:wrap!important;padding-bottom:10px!important}
+#mapView .catalog-search-wrap{min-width:200px;flex:1 1 240px!important}
+#mapView .filters select:not([hidden]){min-width:100px!important;max-width:155px;height:40px!important}
+#mapView .catalog-search-wrap .search-box{height:40px!important;min-height:40px!important}
+#mapView .library-pick,#mapView .library-secondary,#mapView .library-pager button{font:500 11px var(--font-sans);border:1px solid var(--border);border-radius:8px;padding:9px 12px;background:var(--surface);color:var(--text);cursor:pointer}
+#mapView .library-pick{display:inline-flex;align-items:center;gap:7px;background:var(--primary-fill);color:var(--primary-ink);height:40px;white-space:nowrap}
+#mapView .library-pick svg{width:15px;height:15px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+#mapView button:disabled{opacity:.45;cursor:not-allowed}
+#mapView .catalog-meta{justify-content:flex-start!important;min-height:28px;padding:5px 2px 7px!important}
+#mapView #catalogAccountProgress,#mapView #catalogSyncStatus:not([data-state="error"]),#mapView #catalogSyncStatus:not([data-state="error"])~#refreshProblemCatalog{display:none!important}
+#mapView .problem-table tbody td{height:44px!important;padding:8px 12px!important}
+#mapView .problem-table th{padding:10px 12px!important}
+#mapView .problem-table th:nth-child(5){border-radius:0!important}
+#mapView .problem-table th:last-child{border-radius:0 11px 0 0}
+#mapView .problem-table .problem-title.is-solved{color:var(--text);font-weight:550;text-decoration:none!important}
+#mapView .problem-table .difficulty{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;min-height:0}
+#mapView .problem-table .difficulty.easy{color:#16794c!important}
+#mapView .problem-table .difficulty.medium{color:#956000!important}
+#mapView .problem-table .difficulty.hard{color:#bd3042!important}
+:root[data-theme=dark] #mapView .problem-table .difficulty.easy{color:#79d8aa!important}
+:root[data-theme=dark] #mapView .problem-table .difficulty.medium{color:#efc378!important}
+:root[data-theme=dark] #mapView .problem-table .difficulty.hard{color:#ff929e!important}
+#mapView .library-save-col{width:48px;text-align:center!important}
+#mapView .library-bookmark{background:transparent;border:0;padding:5px;color:var(--muted);cursor:pointer}
+#mapView .library-bookmark svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
+#mapView .library-bookmark[aria-pressed=true]{color:var(--accent)}
+#mapView .library-bookmark[aria-pressed=true] svg{fill:currentColor}
+#mapView .library-pager{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;font-size:11px;color:var(--muted)}
+#mapView .library-pager>div{display:flex;align-items:center;gap:12px}
+#mapView .library-pager button{font-size:18px;line-height:1;padding:5px 10px}
+#mapView [hidden]{display:none!important}
+@media(max-width:900px){#mapView .catalog-search-wrap{flex-basis:100%!important}#mapView .filters select:not([hidden]){flex:1 1 120px!important;max-width:none}#mapView .problem-table{min-width:700px!important}}
+@media(max-width:620px){#mapView .library-heading{align-items:stretch!important}#mapView .library-heading-actions{justify-content:space-between;flex-wrap:wrap}#mapView .library-progress{width:min(100%,180px)}}
