@@ -52,3 +52,16 @@ export function buildSolveLists(catalog,solved={}){
   for(const list of lists.values())list.problems.sort((a,b)=>(rank[String(a.difficulty).toLowerCase()]??3)-(rank[String(b.difficulty).toLowerCase()]??3));
   return [...lists.values()].sort((a,b)=>a.name.localeCompare(b.name));
 }
+
+// Suggested learning order only; no prerequisites or locks.
+const roadmapOrder=['Mathematics','Arrays','Strings','Hash Maps & Sets','Linked Lists','Stacks','Queues','Matrices','Trees','Heaps','Tries','Graphs','Disjoint Sets'];
+export function orderSolveRoadmap(lists){
+ const rank=new Map(roadmapOrder.map((name,i)=>[name,i]));
+ return [...lists].sort((a,b)=>(rank.get(a.name)??99)-(rank.get(b.name)??99)||a.name.localeCompare(b.name));
+}
+export function collectionState(list,ready){
+ return !ready?'pending':list.total>0&&list.solved===list.total?'completed':list.solved>0?'progress':'new';
+}
+export function nextCollectionProblem(list,solved,ready){
+ return ready?list.problems.find(p=>!Object.hasOwn(solved,p.id)||!solved[p.id])||null:null;
+}
