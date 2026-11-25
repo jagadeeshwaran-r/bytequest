@@ -1,47 +1,29 @@
-// Solve Lists are derived from the published catalog; no duplicated problems or progress.
+// Only data structures and mathematics are collection categories.
 const aliases = new Map();
 const groups = {
-  'Mathematics':['math','mathematics','number theory','arithmetic','combinatorics','geometry','modular arithmetic','gcd','prime numbers'],
-  'Arrays':['array','arrays','array manipulation','array traversal'],
-  'Strings':['string','strings','string manipulation'],
-  'Hashing':['hashing','hash map','hash maps','hashmap','hash table','hash tables','hash set','hash sets','hashset','frequency counting'],
-  'Linked Lists':['linked list','linked lists','singly linked list','doubly linked list'],
-  'Dynamic Programming':['dp','dynamic programming','memoization','tabulation'],
-  'Two Pointers':['two pointer','two pointers','fast and slow pointers','fast slow pointers','floyd cycle detection'],
-  'Binary Search':['binary search','binary search on answer'],
-  'Sliding Window':['sliding window','sliding windows'],
-  'Stacks':['stack','stacks','monotonic stack'],
-  'Queues':['queue','queues','deque','deques','monotonic queue'],
-  'Trees':['tree','trees','binary tree','binary trees','binary search tree','binary search trees','bst'],
-  'Graphs':['graph','graphs','graph traversal','topological sort','union find','disjoint set','shortest path'],
-  'Sorting':['sorting','sort'],
-  'Greedy':['greedy','greedy algorithms'],
-  'Backtracking':['backtracking'],
-  'Recursion':['recursion','recursive'],
-  'Heaps':['heap','heaps','priority queue','priority queues'],
-  'Bit Manipulation':['bit manipulation','bitwise','bitwise operations'],
-  'Prefix Sum':['prefix sum','prefix sums'],
-  'Matrices':['matrix','matrices','2d array','2d arrays'],
-  'Tries':['trie','tries','prefix tree'],
-  'Breadth-First Search':['bfs','breadth first search'],
-  'Depth-First Search':['dfs','depth first search']
+  'Mathematics':['math','number theory','arithmetic','combinatorics','geometry','modular arithmetic','gcd','prime numbers','probability'],
+  'Arrays':['array','array manipulation','array traversal'],
+  'Strings':['string','string manipulation'],
+  'Hash Maps & Sets':['hash map','hash maps','hashmap','hash table','hash tables','hash set','hash sets','hashset','map','maps','set','sets','dictionary','dictionaries','hash maps and sets'],
+  'Linked Lists':['linked list','singly linked list','doubly linked list','circular linked list'],
+  'Stacks':['stack','monotonic stack'],
+  'Queues':['queue','deque','deques','monotonic queue'],
+  'Trees':['tree','binary tree','binary trees','binary search tree','binary search trees','bst','segment tree','segment trees','fenwick tree','fenwick trees','balanced tree','n ary tree'],
+  'Graphs':['graph','directed graph','undirected graph','weighted graph'],
+  'Heaps':['heap','priority queue','priority queues','min heap','max heap'],
+  'Matrices':['matrix','2d array','2d arrays'],
+  'Tries':['trie','prefix tree'],
+  'Disjoint Sets':['disjoint set','union find','disjoint set union','dsu']
 };
 const normalize = value => typeof value==='string' ? value.trim().toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ') : '';
 for(const [name,values] of Object.entries(groups)) for(const value of [name,...values]) aliases.set(normalize(value),name);
-const canonical=(value,allowNew=false)=>{
-  const key=normalize(value);
-  if(!key||key.length>80||['other','general','uncategorized','unknown','none'].includes(key))return null;
-  return aliases.get(key)||(allowNew?key.replace(/\b\w/g,c=>c.toUpperCase()):null);
-};
 const values=value=>Array.isArray(value)?value:typeof value==='string'?value.split(','):[];
 export function problemSkills(problem){
   const names=new Set();
-  const add=(value,allowNew=false)=>{const name=canonical(value,allowNew);if(name)names.add(name);};
-  for(const value of [...values(problem.requiredSkills),...values(problem.skills)])add(value,true);
-  add(problem.topic,true);
-  add(problem.pattern);
-  for(const value of values(problem.techniques))add(value,true);
-  // Structural inputs provide additional useful categories, never infer algorithms from titles.
+  const add=value=>{const name=aliases.get(normalize(value));if(name)names.add(name);};
+  // Technique metadata can identify a known structure, but never create a technique playlist.
+  for(const value of [...values(problem.requiredSkills),...values(problem.skills),problem.topic,problem.pattern,...values(problem.techniques)])add(value);
+  // Use declared structural types, not title keywords or scalar numbers.
   for(const type of [...(Array.isArray(problem.params)?problem.params.map(p=>p?.type):[]),problem.returns]){
     if(typeof type!=='string')continue;
     if(/\bListNode\b/.test(type))names.add('Linked Lists');
@@ -49,8 +31,9 @@ export function problemSkills(problem){
     if(/\[\s*\]/.test(type))names.add('Arrays');
     if(/\[\s*\]\s*\[\s*\]/.test(type))names.add('Matrices');
     if(/\bString\b/.test(type))names.add('Strings');
+    if(/\b(?:HashMap|HashSet|Map|Set)\s*</.test(type))names.add('Hash Maps & Sets');
   }
-  if(!names.size)names.add('Uncategorized');
+  // No "Uncategorized" or arbitrary topic list. Unclassified problems remain in Problems.
   return [...names];
 }
 const rank={easy:0,medium:1,hard:2};
@@ -67,5 +50,5 @@ export function buildSolveLists(catalog,solved={}){
     }
   }
   for(const list of lists.values())list.problems.sort((a,b)=>(rank[String(a.difficulty).toLowerCase()]??3)-(rank[String(b.difficulty).toLowerCase()]??3));
-  return [...lists.values()].sort((a,b)=>a.name==='Uncategorized'?1:b.name==='Uncategorized'?-1:a.name.localeCompare(b.name));
+  return [...lists.values()].sort((a,b)=>a.name.localeCompare(b.name));
 }
