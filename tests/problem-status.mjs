@@ -21,7 +21,7 @@ assert.ok(problemStatusMarkup(true,{complete:false}).includes('is-solved'),
   'Existing locally accepted solves remain visible while cloud loads');
 
 const app=readFileSync("dist/app.js","utf8");
-assert.ok(app.includes('problemStatusMarkup(Boolean(state.solved[p.id]),{complete:accountHistoryStatus==="ready",failed:accountHistoryStatus==="failed"})'),
+assert.ok(app.includes('problemStatusMarkup(Boolean(state.solved[p.id]),{complete:accountHistoryStatus==="ready",failed:accountHistoryStatus==="failed",compact:true})'),
   "Problem rows derive accepted status from saved solves but never label unconfirmed account progress as unsolved.");
 assert.ok(app.includes('if(view==="map"){if(previousView!==null&&previousView!=="map")$("questGrid").scrollLeft=0;renderMap();}'),
   "Navigating back from a practice problem must reset horizontal grid scrolling to the left.");
@@ -43,4 +43,10 @@ for(const page of ["index.html","studio.html"]){
   assert.ok(html.includes(page==="studio.html"?'studio-page.js?v=':'app.js?v='),"Page must refresh its correct entrypoint bundle.");
   assert.ok(html.includes('problem-alignment.css?v=align-2'),"Page must refresh the updated alignment rules.");
 }
+assert.match(problemStatusMarkup(true,{compact:true}),/aria-label="Solved"/);
+assert.match(problemStatusMarkup(false,{compact:true}),/aria-label="Unsolved"/);
+assert.ok(!problemStatusMarkup(false,{compact:true}).includes('<path'),'Unsolved compact indicator is not a check');
+assert.match(problemStatusMarkup(false,{compact:true,complete:false}),/aria-label="Checking account progress"/);
+assert.match(problemStatusMarkup(false,{compact:true,complete:false,failed:true}),/aria-label="Solve status unavailable"/);
+assert.match(problemStatusMarkup(true,{compact:true,complete:false}),/aria-label="Solved"/);
 console.log("PASS: left-aligned problem grid after navigation and green check only for accepted solves.");

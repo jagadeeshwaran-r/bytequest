@@ -48,3 +48,39 @@
 body:has(#mapView:not([hidden]))::before{opacity:.38}
 #mapView .catalog-meta:not(:has(#visibleProblemCount:not([hidden]))):not(:has(#catalogSyncStatus[data-state="error"])){min-height:0!important;padding:0!important;margin:0 0 10px}
 #mapView .problem-table .problem-title:focus-visible,#mapView .library-bookmark:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+/* Compact catalog: progress on the left, actions on the right. */
+#mapView .library-heading{justify-content:space-between!important;gap:12px!important;margin-bottom:12px!important}
+#mapView .library-heading-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;width:auto;flex-wrap:nowrap}
+#mapView .library-progress{display:flex;align-items:center;gap:12px;width:auto;min-width:0}
+#mapView .library-progress>div{display:grid;gap:2px;justify-content:start}
+#mapView .library-progress strong{font-size:18px;letter-spacing:-.035em}
+#mapView .library-progress progress{width:100px;flex:none}
+#mapView .library-secondary{display:inline-flex;align-items:center;gap:6px;height:34px;white-space:nowrap}
+#mapView .library-secondary svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linejoin:round}
+#mapView .library-pick{height:34px}
+#mapView .filters select:not([hidden]){height:36px!important;min-width:88px!important;max-width:145px;padding:6px 9px!important}
+#mapView .catalog-search-wrap .search-box{height:36px!important;min-height:36px!important}
+#mapView .library-search-key{border:1px solid var(--border);border-radius:4px;padding:1px 5px;font:11px var(--font-mono);color:var(--muted)}
+#mapView .problem-table{table-layout:fixed}
+#mapView .problem-table th.library-number-col{width:56px}
+#mapView .problem-table th.library-status-col{width:40px}
+#mapView .problem-table th.library-title-col{width:auto}
+#mapView .problem-table th.library-company-col{width:152px}
+#mapView .problem-table th.library-level-col{width:100px;border-radius:0!important}
+#mapView .problem-table :is(th,td).library-save-col{width:44px}
+#mapView .problem-table :is(th,td).library-status-col{text-align:center;padding-inline:4px!important;width:40px}
+#mapView .problem-table th.library-status-col svg,#mapView .problem-table .compact-status svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle}
+#mapView .problem-table .compact-status{display:inline-flex;align-items:center;justify-content:center;min-height:0;width:20px}
+#mapView .problem-table .compact-status.is-unsolved{color:var(--muted);opacity:.7}
+#mapView .problem-table .compact-status.is-pending{color:var(--muted)}
+#mapView .problem-table .compact-status.is-solved svg{stroke-width:2.5}
+#mapView .problem-table td:nth-child(2){width:auto}
+#mapView .problem-table td.library-title-cell{white-space:normal;overflow-wrap:anywhere}
+#mapView .problem-table tbody td{height:39px!important;padding-block:6px!important}
+#mapView .problem-table tbody tr:nth-child(even):not(:hover) td{background:color-mix(in srgb,var(--surface) 97%,var(--text))!important}
+#mapView .problem-table .company-logo{width:22px;height:22px;margin-right:4px}
+#mapView .problem-table .company-logo img{width:13px;height:13px}
+#mapView .problem-table .company-overflow-count{height:22px;min-width:23px}
+@media(max-width:900px){#mapView .problem-table{min-width:610px!important}#mapView .filters select:not([hidden]){max-width:none}#mapView .problem-table th.library-number-col{width:43px}#mapView .problem-table th.library-status-col,#mapView .problem-table td.library-status-col{width:34px}#mapView .problem-table th.library-company-col{width:125px}#mapView .problem-table th.library-level-col{width:75px}}
+@media(max-width:620px){#mapView .library-heading{align-items:center!important;flex-wrap:wrap;gap:9px!important}#mapView .library-progress{width:auto;gap:8px}#mapView .library-progress strong{font-size:15px}#mapView .library-progress progress{width:65px}#mapView .library-heading-actions{margin-left:auto;flex-wrap:wrap}#mapView .library-secondary,#mapView .library-pick{padding-inline:8px}}

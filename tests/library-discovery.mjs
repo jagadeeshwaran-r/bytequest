@@ -25,4 +25,9 @@ assert.ok(readFileSync('dist/library-discovery.css','utf8').includes('#mapView .
 assert.ok(readFileSync('dist/library-discovery.css','utf8').includes('#mapView #catalogCount[hidden]{display:none!important}'));
 assert.ok(app.includes('"ArrowDown","ArrowUp"'));
 assert.ok(app.includes('accountHistoryStatus==="ready"'));
+assert.ok(html.indexOf('id="libraryProgressBar"')<html.indexOf('id="libraryContinue"'));
+assert.ok(html.indexOf('id="libraryPick"')<html.indexOf('id="searchInput"'));
+assert.ok(html.includes('aria-label="Continue last problem"'));
+assert.ok(app.indexOf('class="library-status-col"')<app.indexOf('class="library-title-col"'));
+assert.ok(!app.includes('<small class="problem-points">'),'Scoring stays out of the compact table');
 console.log('PASS: ProSolver catalog discovery, pagination, owner-local bookmarks and safe random selection.');
