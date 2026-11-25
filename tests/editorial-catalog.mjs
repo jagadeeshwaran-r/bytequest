@@ -31,7 +31,7 @@ const css=readFileSync('dist/catalog-refined.css','utf8');
 assert.ok(html.includes('catalog-refined.css?v=catalog-1'));
 assert.ok(html.includes('id="clearProblemSearch"'));
 assert.ok(html.includes('id="visibleProblemCount"'));
-assert.ok(html.includes('<h2>Problem library</h2>'));
+assert.match(html, /<section id="mapView"[^>]*>\s*<div class="section-heading library-heading">\s*<div><h2>Problems<\/h2>/, 'Keep the redesigned Problems heading in the catalog');
 assert.ok(html.includes('role="search"'));
 assert.ok(app.includes('editorialSolutionGateMarkup(canCheckJavaReference(current),Boolean(cloud.user))'));
 assert.ok(app.includes('cloud.request("reference-read",{problemId:selected.id,revision:selected.revision},owner)'), 'Reference source must be fetched through authenticated API');
