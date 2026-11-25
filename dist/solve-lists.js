@@ -1,7 +1,7 @@
-import {buildSolveLists} from './solve-lists-model.js?v=1';
+import {buildSolveLists} from './solve-lists-model.js?v=2';
 import {problemStatusMarkup} from './problem-status.js?v=auth-ready-1';
 const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node;};
-const symbols={'Mathematics':'∑','Arrays':'[ ]','Strings':'Aa','Dynamic Programming':'DP','Linked Lists':'→','Binary Search':'⌕','Trees':'T','Graphs':'G','Hashing':'#','Two Pointers':'↔','Sorting':'⇅','Stacks':'≡','Queues':'⇥','Matrices':'▦'};
+const symbols={'Mathematics':'∑','Arrays':'[ ]','Strings':'Aa','Linked Lists':'→','Trees':'T','Graphs':'G','Hash Maps & Sets':'#','Stacks':'≡','Queues':'⇥','Matrices':'▦','Heaps':'H','Tries':'Tr','Disjoint Sets':'DS'};
 export function selectedSolveList(hash){try{return hash.startsWith('#solve-lists/')?decodeURIComponent(hash.slice(13)):'';}catch{return '';}}
 const linkFor=name=>'#solve-lists/'+encodeURIComponent(name);
 function progress(list,ready){
@@ -15,7 +15,7 @@ export function renderSolveLists(root,catalog,solved,status,openProblem,selected
   const chosen=lists.find(list=>list.name===selected);
   const fragment=document.createDocumentFragment();
   const heading=el('div','section-heading solve-list-heading');
-  const copy=el('div');copy.append(el('h2','',chosen?chosen.name:'Solve Lists'),el('p','',chosen?chosen.total+' problems · Easy to Hard':'Automatically organized practice collections'));
+  const copy=el('div');copy.append(el('h2','',chosen?chosen.name:'Solve Lists'),el('p','',chosen?chosen.total+' problems · Easy to Hard':'Practice collections by data structure and mathematics'));
   if(selected){const back=el('a','solve-list-back','← All Solve Lists');back.href='#solve-lists';heading.append(copy,back);}else heading.append(copy);
   fragment.append(heading);
   if(!ready)fragment.append(el('p','muted',status==='failed'?'Account progress unavailable. Known solves are shown.':'Checking account progress…'));
@@ -42,7 +42,7 @@ export function renderSolveLists(root,catalog,solved,status,openProblem,selected
       card.append(cover,el('strong','',list.name),el('span','muted',list.total+' '+(list.total===1?'problem':'problems')),progress(list,ready));
       grid.append(card);
     }
-    fragment.append(lists.length?grid:el('p','empty-state','No published problems available yet.'));
+    fragment.append(lists.length?grid:el('p','empty-state','No data structure or mathematics collections available yet.'));
   }
   root.replaceChildren(fragment);
 }
