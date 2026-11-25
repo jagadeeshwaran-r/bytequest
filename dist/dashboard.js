@@ -54,7 +54,7 @@ async render(){
   const opts={mode:$('graphMode').value,month:$('graphMonth').value,year:Number($('graphYear').value),topic:$('graphTopic').value};$('graphMonth').hidden=opts.mode!=='daily';$('graphYear').hidden=opts.mode==='daily';let own;
   const events=this.getEvents?this.getEvents():solveEvents(this.getState(),catalog);
   try{own=bucketSolves(events,opts);this.paintTopics(topicProgress(catalog,this.topicInsights,events,opts));}catch(e){$('dashboardMessage').textContent=e.message;return;}
-  const series=[{name:this.name,profile:this.profile,data:own,events,color:'#16a477'}];this.draw(series);
+  const series=[{name:this.name,profile:this.profile,data:own,events,color:'var(--accent)'}];this.draw(series);
   for(const [id,v] of [['dashboardSolved',this.summary?.solved??0],['dashboardActive',this.summary?.active??0],['dashboardPeriod',own.total]])if($(id))$(id).textContent=v;
   if(!this.allowCompare){$('dashboardMessage').textContent='';$('dashboardMessage').hidden=true;return;}
   const ids=[...this.selected];$('dashboardMessage').textContent=ids.length?'Loading friend activity…':this.cloud.user?'Choose any number of followed friends, or compare all.':'Sign in and follow people to compare activity.';

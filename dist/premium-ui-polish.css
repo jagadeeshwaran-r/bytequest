@@ -1,7 +1,7 @@
 /* Premium translucent navigation: preserves the ByteQuest header footprint,
    navigation position and accessible contrast in both themes. */
-:root{--bq-nav-glass:rgba(247,250,249,.59);--bq-nav-edge:rgba(255,255,255,.67);--bq-nav-shadow:0 12px 38px rgba(13,42,30,.08)}
-:root[data-theme="dark"]{--bq-nav-glass:rgba(17,19,24,.46);--bq-nav-edge:rgba(255,255,255,.13);--bq-nav-shadow:0 15px 44px rgba(0,0,0,.30)}
+:root{--bq-nav-glass:rgba(249,249,249,.59);--bq-nav-edge:rgba(255,255,255,.67);--bq-nav-shadow:0 12px 38px rgba(35,35,35,.08)}
+:root[data-theme="dark"]{--bq-nav-glass:rgba(17,17,17,.46);--bq-nav-edge:rgba(255,255,255,.13);--bq-nav-shadow:0 15px 44px rgba(0,0,0,.30)}
 .minimal-header{
  background:var(--bq-nav-glass)!important;
  border:1px solid var(--bq-nav-edge)!important;
