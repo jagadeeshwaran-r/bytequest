@@ -1,4 +1,4 @@
-// Loaded only after the ByteQuest maintenance preflight succeeds.
+// Loaded only after the ProSolver maintenance preflight succeeds.
 await new Promise(resolve=>{
   const loader=document.createElement('script');
   loader.src='https://cjrtnc.leaningtech.com/5.0/loader.js';

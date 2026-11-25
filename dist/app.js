@@ -112,7 +112,7 @@ function persist({scheduleSync=true}={}) {
   }catch{
     storageOK=false;$("saveStatus").textContent="Not saved · storage unavailable — export a backup";
   }
-  // Surface unsynced local work on all ByteQuest pages, including Profile.
+  // Surface unsynced local work on all ProSolver pages, including Profile.
   if(cloud.user||!storageOK)cloud.onHealth?.({kind:storageOK?'pending':'storage-failed',localSaved:storageOK});
   if(scheduleSync&&accountReady&&cloud.user){clearTimeout(syncTimer);setSyncStatus("syncing",storageOK?"Changes saved here":"Local save failed · cloud sync queued");syncTimer=setTimeout(()=>syncCloud(),1800);}
   return storageOK;
@@ -266,7 +266,7 @@ async function loadCredits(problem,ticket){
  const container=$("problemCredits"),owner=cloud.user?.id;if(!container)return;
  if(!owner){container.textContent='Community library · Sign in to view contributor';return;}
  container.textContent='Loading contributor…';
- try{const r=await cloud.request('problem-authors',{problemId:problem.id},owner);if(ticket!==creditEpoch||cloud.user?.id!==owner||!container.isConnected)return;container.innerHTML=r.users?.length?'<span>Created by</span>'+r.users.map(p=>'<a class="problem-author" href="'+publicProfileHref(p)+'" aria-label="View '+html(p.display_name)+' profile">'+profileAvatar(p)+'<strong>'+html(p.display_name)+'</strong></a>').join(''):r.hasAuthor?'Contributor profile unavailable':'ByteQuest collection';}catch{if(ticket===creditEpoch&&container.isConnected)container.textContent='Community library';}
+ try{const r=await cloud.request('problem-authors',{problemId:problem.id},owner);if(ticket!==creditEpoch||cloud.user?.id!==owner||!container.isConnected)return;container.innerHTML=r.users?.length?'<span>Created by</span>'+r.users.map(p=>'<a class="problem-author" href="'+publicProfileHref(p)+'" aria-label="View '+html(p.display_name)+' profile">'+profileAvatar(p)+'<strong>'+html(p.display_name)+'</strong></a>').join(''):r.hasAuthor?'Contributor profile unavailable':'ProSolver collection';}catch{if(ticket===creditEpoch&&container.isConnected)container.textContent='Community library';}
 }
 function renderTrace(){
   const frames=traceFor(current), f=frames[traceStep];

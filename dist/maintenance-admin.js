@@ -51,7 +51,7 @@ async function checkAccess(){
  }catch(error){
   if(token!==epoch||cloud.user?.id!==owner)return;
   showAuth(error?.httpStatus===403?
-   'Your Google account is not a ByteQuest library administrator. No changes were made.':
+   'Your Google account is not a ProSolver library administrator. No changes were made.':
    'Could not verify administrator access. Check the backend connection and retry.',{retry:true});
   message(error?.message||'Authorization unavailable',true);
  }
@@ -74,7 +74,7 @@ async function save(enabled,{confirmActivation=false}={}){
   const windowText=candidate.mode==='scheduled'?
    'from '+istDisplay(candidate.startsAt)+' until '+istDisplay(candidate.endsAt):
    'immediately until '+istDisplay(candidate.endsAt);
-  if(!confirm('Enable ByteQuest maintenance '+windowText+'? Learners will see the maintenance notice and backend writes will be blocked.'))return;
+  if(!confirm('Enable ProSolver maintenance '+windowText+'? Learners will see the maintenance notice and backend writes will be blocked.'))return;
  }
  setBusy(true);message('Saving maintenance configuration…');
  const owner=cloud.user?.id,ticket=epoch;
@@ -98,7 +98,7 @@ $('maForm').addEventListener('submit',event=>{
 $('maArm').onclick=()=>void save(true,{confirmActivation:true});
 $('maDisable').onclick=()=>{
  if(current?.enabled!==true)return;
- if(confirm('Disable ByteQuest maintenance immediately? Learners will be able to submit and sync again.'))void save(false);
+ if(confirm('Disable ProSolver maintenance immediately? Learners will be able to submit and sync again.'))void save(false);
 };
 $('maMode').onchange=()=>{
  $('maArm').textContent=$('maMode').value==='on'?'Start maintenance now':'Enable schedule';

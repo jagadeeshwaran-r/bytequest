@@ -1,4 +1,4 @@
-/* ByteQuest — monochrome, floating glass, and editorial typography. */
+/* ProSolver — monochrome, floating glass, and editorial typography. */
 :root{
  --page:#fafafa;--bg:var(--page);--surface:#ffffff;--surface-2:#f2f2f2;--text:#171717;--ink:var(--text);--soft-text:#616161;--muted:var(--soft-text);--border:#e1e1e1;--border-hover:#a3a3a3;
  --accent:#242424;--blue:var(--accent);--blue-soft:#ededed;--purple:var(--accent);--purple-dark:#363636;--purple-soft:var(--blue-soft);--line:var(--border);--glass-highlight:#ffffffc4;--glass-shadow:0 10px 32px #00000006;
@@ -92,7 +92,7 @@ footer,.leader-footer{border-top:1px solid var(--border);margin-top:30px;padding
 #menuAccountSlot .delete-menu-button{background:transparent!important;border:1px solid transparent!important;border-radius:9px;text-align:left;padding:10px 12px;font-size:11px;color:var(--danger)!important}#menuAccountSlot .delete-menu-button:hover{background:color-mix(in srgb,var(--danger) 6%,var(--surface))!important}
 dialog{background:var(--surface)!important;color:var(--text)!important;border-color:var(--border)!important}
 
-/* ByteQuest joined wordmark: one name, no binary icon or artificial gap. */
+/* ProSolver joined wordmark: one name, no binary icon or artificial gap. */
 .minimal-header .minimal-brand{display:inline-flex;align-items:baseline;gap:0!important;white-space:nowrap;text-decoration:none;letter-spacing:-.065em}
 .minimal-header .minimal-brand .wordmark-byte,.minimal-header .minimal-brand .wordmark-quest{font-family:Inter,system-ui,sans-serif!important;font-weight:800!important;line-height:1.1;letter-spacing:inherit}
 .minimal-header .minimal-brand .wordmark-byte{color:var(--text)!important}

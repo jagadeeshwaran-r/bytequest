@@ -1,4 +1,4 @@
-// All ByteQuest maintenance timestamps are stored in UTC, displayed/edited
+// All ProSolver maintenance timestamps are stored in UTC, displayed/edited
 // as Asia/Kolkata (IST, +05:30). Never rely on the visitor's device zone.
 const IST_MINUTES=330;
 const dateTimeLocal=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
