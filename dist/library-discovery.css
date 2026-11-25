@@ -1,7 +1,7 @@
 /* ProSolver catalog only; retain existing workspace, shell and account styles. */
-#mapView .library-heading{margin:0 0 18px!important;padding:0!important;align-items:center!important}
-#mapView .library-heading h2{margin:0 0 4px!important}
-#mapView .library-total{font:400 12px/1.5 var(--font-sans);color:var(--muted)}
+#mapView .library-heading{margin:0 0 10px!important;padding:0!important;align-items:center!important;justify-content:flex-end!important;flex-direction:row!important;gap:0!important}
+#mapView .library-heading h2.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important}
+#mapView #catalogCount[hidden]{display:none!important}
 #mapView .library-heading-actions{display:flex;align-items:center;gap:18px}
 #mapView .library-progress{width:156px;display:grid;gap:7px}
 #mapView .library-progress>div{display:flex;justify-content:space-between;gap:7px;align-items:baseline;font-size:11px;color:var(--muted)}
@@ -42,7 +42,7 @@
 #mapView .library-pager button{font-size:18px;line-height:1;padding:5px 10px}
 #mapView [hidden]{display:none!important}
 @media(max-width:900px){#mapView .catalog-search-wrap{flex-basis:100%!important}#mapView .filters select:not([hidden]){flex:1 1 120px!important;max-width:none}#mapView .problem-table{min-width:700px!important}}
-@media(max-width:620px){#mapView .library-heading{align-items:stretch!important}#mapView .library-heading-actions{justify-content:space-between;flex-wrap:wrap}#mapView .library-progress{width:min(100%,180px)}}
+@media(max-width:620px){#mapView .library-heading{align-items:stretch!important}#mapView .library-heading-actions{width:100%;justify-content:flex-end;flex-wrap:wrap;gap:10px}#mapView .library-progress{width:min(100%,180px)}}
 
 /* Calm backdrop and no empty metadata strip when all results are visible. */
 body:has(#mapView:not([hidden]))::before{opacity:.38}
