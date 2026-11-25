@@ -1,3 +1,4 @@
+import './library-discovery.mjs';
 import './solve-lists.mjs';
 import './java-judge-failover.mjs';
 import './site-maintenance.mjs';
