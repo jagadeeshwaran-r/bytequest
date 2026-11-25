@@ -19,4 +19,6 @@ const html=readFileSync('dist/index.html','utf8'),app=readFileSync('dist/app.js'
 for(const id of ['libraryPick','librarySort','libraryCompany','libraryProgressBar','libraryPager','libraryContinue'])assert.ok(html.includes('id="'+id+'"'),id);
 assert.ok(app.includes('prosolver.bookmarks.v1:"+storageKey'));
 assert.ok(html.includes('library-discovery.css?v=1'));
+assert.ok(app.includes('"ArrowDown","ArrowUp"'));
+assert.ok(app.includes('accountHistoryStatus==="ready"'));
 console.log('PASS: ProSolver catalog discovery, pagination, owner-local bookmarks and safe random selection.');

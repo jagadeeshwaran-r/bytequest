@@ -43,3 +43,8 @@
 #mapView [hidden]{display:none!important}
 @media(max-width:900px){#mapView .catalog-search-wrap{flex-basis:100%!important}#mapView .filters select:not([hidden]){flex:1 1 120px!important;max-width:none}#mapView .problem-table{min-width:700px!important}}
 @media(max-width:620px){#mapView .library-heading{align-items:stretch!important}#mapView .library-heading-actions{justify-content:space-between;flex-wrap:wrap}#mapView .library-progress{width:min(100%,180px)}}
+
+/* Calm backdrop and no empty metadata strip when all results are visible. */
+body:has(#mapView:not([hidden]))::before{opacity:.38}
+#mapView .catalog-meta:not(:has(#visibleProblemCount:not([hidden]))):not(:has(#catalogSyncStatus[data-state="error"])){min-height:0!important;padding:0!important;margin:0 0 10px}
+#mapView .problem-table .problem-title:focus-visible,#mapView .library-bookmark:focus-visible{outline:2px solid var(--accent);outline-offset:3px}

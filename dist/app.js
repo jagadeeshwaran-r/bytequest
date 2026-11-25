@@ -591,6 +591,12 @@ let libraryPage=1,bookmarkOwner=null,libraryBookmarks=new Set(),libraryCandidate
 function resetLibrary(){libraryPage=1;renderMap();}
 ["topicFilter","patternFilter","techniqueFilter","difficultyFilter","statusFilter","libraryCompany","librarySort"].forEach(id=>$(id).onchange=resetLibrary);
 $("searchInput").oninput=resetLibrary;
+$("questGrid").addEventListener("keydown",event=>{
+ const active=event.target;
+ if(!active?.matches?.(".problem-title")||event.ctrlKey||event.metaKey||event.altKey||!["ArrowDown","ArrowUp"].includes(event.key))return;
+ const titles=[...$("questGrid").querySelectorAll(".problem-title")],index=titles.indexOf(active),next=index+(event.key==="ArrowDown"?1:-1);
+ if(titles[next]){event.preventDefault();titles[next].focus();}
+});
 $("libraryPrev").onclick=()=>{libraryPage--;renderMap();};
 $("libraryNext").onclick=()=>{libraryPage++;renderMap();};
 $("libraryPick").onclick=()=>{const p=pickUnsolved(libraryCandidates,state.solved,accountHistoryStatus==="ready");if(p)changeProblem(p.id);};
@@ -641,7 +647,7 @@ function renderMap(){
   const numbers=new Map(problems.map((p,i)=>[p.id,i+1])),recent=recentAttempts(state.activity),attempted=new Set(recent);
   const list=problems.filter(p=>(p.title+" "+String(numbers.get(p.id))).toLowerCase().includes(query)&&(!topic||p.topic===topic)&&(!pattern||(p.pattern||p.topic)===pattern)&&(!technique||(p.techniques||[]).includes(technique))&&(!level||p.difficulty===level)&&(!company||(p.companies||[]).includes(company))&&(!status||(status==="solved"?state.solved[p.id]:status==="new"?accountHistoryStatus==="ready"&&!state.solved[p.id]:status==="bookmarked"?libraryBookmarks.has(p.id):status==="recent"?attempted.has(p.id):due(p.id))));
   libraryCandidates=list;
-  const page=catalogPage(sortCatalog(list,$("librarySort").value,numbers,recent),libraryPage);libraryPage=page.page;
+  const page=catalogPage(sortCatalog(list,status==="recent"&&$("librarySort").value==="number"?"recent":$("librarySort").value,numbers,recent),libraryPage);libraryPage=page.page;
   const done=problems.filter(p=>state.solved[p.id]).length,ready=accountHistoryStatus==="ready";
   $("librarySolved").textContent=ready?done+" / "+problems.length:done+" known solved";
   $("libraryProgressNote").textContent=ready?"Solved":accountHistoryStatus==="failed"?"Sync unavailable":"Checking progress…";
@@ -649,6 +655,7 @@ function renderMap(){
   $("libraryPick").disabled=!ready||!list.some(p=>!state.solved[p.id]);
   $("libraryContinue").hidden=!state.current||!problems.some(p=>p.id===state.current);
   $("clearProblemSearch").hidden=!$("searchInput").value;
+  $("visibleProblemCount").hidden=list.length===problems.length;
   $("visibleProblemCount").textContent=list.length===problems.length?"Showing all "+problems.length+" problems":"Showing "+list.length+" of "+problems.length+" problems";
   $("libraryPageText").textContent=page.start+"–"+page.end+" of "+list.length;
   $("libraryPageNumber").textContent=page.page+" / "+page.totalPages;
