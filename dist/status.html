@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#080808">
-<meta name="description" content="ByteQuest connection recovery and service status">
-<title>Connection status · ByteQuest</title>
+<meta name="description" content="ProSolver connection recovery and service status">
+<title>Connection status · ProSolver</title>
 <script src="./theme-mode.js"></script>
 <script>
 const statusIssue=new URLSearchParams(location.search).get('issue');
@@ -22,7 +22,7 @@ else document.documentElement.dataset.bqStatusCheck='pending';
 <body class="bq-status-page" data-issue="unreachable">
 <div class="status-background" aria-hidden="true"></div>
 <header class="status-top">
-  <a class="status-brand" href="./status.html?issue=maintenance" aria-label="ByteQuest status"><span>Byte</span><strong>Quest</strong></a>
+  <a class="status-brand" href="./status.html?issue=maintenance" aria-label="ProSolver status"><span>Pro</span><strong>Solver</strong></a>
   <div class="status-top-meta"><span class="status-pulse"></span> CONNECTION CENTER <span class="status-top-rule"></span> <span id="statusCode">BQ-003</span></div>
 </header>
 <main class="status-main" id="statusMain">
@@ -30,20 +30,20 @@ else document.documentElement.dataset.bqStatusCheck='pending';
     <div class="status-copy">
       <div class="status-eyebrow"><span class="status-dash"></span><span id="statusEyebrow">SERVICE CONNECTION</span></div>
       <h1 id="statusTitle">The route went <em>quiet.</em></h1>
-      <p class="status-lead" id="statusIntro">ByteQuest could not reach one of the services it needs.</p>
+      <p class="status-lead" id="statusIntro">ProSolver could not reach one of the services it needs.</p>
       <div class="status-window" id="statusWindow" hidden><span id="statusWindowLabel">MAINTENANCE WINDOW · IST</span><strong id="statusWindowTime"></strong><span id="statusWindowEnds"></span></div>
       <div class="status-divider"></div>
       <div class="status-safety"><span class="status-safety-icon" aria-hidden="true">◈</span><div><strong>YOUR WORK COMES FIRST</strong><p id="statusDetail">Existing drafts are not removed. Cloud changes still require a confirmed sync.</p></div></div>
       <div class="status-actions">
         <button class="status-action-primary" id="statusRetry" type="button"><span id="statusRetryLabel">Retry connection</span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M15.7 7.4a6.2 6.2 0 1 0 .7 5.4M15.6 3.4v4.4h-4.4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/></svg></button>
-        <a class="status-action-secondary" id="statusContinue" href="./index.html">Continue to ByteQuest <span aria-hidden="true">↗</span></a>
+        <a class="status-action-secondary" id="statusContinue" href="./index.html">Continue to ProSolver <span aria-hidden="true">↗</span></a>
       </div>
       <p class="status-feedback" id="statusFeedback" role="status" aria-live="polite"></p>
       <a id="statusAdminLink" class="status-admin-link" href="./maintenance.html" hidden>Library administrator? Manage maintenance ↗</a>
     </div>
     <div class="status-illustration" aria-hidden="true">
       <div class="status-visual-frame">
-        <div class="visual-overline">BYTEQUEST / SIGNAL GRAPH</div>
+        <div class="visual-overline">PROSOLVER / SIGNAL GRAPH</div>
         <svg class="status-network" viewBox="0 0 480 455" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs><linearGradient id="signalGradient" x1="40" y1="30" x2="440" y2="410"><stop stop-color="#d5d5d5" stop-opacity=".85"/><stop offset="1" stop-color="#6d6d6d" stop-opacity=".12"/></linearGradient><radialGradient id="coreGradient"><stop stop-color="#bebebe" stop-opacity=".16"/><stop offset="1" stop-color="#bebebe" stop-opacity="0"/></radialGradient></defs>
           <circle cx="240" cy="222" r="173" stroke="currentColor" class="ring ring-outer" stroke-width=".7"/>
