@@ -32,10 +32,11 @@ assert.match(rendered,/class="streak-awards"/);
 assert.match(rendered,/data-days="7" data-count="2"/);
 assert.match(rendered,/×2/);
 assert.ok(rendered.includes('aria-label="7-day streaker streak badge'),'7-day milestone remains accessible');
-assert.ok(!rendered.includes('>STREAKER</span>'),'No caption beneath the 7-day PNG');
+assert.ok(!rendered.includes('>STREAKER</span>'),'No caption beneath the seven-day stamp');
 assert.ok(!rendered.includes('CONSISTENT'),'Locked tiers remain hidden');
 assert.ok(!rendered.includes('is-locked'));
-assert.ok(rendered.includes('src="./assets/streak/7-day-rubber-stamp.png"'),'Seven-day artwork uses approved PNG');
+assert.ok(rendered.includes('bq-stamp-7-ink')&&rendered.includes('>PROSOLVER</textPath>'),'Seven-day artwork uses distressed ProSolver SVG');
+assert.ok(!rendered.includes('7-day-rubber-stamp.png'),'Do not render obsolete branding');
 assert.ok(earnedStreakBadgesMarkup(span('2026-01-01',30),'2026-11-18').includes('bq-stamp-30-ink'), 'Higher milestones retain dynamic SVGs');
 const x3=earnedStreakBadgesMarkup(triple,'2026-11-18');
 assert.ok(x3.includes('×3'));
@@ -50,6 +51,9 @@ const sample=(days,streak=0)=>profileMarkup({
 assert.equal(sample([]).includes('streak-awards'),false,'New users have no awards section');
 assert.ok(sample([...first,...second],0).includes('×2'),'Past badge remains visible after streak is lost');
 assert.ok(sample([...first,...second],0).includes('streak-award tier-silver'));
+const earnedProfile=sample([...first,...second],0);
+assert.ok(earnedProfile.indexOf('class="profile-summary-grid"')<earnedProfile.indexOf('class="streak-awards"')&&earnedProfile.indexOf('class="streak-awards"')<earnedProfile.indexOf('class="profile-calendar-section"'),'Earned badge stays in summary before calendar');
+assert.equal((earnedProfile.match(/class="streak-awards"/g)||[]).length,1,'Do not duplicate earned badge section');
 assert.ok(!profileMetrics({solved:0,total:31,streak:365},0,31).includes('streak-milestones'),'Old milestone row removed');
 assert.ok(!profileMetrics({solved:0,total:31,streak:365},0,31).includes('streak-awards'),'Current streak alone does not invent awards');
 
