@@ -38,7 +38,7 @@ console.log("PASS: reference-aligned theme, uniform right metrics, no flame icon
 
 const compactCss=readFileSync('dist/profile-streak-awards.css','utf8');
 const renderer=readFileSync('dist/profile-view.js','utf8');
-assert.ok(renderer.indexOf('<section class="profile-calendar-section">')<renderer.lastIndexOf('earnedStreakBadgesMarkup(r.stats.days,r.stats.serverDay)'),'Calendar comes before earned badges');
+assert.ok(renderer.lastIndexOf('earnedStreakBadgesMarkup(r.stats.days,r.stats.serverDay)')<renderer.indexOf('<section class="profile-calendar-section">'),'Earned badges belong inside the summary before the calendar');
 assert.ok(!renderer.includes('<span class="eyebrow">PROFILE</span>'));
 assert.ok(compactCss.includes('metric-caption.is-adjusted'),'Keep adjusted streak disclosure visible');
 assert.ok(compactCss.includes('grid-template-rows:16px auto auto!important'));
@@ -52,3 +52,12 @@ assert.ok(compactCss.includes('justify-content:flex-start!important;align-items:
 assert.ok(compactCss.includes('justify-self:start!important;justify-content:flex-start!important'));
 assert.ok(compactCss.includes('padding-inline:var(--profile-section-inset)!important'));
 assert.ok(compactCss.includes('--profile-section-inset:12px'));
+
+const unified=readFileSync('dist/profile-unified.css','utf8');
+assert.ok(page.indexOf('profile-unified.css?v=1')>page.indexOf('premium-ui-polish.css'));
+assert.ok(unified.includes('max-width:1100px'));
+assert.ok(unified.includes('grid-template-columns:minmax(0,2fr) minmax(0,3fr)'));
+assert.ok(unified.includes('@media(max-width:900px)'));
+assert.ok(renderer.includes('class="profile-summary-grid"'));
+assert.ok(renderer.includes('class="profile-bottom-grid"'));
+assert.ok(readFileSync('dist/community.js','utf8').includes("querySelector('.profile-bottom-grid').insertAdjacentHTML('beforeend',analyticsMarkup)"));

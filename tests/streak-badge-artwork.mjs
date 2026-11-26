@@ -11,12 +11,12 @@ assert.ok(png.includes(Buffer.from('tRNS')),'Stamp must have an actual transpare
 assert.ok(png.length<100000,'Badge image must be optimized for fast profile loads');
 const markup=earnedStreakBadgesMarkup(span('2026-01-01',7),'2026-11-22');
 assert.ok(markup.includes('data-days="7"'));
-assert.ok(markup.includes('<img class="streak-award-art streak-award-png"'));
-assert.ok(markup.includes('src="./assets/streak/7-day-rubber-stamp.png"'));
-assert.ok(markup.includes('width="384" height="384"'),'Reserve image layout dimensions');
+assert.ok(markup.includes('<svg viewBox="0 0 200 200" class="streak-award-art streak-award-stamp"'));
+assert.ok(markup.includes('>PROSOLVER</textPath>'),'Seven-day stamp uses current branding');
+assert.ok(!markup.includes('7-day-rubber-stamp.png'),'Archive original PNG without displaying obsolete branding');
 assert.ok(!markup.includes('>STREAKER</span>'),'Remove the external 7-day caption');
 assert.ok(markup.includes('aria-label="7-day streaker streak badge'),'Keep accessible milestone description');
-assert.ok(!markup.includes('class="stamp-ink-rings"'),'7-day art must use the image, not regenerated SVG');
+assert.ok(markup.includes('class="stamp-ink-rings"')&&markup.includes('bq-stamp-7-ink'),'Keep distressed vector ink and correct milestone');
 assert.equal(earnedStreakBadgesMarkup([],'2026-11-22'),'','Unearned badges must stay hidden');
 assert.deepEqual(earnedStreakBadges(span('2026-01-01',7),'2026-11-22').map(x=>x.days),[7]);
 for(const tier of STREAK_BADGE_TIERS.filter(x=>x.days!==7)){
@@ -28,10 +28,10 @@ for(const tier of STREAK_BADGE_TIERS.filter(x=>x.days!==7)){
  assert.ok(!tierEntry.includes('7-day-rubber-stamp.png'),'A non-seven tier must not display the 7 PNG');
 }
 const css=readFileSync('dist/profile-streak-awards.css','utf8');
-assert.ok(css.includes('html[data-theme="light"] .community-page #profileContent .streak-award-png'));
-assert.ok(css.includes('filter:brightness(0) opacity(.72)'),'Light theme must darken transparent stamp ink');
-assert.ok(css.includes('width:128px;'),'Desktop 7-day PNG should be compact');
-assert.ok(css.includes('width:108px;'),'Mobile 7-day PNG should be compact');
+const unified=readFileSync('dist/profile-unified.css','utf8');
+assert.ok(unified.includes('--stamp-ink:var(--text)'),'Silver stamp follows both themes');
+assert.ok(unified.includes('width:72px;flex:0 0 72px'),'Compact desktop stamp');
+assert.ok(unified.includes('width:60px;flex-basis:60px'),'Compact mobile stamp');
 assert.ok(css.includes('prefers-reduced-motion:reduce'));
 assert.ok(!css.includes('.streak-award.tier-silver .streak-award-name'),'No decorative dashes under the stamp');
 const page=readFileSync('dist/community.html','utf8'),profile=readFileSync('dist/profile-view.js','utf8'),community=readFileSync('dist/community.js','utf8');
@@ -39,4 +39,4 @@ assert.ok(page.includes('badge-7-compact=8'),'Reload changed CSS and main module
 assert.ok(profile.includes('streak-awards.js?v=lifetime-1&badge-7-compact=8'),'Reload badge renderer');
 assert.ok(community.includes('profile-view.js?v=lifetime-awards-1&github=1&streak-correction=1&badge-7-compact=8'));
 assert.equal(page.split('online-alerts=1&amp;badge-7-compact=8').length,3,'Keep preload and guarded module URLs aligned');
-console.log('PASS: real transparent 7-day PNG, theme variants, other tiers, earned-only logic, and optimized asset size');
+console.log('PASS: archived original PNG, rebranded distressed seven-day vector stamp, all earned tiers and theme variants');

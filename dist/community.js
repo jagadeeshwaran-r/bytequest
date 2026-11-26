@@ -1,6 +1,6 @@
 import {mountCreatorAccess} from './creator-access.js?v=workbench-1';
 import {companies} from './companies.js?v=social-1';
-import {profileMarkup,profileAvatar,publicProfileHref} from './profile-view.js?v=lifetime-awards-1&github=1&streak-correction=1&badge-7-compact=8&compact-profile=2';
+import {profileMarkup,profileAvatar,publicProfileHref} from './profile-view.js?v=lifetime-awards-1&github=1&streak-correction=1&badge-7-compact=8&compact-profile=2&unified=1';
 import {bindProfileCalendar,refreshProfileCalendar} from './profile-calendar.js?v=today-marker-1';
 import {bindStreakCountdown} from './streak-countdown.js?v=urgency-1';
 import {hydrateRecentProblemNumbers} from './profile-extras.js?v=profile-compact-1';
@@ -109,7 +109,7 @@ function renderProfile(r,{presencePending=false}={}){
  const presenceNode=$('profilePresenceStatus');
  if(presencePending){presenceNode.dataset.status='checking';presenceNode.className='presence';presenceNode.textContent='Checking status…';}
  else paintPresence(presenceNode,viewedPresence);
- $('profileContent').insertAdjacentHTML('beforeend',analyticsMarkup);analytics=new Dashboard({cloud,getState:()=>({solved:{},days:r.stats.days||[]}),getCatalog:()=>catalog,getEvents:()=>r.stats.solves||[],summary:{solved:r.stats.solved,active:(r.stats.days||[]).length},topicInsights:r.insights?.skills||[],allowCompare:r.isOwn,animateRhythm:true,name:r.isOwn?'You':'@'+p.username,profile:p,viewerProfile:self?.profile||null});analytics.open();
+ $('profileContent').querySelector('.profile-bottom-grid').insertAdjacentHTML('beforeend',analyticsMarkup);analytics=new Dashboard({cloud,getState:()=>({solved:{},days:r.stats.days||[]}),getCatalog:()=>catalog,getEvents:()=>r.stats.solves||[],summary:{solved:r.stats.solved,active:(r.stats.days||[]).length},topicInsights:r.insights?.skills||[],allowCompare:r.isOwn,animateRhythm:true,name:r.isOwn?'You':'@'+p.username,profile:p,viewerProfile:self?.profile||null});analytics.open();
  bindProfileCalendar($('profileContent'),r.stats.days,r.stats.serverDay);
  stopStreakCountdown=bindStreakCountdown($('profileContent'),{onDayChange:()=>refreshProfileCalendar($('profileContent'),r.stats.days,r.stats.serverDay)});
  const recentToggle=$('profileContent').querySelector('[data-recent-toggle]');if(recentToggle)recentToggle.onclick=()=>{const expanded=recentToggle.getAttribute('aria-expanded')!=='true',rows=$('profileContent').querySelectorAll('[data-recent-row]');rows.forEach((row,i)=>row.hidden=!expanded&&i>=3);recentToggle.setAttribute('aria-expanded',String(expanded));recentToggle.textContent=expanded?'Show less':'Show all '+rows.length+' ↗';};
