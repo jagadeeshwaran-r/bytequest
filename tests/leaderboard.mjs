@@ -1,3 +1,4 @@
+import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 import {validateCommunity} from '../supabase/functions/bytequest-firebase/community.js';
 import {createHandler} from '../supabase/functions/bytequest-firebase/handler.js';
@@ -22,3 +23,15 @@ const pending=[];const loader=latestLeaderboard((...args)=>new Promise((resolve,
 const first=loader.load({scope:'global'},'owner-a'),second=loader.load({scope:'friends'},'owner-a');pending[1].resolve({scope:'friends'});assert.deepEqual(await second,{result:{scope:'friends'}});pending[0].resolve({scope:'global'});assert.equal(await first,null,'Slow responses cannot replace the selected board.');
 const beforeSwitch=loader.load({},'owner-a');loader.cancel();pending[2].reject(new Error('stale account'));assert.equal(await beforeSwitch,null,'Old-account failures cannot overwrite the new page state.');
 console.log('PASS: leaderboard filters, verified viewer binding, unsigned rejection, private avatar signing, safe profile rendering and stale-response cancellation.');
+
+const markup=readFileSync('dist/leaderboard.html','utf8'),source=readFileSync('dist/leaderboard.js','utf8'),style=readFileSync('dist/leaderboard-refined.css','utf8');
+assert.ok(!markup.includes('class="leader-summary"'),'No duplicate ranking cards');
+for(const id of ['yourRank','yourPoints','yourSolved','rankedLearners','boardDescription']){assert.ok(!markup.includes('id="'+id+'"'));assert.ok(!source.includes("$('"+id+"')"));}
+for(const id of ['leaderFindMe','leaderRefresh','leaderPeriod','leaderRows','leaderCount','leaderMessage','leaderError','yourPosition','leaderPager'])assert.ok(markup.includes('id="'+id+'"'),id);
+assert.ok(markup.includes('<details class="leader-rules">'));
+assert.ok(markup.includes('Rankings')||markup.includes('Ranking rules'));
+assert.ok(markup.includes('Equal point totals share a rank'));
+assert.ok(source.includes("dataset.state=error?'error':'routine'"));
+assert.ok(style.includes('#leaderMessage:not(.error)'));
+assert.ok(style.includes('display:table-cell'));
+assert.ok(markup.includes('leaderboard-refined.css?v=leaderboard-2&amp;minimal=1'));

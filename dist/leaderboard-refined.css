@@ -133,3 +133,34 @@
  .leaderboard-page .leader-table .leader-person small{font-size:9px}
 }
 @media(prefers-reduced-motion:reduce){.leaderboard-page :is(.leader-table tbody tr,.leader-refresh){transition:none!important}}
+
+/* Minimal ProSolver rankings: the table is the only visible scorecard. */
+.leaderboard-page main.leaderboard-main{max-width:1280px!important;padding-top:16px!important}
+.leaderboard-page .leader-controls{gap:8px;margin:0 0 12px}
+.leaderboard-page .leader-tabs{padding:3px;gap:2px}
+.leaderboard-page .leader-tabs button{min-height:30px;padding:6px 14px}
+.leaderboard-page .leader-tabs button[aria-selected=true]{background:var(--primary-fill);color:var(--primary-ink);box-shadow:none}
+.leaderboard-page .leader-controls select,.leaderboard-page #leaderFindMe,.leaderboard-page #leaderRefresh{min-height:34px;padding:6px 10px}
+.leaderboard-page #leaderFindMe,.leaderboard-page #leaderRefresh{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.leaderboard-page #leaderRefresh{width:34px;padding:6px}
+.leaderboard-page :is(#leaderFindMe,#leaderRefresh,.leader-rules summary) svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.leaderboard-page #leaderFindMe[hidden]{display:none!important}
+.leaderboard-page .leader-intro{margin:0;gap:0}
+.leaderboard-page #leaderMessage:not(.error){position:absolute;width:1px;height:1px;min-height:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;margin:0;padding:0}
+.leaderboard-page .leader-intro:has(#leaderMessage.error){margin-bottom:8px}
+.leaderboard-page #leaderMessage.error{max-width:none;text-align:left;color:var(--muted)}
+.leaderboard-page .leader-table thead th{padding:10px 14px}
+.leaderboard-page .leader-table tbody td{padding:9px 14px}
+.leaderboard-page .leader-table .leader-avatar{width:32px;height:32px;border-radius:50%}
+.leaderboard-page .leader-table .leader-person{gap:9px}
+.leaderboard-page .leader-table .leader-person small{margin-top:2px}
+.leaderboard-page .leader-table tbody tr:nth-child(even):not(.your-ranking):not(:hover) td{background:color-mix(in srgb,var(--surface) 97%,var(--text))}
+.leaderboard-page .leader-bottom{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-top:12px;font-size:11px;color:var(--muted)}
+.leaderboard-page .leader-rules{margin-left:auto;max-width:520px}
+.leaderboard-page .leader-rules summary{display:flex;justify-content:flex-end;align-items:center;gap:6px;cursor:pointer;list-style:none;white-space:nowrap}
+.leaderboard-page .leader-rules summary::-webkit-details-marker{display:none}
+.leaderboard-page .leader-rules .leader-note{margin:8px 0 0;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface)}
+.leaderboard-page .leader-footer{justify-content:flex-end;margin-top:18px}
+body.leaderboard-page::before{opacity:.38}
+.leaderboard-page :is(.leader-controls button,.leader-controls select,.leader-rules summary):focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media(max-width:760px){.leaderboard-page main.leaderboard-main{padding-top:12px!important}.leaderboard-page .leader-table{min-width:600px;table-layout:auto}.leaderboard-page .leader-table th:nth-child(n+4),.leaderboard-page .leader-table td:nth-child(n+4){display:table-cell}.leaderboard-page .leader-table th:first-child{width:58px}.leaderboard-page .leader-table th:nth-child(3){width:70px}.leaderboard-page .leader-table td,.leaderboard-page .leader-table th{padding:9px 10px}.leaderboard-page .leader-controls select{flex:0 1 auto;min-width:90px}.leaderboard-page .leader-bottom{flex-wrap:wrap}}
