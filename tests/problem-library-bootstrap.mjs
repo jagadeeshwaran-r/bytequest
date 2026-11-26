@@ -58,6 +58,7 @@ try{
  const dashboard=new Dashboard({
   cloud:{user:null},getState:()=>({solved:{}}),getCatalog:()=>[],allowCompare:false
  });
+ assert.equal(dashboard.rhythmMotion,null,'Legacy Problems page must not initialize profile animation');
  assert.equal(typeof controlsById.get('graphMode').onchange,'function');
  assert.equal(controlsById.has('graphMeasure'),false,'Problems page must not need Profile-only controls');
  const today=new Date().toISOString().slice(0,10);

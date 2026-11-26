@@ -9,7 +9,7 @@ export function createRhythmMotion(chart,{Observer=globalThis.IntersectionObserv
   if(layer?.animate)animation=layer.animate([
    {clipPath:'inset(0 100% 0 0)',opacity:.45},
    {clipPath:'inset(0 0 0 0)',opacity:1}
-  ],{duration:540,easing:'cubic-bezier(.22,.61,.36,1)',fill:'none'});
+  ],{duration:1200,easing:'cubic-bezier(.4,0,.2,1)',fill:'none'});
  }
  const observer=Observer?new Observer(entries=>{
   if(disposed)return;

@@ -1,4 +1,4 @@
-import {createRhythmMotion} from './rhythm-motion.js?v=1';
+import {createRhythmMotion} from './rhythm-motion.js?v=2';
 import {bucketSolves,solveEvents,chartValues,chartDomain,straightPath,visiblePeriodCount,topicProgress,forecastSolvePace,smoothPath} from './dashboard-model.js?v=backtested-1';
 import {escapeHtml as h} from './community-model.js';
 import {topicCoverageSummary,topicExplorerPage} from './topic-explorer.js?v=topics-1';
@@ -6,7 +6,7 @@ const photo=p=>p?.avatar_url&&/^https:\/\//.test(p.avatar_url)?p.avatar_url:'';
 const initial=p=>(p?.display_name||p?.username||'You').trim().charAt(0).toUpperCase();
 const avatar=p=>'<span class="chart-avatar">'+(photo(p)?'<img src="'+h(photo(p))+'" alt="" referrerpolicy="no-referrer">':h(initial(p)))+'</span>';
 export class Dashboard{
- constructor({cloud,getState,getCatalog,getEvents=null,summary=null,name='You',profile=null,viewerProfile=null,topicInsights=[],allowCompare=true}){
+ constructor({cloud,getState,getCatalog,getEvents=null,summary=null,name='You',profile=null,viewerProfile=null,topicInsights=[],allowCompare=true,animateRhythm=false}){
   Object.assign(this,{cloud,getState,getCatalog,getEvents,summary,name,profile,viewerProfile,topicInsights,allowCompare,topicsExpanded:false,topicQuery:"",topicStatus:"all",topicPage:0,epoch:0,accountGeneration:0,loadedFor:null,friends:[],selected:new Set(),cache:new Map()});this.$=id=>document.getElementById(id);
   this.$('graphMonth').value=new Date().toISOString().slice(0,7);this.$('graphYear').value=new Date().getUTCFullYear();
   // Profile has graphMeasure; the legacy problem-library dashboard doesn't.
@@ -18,7 +18,7 @@ export class Dashboard{
   const host=this.$('frequencyChart').closest('section'),controls=host.querySelector('.comparison-controls');
   controls.innerHTML='<details class="friend-picker"><summary>Compare with friends <span class="compare-count"></span></summary><div class="friend-picker-panel"><div class="friend-picker-actions"><button type="button" data-all>All friends</button><button type="button" data-clear>Clear</button></div><input class="friend-filter" type="search" placeholder="Filter friends…" aria-label="Filter comparison friends"><div class="friend-checks"></div></div></details>';
   controls.hidden=!this.allowCompare;this.picker=controls.querySelector('.friend-picker');controls.querySelector('[data-all]').onclick=()=>{this.selected=new Set(this.friends.map(p=>p.public_id));this.paintPicker();this.render();};controls.querySelector('[data-clear]').onclick=()=>{this.selected.clear();this.paintPicker();this.render();};controls.querySelector('input').oninput=()=>this.paintPicker();
-  this.rhythmMotion=this.$('frequencyChart').closest('#profileAnalytics')?createRhythmMotion(this.$('frequencyChart')):null;this.tooltip=document.createElement('div');this.tooltip.className='chart-tooltip';this.tooltip.hidden=true;this.tooltip.setAttribute('role','status');this.$('frequencyChart').closest('.graph-scroll').append(this.tooltip);this.paintPicker();
+  this.rhythmMotion=animateRhythm?createRhythmMotion(this.$('frequencyChart')):null;this.tooltip=document.createElement('div');this.tooltip.className='chart-tooltip';this.tooltip.hidden=true;this.tooltip.setAttribute('role','status');this.$('frequencyChart').closest('.graph-scroll').append(this.tooltip);this.paintPicker();
  }
  dispose(){this.epoch++;this.accountGeneration++;this.rhythmMotion?.dispose();}
  accountChanged(){this.epoch++;this.accountGeneration++;this.loadedFor=null;this.friends=[];this.selected.clear();this.cache.clear();this.paintPicker();}
