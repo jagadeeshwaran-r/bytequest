@@ -54,7 +54,8 @@ assert.equal(topicProgress([],insights,events,{mode:'daily',month:'2026-11',now}
 
 assert.ok(analyticsMarkup.includes('id="graphMeasure"'));
 assert.ok(analyticsMarkup.includes('value="cumulative"'));
-assert.ok(analyticsMarkup.includes('id="topicBreakdown"'));
+assert.ok(!analyticsMarkup.includes('id="topicBreakdown"'),'Profile no longer renders topic coverage');
+assert.ok(analyticsMarkup.includes('id="graphTopic"'),'Retain chart topic filter');
 assert.ok(analyticsMarkup.includes('Compare with friends'));
 const dashboard=readFileSync('dist/dashboard.js','utf8');
 const profile=readFileSync('dist/community.js','utf8');

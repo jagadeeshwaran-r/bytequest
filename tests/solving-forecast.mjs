@@ -1,3 +1,4 @@
+import {createRhythmMotion} from '../dist/rhythm-motion.js';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {forecastSolvePace,straightPath} from '../dist/dashboard-model.js';
@@ -89,3 +90,23 @@ assert.ok(model.includes('scoreCandidates('),'Models selected via walk-forward v
 assert.ok(model.includes('duration<56||sample<10||activeDays<7'),'Reject statistically thin histories');
 assert.equal(straightPath([[1,1],[2,2]]),'M1,1 L2,2');
 console.log('PASS: non-ML six-month/30-day walk-forward forecasting, per-user trend, MAE, guardrails and legacy page safety.');
+
+let callback,plays=0,cancels=0,disconnects=0,reduce=false;
+const chart={querySelector:()=>({animate(frames,opts){plays++;assert.equal(opts.duration,1200);assert.equal(frames[1].clipPath,'inset(0 0 0 0)');return {cancel(){cancels++;}};}})};
+class FakeObserver{constructor(cb){callback=cb;}observe(target){assert.equal(target,chart);}disconnect(){disconnects++;}}
+const motion=createRhythmMotion(chart,{Observer:FakeObserver,reduced:()=>reduce});
+const visibility=ratio=>callback([{target:chart,intersectionRatio:ratio,isIntersecting:ratio>0}]);
+motion.updated();assert.equal(plays,0,'Do not animate offscreen');
+visibility(.3);assert.equal(plays,1);
+visibility(.2);visibility(.3);assert.equal(plays,1,'No replay from minor scrolling');
+visibility(0);assert.equal(cancels,1);
+visibility(.5);assert.equal(plays,2,'Replay when the chart returns into view');
+motion.updated();assert.equal(plays,3,'Animate changed chart data');
+reduce=true;motion.updated();assert.equal(plays,3,'Respect reduced motion');
+motion.dispose();visibility(0);visibility(.5);assert.equal(plays,3);assert.equal(disconnects,1);
+assert.ok(dashboard.includes('this.lastChartSvg!==svg'),'Identical redraws do not interrupt animation');
+assert.ok(community.includes('analytics?.dispose()'),'Release observer on profile replacement');
+assert.ok(!analyticsMarkup.includes('topicBreakdown'));
+
+assert.ok(community.includes('animateRhythm:true'),'Profile explicitly opts into chart motion');
+assert.ok(dashboard.includes('animateRhythm=false'),'Legacy dashboard stays opt-out by default');

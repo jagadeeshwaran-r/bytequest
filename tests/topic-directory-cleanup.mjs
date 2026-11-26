@@ -68,7 +68,8 @@ assert.ok(editorCss.includes('::-webkit-scrollbar:horizontal'),'Remove duplicate
 assert.ok(editorCss.includes('.editor-resizer'),'Keep functional code height resizer');
 assert.ok(index.includes('editor-cleanup.css?v=editor-cleanup-1'));
 assert.ok(studio.includes('editor-cleanup.css?v=editor-cleanup-1'));
-assert.ok(analyticsMarkup.includes('<h2>Topic coverage</h2>'));
+assert.ok(!analyticsMarkup.includes('<h2>Topic coverage</h2>'),'Remove redundant profile coverage; Solve Lists remains the collection workspace');
+assert.ok(index.includes('id="topicBreakdown"'),'Legacy dashboard remains compatible');
 assert.ok(!analyticsMarkup.includes('<h2>Patterns growing</h2>'));
 assert.ok(dashboard.includes('topicCoverageSummary(rows)'),'Show compact cover-all summary');
 assert.ok(dashboard.includes('topicExplorerPage(this.topicRows'),'Search and paginate through all topics');
