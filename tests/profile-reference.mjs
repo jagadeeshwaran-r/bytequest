@@ -43,3 +43,12 @@ assert.ok(!renderer.includes('<span class="eyebrow">PROFILE</span>'));
 assert.ok(compactCss.includes('metric-caption.is-adjusted'),'Keep adjusted streak disclosure visible');
 assert.ok(compactCss.includes('grid-template-rows:16px auto auto!important'));
 assert.ok(readFileSync('dist/streak-awards.js','utf8').includes('>PROSOLVER</textPath>'));
+
+// Final alignment overrides must load after the previous right-aligned layout.
+assert.ok(page.includes('compact-profile=2&amp;alignment=1'));
+assert.ok(compactCss.includes('--profile-section-inset:18px'));
+assert.ok(compactCss.includes('justify-items:start!important;align-items:start!important;text-align:left!important'));
+assert.ok(compactCss.includes('justify-content:flex-start!important;align-items:baseline!important;text-align:left!important'));
+assert.ok(compactCss.includes('justify-self:start!important;justify-content:flex-start!important'));
+assert.ok(compactCss.includes('padding-inline:var(--profile-section-inset)!important'));
+assert.ok(compactCss.includes('--profile-section-inset:12px'));
