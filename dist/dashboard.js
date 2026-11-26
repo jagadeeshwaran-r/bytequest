@@ -1,3 +1,4 @@
+import {createRhythmMotion} from './rhythm-motion.js?v=1';
 import {bucketSolves,solveEvents,chartValues,chartDomain,straightPath,visiblePeriodCount,topicProgress,forecastSolvePace,smoothPath} from './dashboard-model.js?v=backtested-1';
 import {escapeHtml as h} from './community-model.js';
 import {topicCoverageSummary,topicExplorerPage} from './topic-explorer.js?v=topics-1';
@@ -17,8 +18,9 @@ export class Dashboard{
   const host=this.$('frequencyChart').closest('section'),controls=host.querySelector('.comparison-controls');
   controls.innerHTML='<details class="friend-picker"><summary>Compare with friends <span class="compare-count"></span></summary><div class="friend-picker-panel"><div class="friend-picker-actions"><button type="button" data-all>All friends</button><button type="button" data-clear>Clear</button></div><input class="friend-filter" type="search" placeholder="Filter friends…" aria-label="Filter comparison friends"><div class="friend-checks"></div></div></details>';
   controls.hidden=!this.allowCompare;this.picker=controls.querySelector('.friend-picker');controls.querySelector('[data-all]').onclick=()=>{this.selected=new Set(this.friends.map(p=>p.public_id));this.paintPicker();this.render();};controls.querySelector('[data-clear]').onclick=()=>{this.selected.clear();this.paintPicker();this.render();};controls.querySelector('input').oninput=()=>this.paintPicker();
-  this.tooltip=document.createElement('div');this.tooltip.className='chart-tooltip';this.tooltip.hidden=true;this.tooltip.setAttribute('role','status');this.$('frequencyChart').closest('.graph-scroll').append(this.tooltip);this.paintPicker();
+  this.rhythmMotion=this.$('frequencyChart').closest('#profileAnalytics')?createRhythmMotion(this.$('frequencyChart')):null;this.tooltip=document.createElement('div');this.tooltip.className='chart-tooltip';this.tooltip.hidden=true;this.tooltip.setAttribute('role','status');this.$('frequencyChart').closest('.graph-scroll').append(this.tooltip);this.paintPicker();
  }
+ dispose(){this.epoch++;this.accountGeneration++;this.rhythmMotion?.dispose();}
  accountChanged(){this.epoch++;this.accountGeneration++;this.loadedFor=null;this.friends=[];this.selected.clear();this.cache.clear();this.paintPicker();}
  paintPicker(){const q=(this.picker.querySelector('input').value||'').toLowerCase(),list=this.picker.querySelector('.friend-checks');this.picker.querySelector('.compare-count').textContent=this.selected.size?'('+this.selected.size+')':'';list.innerHTML=this.friends.length?this.friends.filter(p=>(p.username+' '+p.display_name).toLowerCase().includes(q)).map(p=>'<label>'+avatar(p)+'<span>'+h(p.display_name)+'<small>@'+h(p.username)+'</small></span><input type="checkbox" data-friend="'+h(p.public_id)+'" '+(this.selected.has(p.public_id)?'checked':'')+'></label>').join(''):'<p class="muted">Follow discoverable profiles to compare their activity.</p>';list.querySelectorAll('[data-friend]').forEach(input=>input.onchange=()=>{if(input.checked)this.selected.add(input.dataset.friend);else this.selected.delete(input.dataset.friend);this.picker.querySelector('.compare-count').textContent=this.selected.size?'('+this.selected.size+')':'';this.render();});}
  async open(){
@@ -53,7 +55,7 @@ async render(){
   const ticket=++this.epoch,$=this.$,catalog=this.getCatalog(),selected=$('graphTopic').value,topics=[...new Set([...catalog.map(p=>p.topic),...(this.getEvents?.()||[]).map(e=>e.topic)])].filter(Boolean).sort();$('graphTopic').replaceChildren(new Option('All topics',''),...topics.map(t=>new Option(t,t)));if(topics.includes(selected))$('graphTopic').value=selected;
   const opts={mode:$('graphMode').value,month:$('graphMonth').value,year:Number($('graphYear').value),topic:$('graphTopic').value};$('graphMonth').hidden=opts.mode!=='daily';$('graphYear').hidden=opts.mode==='daily';let own;
   const events=this.getEvents?this.getEvents():solveEvents(this.getState(),catalog);
-  try{own=bucketSolves(events,opts);this.paintTopics(topicProgress(catalog,this.topicInsights,events,opts));}catch(e){$('dashboardMessage').textContent=e.message;return;}
+  try{own=bucketSolves(events,opts);if($('topicBreakdown'))this.paintTopics(topicProgress(catalog,this.topicInsights,events,opts));}catch(e){$('dashboardMessage').textContent=e.message;return;}
   const series=[{name:this.name,profile:this.profile,data:own,events,color:'var(--accent)'}];this.draw(series);
   for(const [id,v] of [['dashboardSolved',this.summary?.solved??0],['dashboardActive',this.summary?.active??0],['dashboardPeriod',own.total]])if($(id))$(id).textContent=v;
   if(!this.allowCompare){$('dashboardMessage').textContent='';$('dashboardMessage').hidden=true;return;}
@@ -172,6 +174,7 @@ async render(){
    const v=i*domain.step;
    svg+='<line x1="38" x2="882" y1="'+y(v)+'" y2="'+y(v)+'" class="graph-grid"/><text x="28" y="'+(y(v)+4)+'" text-anchor="end">'+v+'</text>';
   }
+  if(this.rhythmMotion)svg+='<g class="rhythm-series">';
   for(const s of lines){
    const historical=s.values.slice(0,visible).map((v,i)=>[x(i),y(v)]);
    if(historical.length)svg+='<path class="graph-curve graph-precise-line" fill="none" stroke="'+s.color+'" stroke-width="2.3" stroke-linejoin="round" d="'+straightPath(historical)+'"/>';
@@ -188,10 +191,12 @@ async render(){
     }
    }
   }
+  if(this.rhythmMotion)svg+='</g>';
   keys.forEach((key,i)=>{if(i===0||i===keys.length-1||i%Math.ceil(keys.length/7)===0)svg+='<text x="'+x(i)+'" y="221" text-anchor="middle">'+h(key.length===10?key.slice(5):key.length===7?key.slice(-2):key)+'</text>';});
   if(!visible)svg+='<text x="460" y="105" text-anchor="middle" class="graph-no-data">This period is in the future</text>';
   svg+='<line id="chartCrosshair" class="chart-crosshair" x1="38" x2="38" y1="16" y2="200" visibility="hidden"/>';
-  chart.innerHTML=svg;
+  if(!this.rhythmMotion||this.lastChartSvg!==svg){chart.innerHTML=svg;this.lastChartSvg=svg;this.rhythmMotion?.updated();}
+  else chart.querySelector('#chartCrosshair')?.setAttribute('visibility','hidden');
   chart.setAttribute('tabindex','0');
   chart.setAttribute('aria-label','Solving activity for '+lines.length+' learners. Solid lines are actual accepted solves. Dotted lines are illustrative forecasts, when available. Use left and right arrow keys to inspect.');
   $('graphLegend').innerHTML=lines.map(s=>'<span class="graph-person" style="--series-color:'+s.color+'">'+avatar(s.profile)+'<i></i>'+h(s.name)+'</span>').join('');

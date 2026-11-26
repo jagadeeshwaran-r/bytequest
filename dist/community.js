@@ -7,8 +7,8 @@ import {hydrateRecentProblemNumbers} from './profile-extras.js?v=profile-compact
 import {profileDetails} from './profile-fields.js?v=profile-github-1';
 import {rankCup} from './rewards.js?v=upgrade-2';
 import {receivedPresence,presenceOnline,relativeTime,profilePreferences} from './presence-model.js?v=social-1';
-import {Dashboard} from './dashboard.js?v=topic-directory-1';
-import {analyticsMarkup} from './profile-analytics.js?v=topic-directory-1';
+import {Dashboard} from './dashboard.js?v=topic-directory-1&rhythm-motion=1';
+import {analyticsMarkup} from './profile-analytics.js?v=topic-directory-1&rhythm-motion=1';
 import {mountShell} from './shell.js?v=quiet-2&online-alerts=1';
 import {prepareAvatar} from './avatar-upload.js';
 import {Cloud} from './cloud.js?v=outage-1';
@@ -104,7 +104,7 @@ async function route(){if(!self||!cloud.user)return;const ticket=++epoch,hash=lo
 function fillProfile(){const p=self.profile||{};for(const key of ['organization_type','organization_name','organization_url','linkedin_url','github_url'])document.getElementById('detail_'+key).value=p[key]||'';$('profileUsername').value=p.username||'';$('profileName').value=p.display_name||cloud.user?.user_metadata?.full_name||'';$('profileBio').value=p.bio||'';$('profileAvatar').value=p.uploadedAvatar?'':p.avatar_url||'';$('photoPreview').hidden=!p.avatar_url;$('photoPreview').src=p.avatar_url||'';const preferences=profilePreferences(self.profile);$('profileDiscoverable').checked=preferences.discoverable;$('profilePresence').checked=preferences.show_presence;pendingPhoto=null;$('profilePhotoFile').value='';$('profileEditStatus').hidden=true;$('profileEditStatus').textContent='';$('profileEditStatus').dataset.error='false';updateProfilePreview();}
 function renderProfile(r,{presencePending=false}={}){
  stopStreakCountdown();stopStreakCountdown=()=>{};
- viewedProfileResult=r;viewedTarget=r.profile.public_id;if(analytics){analytics.epoch++;analytics.accountGeneration++;}const p=r.profile;$('profileContent').innerHTML=profileMarkup(r,{catalogCount:catalog.length,catalog,admin:self.admin,canFollow:Boolean(self.profile?.discoverable)});
+ viewedProfileResult=r;viewedTarget=r.profile.public_id;analytics?.dispose();const p=r.profile;$('profileContent').innerHTML=profileMarkup(r,{catalogCount:catalog.length,catalog,admin:self.admin,canFollow:Boolean(self.profile?.discoverable)});
  viewedPresence=presencePending?null:receivedPresence(r.presence);
  const presenceNode=$('profilePresenceStatus');
  if(presencePending){presenceNode.dataset.status='checking';presenceNode.className='presence';presenceNode.textContent='Checking status…';}

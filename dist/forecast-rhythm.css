@@ -68,3 +68,10 @@
   animation:none!important;
  }
 }
+
+/* Animate only the plotted series via viewport-driven Web Animations.
+   Axes, tooltips and exact historical geometry remain stationary. */
+.community-page #profileAnalytics #frequencyChart .rhythm-series :is(.graph-forecast-line,.graph-precise-line,.graph-forecast-point,.graph-actual-point){animation:none!important}
+@media(prefers-reduced-motion:reduce){
+ .community-page #profileAnalytics #frequencyChart .rhythm-series{clip-path:none!important;opacity:1!important}
+}
