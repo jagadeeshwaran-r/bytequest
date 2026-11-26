@@ -198,3 +198,33 @@ html[data-theme="light"] .community-page #profileContent .streak-award:hover .st
  .community-page #profileContent .streak-awards-heading{flex-basis:auto;min-width:0}
  .community-page #profileContent .streak-award,.community-page #profileContent .streak-award.tier-silver{width:76px;flex-basis:76px}
 }
+
+/* Shared profile inset and aligned, equal-width metric columns. */
+.community-page #profileContent .profile-main-card.profile-unboxed{--profile-section-inset:18px;--profile-section-gap:14px}
+.community-page #profileContent .profile-overview{padding:8px var(--profile-section-inset) var(--profile-section-gap)!important;row-gap:14px!important;box-sizing:border-box}
+.community-page #profileContent .profile-hero{align-items:center!important}
+.community-page #profileContent .profile-hero .profile-actions{align-self:center!important}
+.community-page #profileContent .profile-overview .social-stats.profile-metrics{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px 24px!important;padding:14px 0 0!important}
+.community-page #profileContent .profile-overview .profile-metrics .social-stat{grid-template-rows:18px minmax(34px,auto) minmax(24px,auto)!important;justify-items:start!important;align-items:start!important;text-align:left!important;row-gap:4px!important}
+.community-page #profileContent .profile-overview .profile-metrics .social-stat .metric-label{width:100%;text-align:left!important;line-height:18px!important}
+.community-page #profileContent .profile-overview .profile-metrics .social-stat b{justify-content:flex-start!important;align-items:baseline!important;text-align:left!important;align-self:start!important;line-height:1.12!important}
+.community-page #profileContent .profile-overview .profile-metrics .metric-solved .metric-progress{justify-self:start!important;align-self:start!important;width:min(100%,160px);margin:7px 0 0!important}
+.community-page #profileContent .profile-overview .profile-metrics .streak-reset{justify-self:start!important;justify-content:flex-start!important;align-self:start!important;text-align:left!important;margin:0!important;min-width:0;max-width:100%;white-space:normal}
+.community-page #profileContent .profile-overview .profile-metrics .metric-caption.is-adjusted{justify-self:start!important;text-align:left!important}
+.community-page #profileContent .profile-calendar-section,
+.community-page #profileContent .recent-solves{padding-inline:var(--profile-section-inset)!important;margin-bottom:var(--profile-section-gap)!important;box-sizing:border-box}
+.community-page #profileContent .streak-awards{padding:8px var(--profile-section-inset) 12px;gap:12px 24px;margin:0 0 var(--profile-section-gap);box-sizing:border-box;align-items:center}
+.community-page #profileContent .streak-awards-heading{flex:0 1 auto;min-width:0}
+.community-page #profileContent .recent-solves li a{padding-inline:0!important}
+.community-page #profileContent .profile-expertise{padding-inline:var(--profile-section-inset)!important}
+@media(max-width:650px){
+ .community-page #profileContent .profile-main-card.profile-unboxed{--profile-section-inset:12px;--profile-section-gap:12px}
+ .community-page #profileContent .profile-overview .social-stats.profile-metrics{gap:6px 10px!important}
+ .community-page #profileContent .profile-overview .profile-metrics .social-stat{grid-template-rows:minmax(24px,auto) minmax(28px,auto) minmax(24px,auto)!important}
+ .community-page #profileContent .profile-overview .profile-metrics .social-stat .metric-label{line-height:12px!important;overflow-wrap:anywhere}
+ .community-page #profileContent .profile-overview .profile-metrics .social-stat b{font-size:clamp(21px,5.8vw,31px)!important;gap:2px!important}
+ .community-page #profileContent .profile-overview .profile-metrics .social-stat b small{font-size:10px!important}
+ .community-page #profileContent .profile-overview .profile-metrics .streak-reset{gap:2px 4px;font-size:9px}
+ .community-page #profileContent .profile-overview .profile-metrics .streak-reset time{padding:2px 3px;font-size:9px}
+ .community-page #profileContent .profile-hero .profile-actions{max-width:100%;min-width:0}
+}
