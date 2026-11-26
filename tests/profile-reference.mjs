@@ -35,3 +35,11 @@ assert.ok(css.includes('#profileAnalytics .dashboard-chart'),"Bring solving rhyt
 assert.ok(css.includes('.recent-solves li a'),"Keep recently-solved rows consistent");
 assert.ok(css.includes('@media(max-width:650px)')&&css.includes('prefers-reduced-motion'));
 console.log("PASS: reference-aligned theme, uniform right metrics, no flame icon, heatmap legend, recent list and rhythm chart.");
+
+const compactCss=readFileSync('dist/profile-streak-awards.css','utf8');
+const renderer=readFileSync('dist/profile-view.js','utf8');
+assert.ok(renderer.indexOf('<section class="profile-calendar-section">')<renderer.lastIndexOf('earnedStreakBadgesMarkup(r.stats.days,r.stats.serverDay)'),'Calendar comes before earned badges');
+assert.ok(!renderer.includes('<span class="eyebrow">PROFILE</span>'));
+assert.ok(compactCss.includes('metric-caption.is-adjusted'),'Keep adjusted streak disclosure visible');
+assert.ok(compactCss.includes('grid-template-rows:16px auto auto!important'));
+assert.ok(readFileSync('dist/streak-awards.js','utf8').includes('>PROSOLVER</textPath>'));
