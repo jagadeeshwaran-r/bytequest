@@ -46,7 +46,7 @@ assert.ok(full.includes('public.bytequest_profile_rank')&&full.includes("public.
  'Profile rank must use the same weighted global scoreboard');
 const board=readFileSync('dist/leaderboard.js','utf8');
 const profile=readFileSync('dist/profile-view.js','utf8');
-assert.ok(board.includes("'yourPoints'")&&board.includes('r.me?.points'),
+assert.ok(board.includes('r.users.map(leaderboardRow)')&&board.includes('r.me.points')&&readFileSync('dist/leaderboard-model.js','utf8').includes('Number(p.points)'),
  'Leaderboard points display must come from server-computed points');
 assert.ok(profile.includes('r.ranking?.points'),
  'Profile score must come from server-computed points');
