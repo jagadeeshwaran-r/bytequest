@@ -96,7 +96,7 @@ function awardArtwork(badge){
    '<circle class="stamp-ring stamp-ring-inner" cx="100" cy="100" r="82"/>'+
   '</g>'+
   '<g class="stamp-impression" mask="url(#'+id+'-ink)">'+
-   '<text class="stamp-curve-text"><textPath href="#'+id+'-arc" startOffset="50%" text-anchor="middle">BYTEQUEST</textPath></text>'+
+   '<text class="stamp-curve-text"><textPath href="#'+id+'-arc" startOffset="50%" text-anchor="middle">PROSOLVER</textPath></text>'+
    '<text class="stamp-number" x="100" y="120" text-anchor="middle" style="font-size:'+size+'px">'+digits+'</text>'+
    '<text class="stamp-star" x="35" y="109" text-anchor="middle">★</text>'+
    '<text class="stamp-star" x="165" y="109" text-anchor="middle">★</text>'+
@@ -112,9 +112,9 @@ export function earnedStreakBadgesMarkup(days,serverDay){
  const earned=earnedStreakBadges(days,serverDay);
  if(!earned.length)return '';
  return '<section class="streak-awards" aria-labelledby="streakAwardsTitle">'+
-  '<div class="streak-awards-heading"><div><span class="eyebrow">ACHIEVEMENTS</span>'+
+  '<div class="streak-awards-heading"><div>'+
   '<h3 id="streakAwardsTitle">Streak badges</h3></div>'+
-  '<p>Lifetime milestones · earned from consecutive UTC solve days</p></div>'+
+  '<p>Earned streak milestones · UTC</p></div>'+
   '<div class="streak-awards-list" role="list">'+earned.map(badge=>{
    const description=badge.days+'-day '+badge.name.toLowerCase()+' streak badge earned '+badge.count+
     (badge.count===1?' time':' times')+', last earned '+badge.lastEarned;
