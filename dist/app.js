@@ -280,11 +280,27 @@ function renderTrace(){
 function pauseTrace(){if(traceTimer)clearInterval(traceTimer);traceTimer=null;if($("tracePlay"))$("tracePlay").textContent="▶ Play";}
 function formatArgs(args){return args.map((v,i)=>current.params[i].name+" = "+JSON.stringify(v)).join(", ");}
 function allCases(){return [...current.tests.slice(0,2),...customCases];}
+let testPanelMode="case";
+function showTestPanelMode(mode){
+  testPanelMode=mode;
+  $("testcaseMode").setAttribute("aria-pressed",String(mode==="case"));
+  $("testResultMode").setAttribute("aria-pressed",String(mode==="result"));
+  $("resultOutput").hidden=mode!=="result";
+  renderTests();
+}
+$("testcaseMode").onclick=()=>showTestPanelMode("case");
+$("testResultMode").onclick=()=>showTestPanelMode("result");
+new MutationObserver(()=>{
+  const output=$("resultOutput");
+  if(output.textContent.trim()) showTestPanelMode("result");
+  else if(testPanelMode==="result") showTestPanelMode("case");
+}).observe($("resultOutput"),{childList:true,subtree:true,characterData:true});
+$("resultOutput").hidden=true;
 function renderTests(){
   const cases=allCases(); selectedCase=Math.min(selectedCase,cases.length-1);
   $("testTabs").innerHTML=cases.map((c,i)=>'<button data-case="'+i+'" class="'+(selectedCase===i?"active ":"")+(results?.cases?.[i]?(results.cases[i].passed?"pass":"fail"):"")+'">'+(i<2?"Case "+(i+1):"Custom "+(i-1))+(results?.cases?.[i]?(results.cases[i].passed?" ✓":" ×"):"")+'</button>').join("");
   $("testTabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{selectedCase=Number(b.dataset.case);renderTests();});
-  const test=cases[selectedCase],result=results?.cases?.[selectedCase];
+  const test=cases[selectedCase],result=testPanelMode==="result"?results?.cases?.[selectedCase]:null;
   $("testDetail").innerHTML='<div><label>INPUT</label><code>'+html(formatArgs(test.args))+'</code></div><div><label>EXPECTED</label><code>'+html(JSON.stringify(test.expected))+'</code></div>'+(result?'<div><label>YOUR OUTPUT</label><code>'+html(result.actual)+'</code></div>':"")+'<p class="test-caption">'+html(test.label)+(selectedCase>=2?' <button id="removeCase" class="remove-case">Remove this case ×</button>':"")+'</p>';
   if($("removeCase"))$("removeCase").onclick=()=>{customCases.splice(selectedCase-2,1);selectedCase=0;results=null;$("resultOutput").replaceChildren();renderTests();};
 }
@@ -565,7 +581,7 @@ $("customForm").onsubmit=event=>{
   event.preventDefault();try{
     if(customCases.length>=8)throw new Error("Keep up to 8 custom cases per quest session.");
     const c={args:JSON.parse($("customArgs").value),expected:JSON.parse($("customExpected").value),label:"Your experiment"};
-    buildTests(current,[c]);customCases.push(c);selectedCase=allCases().length-1;results=null;renderTests();$("customDialog").close();notify("Custom case added. Run it with your samples.");
+    buildTests(current,[c]);customCases.push(c);selectedCase=allCases().length-1;results=null;$("resultOutput").replaceChildren();showTestPanelMode("case");$("customDialog").close();notify("Custom case added. Run it with your samples.");
   }catch(error){$("customError").textContent=error.message;}
 };
 $("resetCode").onclick=()=>$("resetDialog").showModal();
