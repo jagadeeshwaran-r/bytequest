@@ -314,3 +314,18 @@ body.bq-dragging-editor{user-select:none!important;cursor:row-resize!important}
 #practiceView .test-detail .test-caption{margin:0;font-size:11px}
 #practiceView #resultOutput[hidden]{display:none!important}
 #practiceView .runbar #runBtn,#practiceView .runbar #submitBtn{min-height:34px;padding:7px 12px;font-size:12px}
+
+#practiceView .test-panel .test-tabs{padding-top:6px!important;margin:0!important;gap:5px}
+#practiceView .test-panel .test-tabs button{padding:5px 9px!important;min-height:25px!important}
+#practiceView .test-panel .test-tabs button.pass{color:#22a06b!important}
+#practiceView .test-panel .test-tabs button.fail{color:#e05260!important}
+#practiceView .test-panel .test-detail{gap:6px!important;margin-top:6px!important}
+#practiceView .test-panel .case-field{min-width:0;margin:0!important}
+#practiceView .test-panel .case-field label{font-size:10px!important;margin:0 0 3px!important;text-transform:none}
+#practiceView .test-panel .case-field code{padding:5px 8px!important;min-height:0!important;line-height:1.45!important;font-size:11px!important}
+#practiceView .case-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#practiceView .test-panel .result-output{margin:4px 0!important;padding:0!important}
+#practiceView .test-panel .result-summary{color:#22a06b!important;font-size:13px!important;font-weight:600;padding:4px 0!important}
+#practiceView .test-panel .result-summary.failed{color:#e05260!important}
+#practiceView #customBtn[hidden]{display:none!important}
+@media(max-width:480px){#practiceView .case-comparison{grid-template-columns:minmax(0,1fr)}}
