@@ -286,6 +286,7 @@ function showTestPanelMode(mode){
   $("testcaseMode").setAttribute("aria-pressed",String(mode==="case"));
   $("testResultMode").setAttribute("aria-pressed",String(mode==="result"));
   $("resultOutput").hidden=mode!=="result";
+  $("customBtn").hidden=mode==="result";
   renderTests();
 }
 $("testcaseMode").onclick=()=>showTestPanelMode("case");
@@ -301,7 +302,9 @@ function renderTests(){
   $("testTabs").innerHTML=cases.map((c,i)=>'<button data-case="'+i+'" class="'+(selectedCase===i?"active ":"")+(results?.cases?.[i]?(results.cases[i].passed?"pass":"fail"):"")+'">'+(i<2?"Case "+(i+1):"Custom "+(i-1))+(results?.cases?.[i]?(results.cases[i].passed?" ✓":" ×"):"")+'</button>').join("");
   $("testTabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{selectedCase=Number(b.dataset.case);renderTests();});
   const test=cases[selectedCase],result=testPanelMode==="result"?results?.cases?.[selectedCase]:null;
-  $("testDetail").innerHTML='<div><label>INPUT</label><code>'+html(formatArgs(test.args))+'</code></div><div><label>EXPECTED</label><code>'+html(JSON.stringify(test.expected))+'</code></div>'+(result?'<div><label>YOUR OUTPUT</label><code>'+html(result.actual)+'</code></div>':"")+'<p class="test-caption">'+html(test.label)+(selectedCase>=2?' <button id="removeCase" class="remove-case">Remove this case ×</button>':"")+'</p>';
+  const field=(label,value)=>'<div class="case-field"><label>'+html(label)+'</label><code>'+html(value)+'</code></div>';
+  const inputs=test.args.map((v,i)=>field((current.params[i]?.name||"Input")+" =",JSON.stringify(v))).join("");
+  $("testDetail").innerHTML=inputs+(result?'<div class="case-comparison">'+field("Output",result.actual)+field("Expected",JSON.stringify(test.expected))+'</div>':field("Expected",JSON.stringify(test.expected)))+(selectedCase>=2?'<button id="removeCase" class="remove-case">Remove custom case ×</button>':"");
   if($("removeCase"))$("removeCase").onclick=()=>{customCases.splice(selectedCase-2,1);selectedCase=0;results=null;$("resultOutput").replaceChildren();renderTests();};
 }
 document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;renderLearning();});
@@ -374,7 +377,7 @@ async function run(submit,{forceBrowser=false,sourceOverride=null}={}){
     renderTests();
     const passed=result.cases.filter(c=>c.passed).length, accepted=passed===cases.length;
     const output=$("resultOutput");output.replaceChildren();
-    const summary=document.createElement("div");summary.className="result-summary"+(accepted?"":" failed");summary.textContent=(accepted?"✓ ":"↻ ")+passed+" / "+cases.length+" cases passed · "+result.elapsedMs+" ms "+(language==="java"?"browser execution":"online execution");output.append(summary);
+    const summary=document.createElement("div");summary.className="result-summary"+(accepted?"":" failed");summary.textContent=(accepted?"All cases passed":"Wrong answer")+" · "+passed+"/"+cases.length+" · "+result.elapsedMs+" ms";output.append(summary);
     result.cases.filter(c=>!c.passed).slice(0,5).forEach(c=>{
       const detail=document.createElement("div");detail.textContent=c.name+"\nExpected: "+c.expected+"\nYour output: "+c.actual+"\n";output.append(detail);
     });
