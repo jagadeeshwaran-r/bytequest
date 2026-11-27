@@ -5,7 +5,7 @@ import {launchCelebration} from './celebration.js?v=next-1';
 import {mountEditorTools} from './editor-tools.js?v=copy-enabled-1';
 import {matchingCurlyBraces} from './brace-match.js?v=brace-1';
 import {mountWorkspaceLayout} from './workspace-layout.js?v=workspace-1';
-import {submissionFeedback} from './submission-feedback.js?v=reliability-1&public-unlock=2';
+import {submissionFeedback} from './submission-feedback.js?v=reliability-1&public-unlock=2&compact-verdict=1';
 import {usesRemoteSubmit,browserSubmissionCases,browserSubmissionVerdict,privateJavaJudgeUnavailable} from './browser-submit.js?v=verified-java-1';
 import {privateJudgeUnavailableSummary} from './verification-evidence.js?v=1';
 import {createPracticeSubmission,addPracticeSubmission,reconcilePracticeProgress} from './practice-history.js?v=practice-history-2';
@@ -446,12 +446,12 @@ async function submitOnline(resume=null){
   }else{
   if(result.status!=='unavailable')logAttempt(p,result.passed||0,result.total||p.tests.length);
   const output=$("resultOutput"),feedback=submissionFeedback(result);output.innerHTML=feedback.html;notify(feedback.announcement);output.tabIndex=-1;output.focus({preventScroll:true});output.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
-  if(result.accepted){const header=output.querySelector('.submission-verdict>header');const metrics=document.createElement('div');metrics.className='verdict-metrics';const runtime=document.createElement('span');runtime.textContent=runtimeLabel(result.runtimeMs??result.submission?.runtime_ms);const memory=document.createElement('span');memory.textContent=memoryLabel(result.memoryBytes??result.submission?.memory_bytes);metrics.append(runtime,memory);const link=document.createElement('button');link.className='verdict-link';link.textContent=result.verificationScope==='public'?'View public showcase':'View community rankings';link.onclick=()=>{tab='submissions';renderLearning();document.querySelector('[data-history]')?.click();};(header||output).append(metrics,link);
+  if(result.accepted){const header=output.querySelector('.submission-verdict>header');const metrics=document.createElement('div');metrics.className='verdict-metrics';const runtime=document.createElement('span');runtime.textContent=runtimeLabel(result.runtimeMs??result.submission?.runtime_ms);const memory=document.createElement('span');memory.textContent=memoryLabel(result.memoryBytes??result.submission?.memory_bytes);metrics.append(runtime,memory);const link=document.createElement('button');link.className='verdict-link';link.textContent=result.verificationScope==='public'?'Showcase':'Rankings';link.onclick=()=>{tab='submissions';renderLearning();document.querySelector('[data-history]')?.click();};(header||output).append(metrics,link);
    serverAcceptedRevisions.add(user+':'+p.id+':'+p.revision);
    completeQuest(p,result.verificationScope==='public'&&Number(p.hiddenCount)>0?'public':false);
    if(tab==='submissions')submissions.refresh();
    const answer=document.createElement('button');answer.type='button';answer.className='verdict-link';
-   answer.textContent='View unlocked Java answer';
+   answer.textContent='Java answer';
    answer.onclick=()=>{if(current?.id!==p.id||cloud.user?.id!==user)return;
      tab='learn';renderLearning();$('referenceBtn')?.click();};
    (header||output).append(answer);}
