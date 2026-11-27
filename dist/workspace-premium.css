@@ -300,3 +300,17 @@ body.bq-dragging-editor{user-select:none!important;cursor:row-resize!important}
 @media(prefers-reduced-motion:reduce){
   #practiceView :is(.pane-resizer,.editor-resizer){transition:none}
 }
+
+/* Compact test workspace; preserve theme tokens and existing resize behavior. */
+#practiceView .test-header{min-height:36px;gap:8px}
+#practiceView .test-mode-tabs{display:flex;align-items:stretch;gap:14px;align-self:stretch}
+#practiceView .test-mode-tabs button{background:none;border:0;border-bottom:2px solid transparent;border-radius:0;padding:6px 2px;color:var(--muted);font:500 12px var(--font-sans);cursor:pointer}
+#practiceView .test-mode-tabs button[aria-pressed="true"]{color:var(--text);border-bottom-color:var(--text);font-weight:600}
+#practiceView #customBtn{font-size:18px;line-height:1;padding:4px 8px}
+#practiceView .test-tabs{display:flex;flex-wrap:wrap;gap:6px;padding-top:10px}
+#practiceView .test-detail{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:9px;margin-top:10px}
+#practiceView .test-detail label{display:block;margin-bottom:5px;font-size:11px}
+#practiceView .test-detail code{display:block;padding:9px 11px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere}
+#practiceView .test-detail .test-caption{margin:0;font-size:11px}
+#practiceView #resultOutput[hidden]{display:none!important}
+#practiceView .runbar #runBtn,#practiceView .runbar #submitBtn{min-height:34px;padding:7px 12px;font-size:12px}
