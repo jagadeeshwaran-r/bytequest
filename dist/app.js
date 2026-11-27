@@ -533,8 +533,8 @@ function completeQuest(p,practice=false){
   }
   else if(isReview){state.reviews[p.id].step++;}
   if(first||isReview)state.activity.push({id:p.id,at:Date.now(),type:first?"solved":"review",passed:p.tests.length,total:p.tests.length});
-  $("successTitle").textContent=first?"Aha! Quest complete.":isReview?"That pattern is sticking.":"Another good repetition.";
-  $("successCopy").textContent=(first?"+"+pointsFor(p.difficulty)+" points! ":isReview?"Review complete! ":"")+p.title+(practice==='public'?" passed published public cases on the server. Hidden cases were NOT checked.":practice?" passed the browser practice cases. No server submission was recorded.":" passed the problem test suite.")+" "+(first?"Your first review is in 2 days.":isReview?"Review progress saved.":"Try explaining why your approach works.");
+  $("successTitle").textContent=practice?"Practice passed":"Solution accepted";
+  $("successCopy").textContent=(first?"+"+pointsFor(p.difficulty)+" points! ":isReview?"Review complete! ":"")+p.title+(practice==='public'?" passed published public cases on the server. Hidden cases were NOT checked.":practice?" passed the browser practice cases. No server submission was recorded.":" passed the problem test suite.")+" "+(first?"Review scheduled in 2 days.":isReview?"Review progress saved.":"");
   $("successNote").value=state.notes[p.id]||"";
   document.querySelectorAll("[data-confidence]").forEach(b=>b.classList.toggle("selected",Number(b.dataset.confidence)===state.confidence[p.id]));
   if(!persist()){
@@ -543,7 +543,7 @@ function completeQuest(p,practice=false){
     notify("Tests passed, but the solve was not saved. Export your work and retry.");
     return false;
   }
-  updateStats();renderMap();if(tab==="learn"&&current.id===p.id)renderLearning();$("successDialog").showModal();celebrate();
+  updateStats();renderMap();if(tab==="learn"&&current.id===p.id)renderLearning();$("successDialog").querySelector(".success-review").open=false;$("successDialog").showModal();
   // Clear stale profile/leaderboard snapshots and flush a new accepted solve
   // immediately, rather than waiting for the debounced draft sync.
   if(accountReady&&cloud.user?.id===accountOwner){
