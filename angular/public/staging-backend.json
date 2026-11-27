@@ -1,0 +1,6 @@
+{
+  "enabled": true,
+  "apiUrl": "https://ainsxwxvfybhwdennsvh.supabase.co/functions/v1/bytequest-firebase",
+  "publishableKey": "sb_publishable_ZI6u30nsj51Y5LVn25MvDA_fWfK2xU0",
+  "note": "ISOLATED STAGING ONLY — Firebase verified; test database, no production data, Firebase account deletion disabled and private judge unavailable."
+}

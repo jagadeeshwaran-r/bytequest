@@ -1,0 +1,23 @@
+name: Angular staging real backend smoke
+on:
+  push:
+    branches: [test/angular-migration]
+    paths:
+      - 'tests/angular-staging-live-http.mjs'
+      - '.github/workflows/angular-staging-live-api.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  staging-real-http:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Live staging Edge Function security, maintenance and Firebase authentication smoke
+        run: node tests/angular-staging-live-http.mjs

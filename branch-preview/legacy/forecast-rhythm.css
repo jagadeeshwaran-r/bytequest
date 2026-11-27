@@ -1,0 +1,70 @@
+/* ByteQuest solving-rhythm forecasts: distinct estimated data, calm motion. */
+.community-page #profileAnalytics .graph-forecast-toggle{
+ display:inline-flex;align-items:center;justify-content:flex-start;
+ gap:7px;min-height:35px;padding:6px 10px;
+ border:1px solid color-mix(in srgb,var(--accent) 22%,var(--border));
+ border-radius:7px;
+ background:var(--surface-2);color:var(--text);
+ cursor:pointer;white-space:nowrap;
+ font:500 10px/1.4 var(--font-sans);
+}
+.community-page #profileAnalytics .graph-forecast-toggle[hidden],
+.community-page #profileAnalytics .graph-forecast-note[hidden]{
+ display:none!important;
+}
+.community-page #profileAnalytics .graph-forecast-toggle input{
+ accent-color:var(--accent);
+ margin:0;width:13px;height:13px;flex:0 0 13px;
+}
+.community-page #profileAnalytics .graph-forecast-toggle:focus-within{
+ outline:2px solid var(--accent);outline-offset:2px;
+}
+.community-page #profileAnalytics .graph-forecast-note{
+ display:flex;align-items:center;gap:9px;
+ margin:8px 0 0!important;
+ font:400 10px/1.6 var(--font-sans);
+ color:var(--muted)!important;
+}
+.community-page #profileAnalytics .graph-forecast-note::before{
+ content:"";display:inline-block;
+ width:26px;min-width:26px;
+ border-top:2px dashed var(--accent);
+ opacity:.8;
+}
+.community-page #profileAnalytics #frequencyChart .graph-forecast-line{
+ stroke-dasharray:5 6;
+ opacity:.78;
+ stroke-linejoin:round;
+ /* Smoothly reveal only the estimated curve; never smooth actual counts. */
+ animation:forecast-appear .7s ease-out both!important;
+}
+.community-page #profileAnalytics #frequencyChart .graph-precise-line{
+ animation:history-appear .35s ease-out both!important;
+}
+.community-page #profileAnalytics #frequencyChart :is(.graph-forecast-point,.graph-actual-point){
+ animation:history-appear .4s ease-out both!important;
+}
+.community-page #profileAnalytics #frequencyChart .graph-forecast-point{
+ opacity:.8;
+}
+@keyframes forecast-appear{
+ from{opacity:0}
+ to{opacity:.78}
+}
+@keyframes history-appear{
+ from{opacity:.15}
+ to{opacity:1}
+}
+@media(max-width:620px){
+ .community-page #profileAnalytics .graph-forecast-toggle{
+  flex:1 1 100%;justify-content:center;
+ }
+ .community-page #profileAnalytics .graph-forecast-note{
+  font-size:9px;line-height:1.5;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ .community-page #profileAnalytics #frequencyChart :is(.graph-forecast-line,.graph-precise-line,.graph-forecast-point,.graph-actual-point){
+  animation:none!important;
+ }
+}

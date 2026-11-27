@@ -1,0 +1,299 @@
+/* ByteQuest Angular staging — editorial dark theme inspired by the user-supplied
+   HTML reference. Visual-only: no templates, copy, routing, data, or behavior changes.
+   Loaded after styles.css, with the original light theme intentionally untouched. */
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
+
+html[data-theme="dark"] body{background:#070709!important}
+html[data-theme="dark"] bq-root{
+  --page:#070709;--panel:#0e0e12;--panel-2:#14141a;
+  --surface:#0e0e12;--surface-2:#14141a;
+  --line:rgba(255,255,255,.08);--border:rgba(255,255,255,.08);
+  --text:#f4f4f6;--muted:#9898a6;--soft-text:#9898a6;
+  --subtle:#b4b4bf;--accent:#34d399;--color-scheme:dark;
+  background:#070709!important;color:var(--text)!important;
+}
+/* Reapply tokens to the existing page-specific roots, which previously
+   hard-coded the former green-black palette at higher specificity. */
+html[data-theme="dark"] bq-root:has(:is(.native-catalog,.native-practice,.native-leaderboard)){
+  --page:#070709;--panel:#0e0e12;--panel-2:#14141a;
+  --surface:#0e0e12;--surface-2:#14141a;
+  --line:rgba(255,255,255,.08);--border:rgba(255,255,255,.08);
+  --text:#f4f4f6;--muted:#9898a6;--soft-text:#9898a6;
+  --subtle:#b4b4bf;--accent:#34d399;
+}
+html[data-theme="dark"] bq-root .native-bytequest-content{
+  background-color:transparent!important;
+  background-image:
+    radial-gradient(ellipse 75% 45% at 50% -10%,rgba(255,255,255,.06),transparent 70%),
+    linear-gradient(to right,rgba(255,255,255,.016) 1px,transparent 1px),
+    linear-gradient(to bottom,rgba(255,255,255,.016) 1px,transparent 1px)!important;
+  background-size:100% 100%,64px 64px,64px 64px!important;
+  background-position:center top!important;
+}
+html[data-theme="dark"] bq-root:has(:is(.native-catalog,.native-practice,.native-leaderboard)) .native-bytequest-content{
+  background-image:
+    radial-gradient(ellipse 75% 45% at 50% -10%,rgba(255,255,255,.06),transparent 70%),
+    linear-gradient(to right,rgba(255,255,255,.016) 1px,transparent 1px),
+    linear-gradient(to bottom,rgba(255,255,255,.016) 1px,transparent 1px)!important;
+  background-size:100% 100%,64px 64px,64px 64px!important;
+}
+/* Reference's translucent capsule navigation; preserve ByteQuest dimensions. */
+html[data-theme="dark"] bq-root .minimal-header,
+html[data-theme="dark"] bq-root:has(:is(.native-catalog,.native-practice,.native-leaderboard)) .minimal-header{
+  background:rgba(14,14,18,.72)!important;
+  border-color:rgba(255,255,255,.10)!important;
+  box-shadow:0 20px 40px -15px rgba(0,0,0,.7),inset 0 1px rgba(255,255,255,.035)!important;
+  -webkit-backdrop-filter:blur(16px) saturate(130%)!important;
+  backdrop-filter:blur(16px) saturate(130%)!important;
+}
+html[data-theme="dark"] bq-root .minimal-nav a{
+  transition:color .2s ease,background-color .2s ease,border-color .2s ease;
+}
+html[data-theme="dark"] bq-root .minimal-nav a:hover{color:#f4f4f6!important}
+html[data-theme="dark"] bq-root .minimal-brand .wordmark-quest,
+html[data-theme="dark"] bq-root:has(:is(.native-catalog,.native-practice,.native-leaderboard)) .minimal-brand .wordmark-quest{
+  color:#34d399!important;
+}
+html[data-theme="dark"] bq-root .native-account-menu,
+html[data-theme="dark"] bq-root .native-chat-dialog{
+  background:#14141a!important;border-color:rgba(255,255,255,.16)!important;
+  box-shadow:0 30px 70px rgba(0,0,0,.7)!important;
+  -webkit-backdrop-filter:blur(16px);
+  backdrop-filter:blur(16px);
+  animation:bq-pop .25s cubic-bezier(.22,1,.36,1) both;
+}
+html[data-theme="dark"] bq-root .profile-dropdown,
+html[data-theme="dark"] bq-root .native-compact-find,
+html[data-theme="dark"] bq-root .native-chat-wrapper .message-button{
+  background:#14141a!important;border-color:rgba(255,255,255,.10)!important;
+}
+html[data-theme="dark"] bq-root .native-chat-wrapper .message-button:hover,
+html[data-theme="dark"] bq-root .profile-dropdown:hover{
+  border-color:rgba(255,255,255,.22)!important;
+  box-shadow:0 6px 20px rgba(0,0,0,.22);
+}
+
+/* Consistent card surfaces across existing pages. No grid, sizing or text edits. */
+html[data-theme="dark"] bq-root :is(.white-card,.person-card,.studio-access-panel,.studio-editor,.preview-note){
+  background:#0e0e12!important;border-color:rgba(255,255,255,.08)!important;
+}
+html[data-theme="dark"] bq-root :is(.bqp-panel,.bqp-access,.person-card,.white-card){
+  border-color:rgba(255,255,255,.08)!important;
+  background:#0e0e12!important;
+}
+html[data-theme="dark"] bq-root :is(.bqp-panel,.person-card,.white-card){
+  transition:transform .3s cubic-bezier(.22,1,.36,1),border-color .3s ease,box-shadow .3s ease;
+}
+@media (hover:hover) and (pointer:fine){
+ html[data-theme="dark"] bq-root :is(.bqp-panel,.person-card):hover{
+   transform:translateY(-3px);
+   border-color:rgba(255,255,255,.18)!important;
+   box-shadow:0 14px 38px -22px rgba(0,0,0,.7);
+ }
+}
+/* Specificity intentionally matches the old screenshot-specific overrides. */
+html[data-theme="dark"] bq-root #mapView.native-catalog .quest-grid{
+  background:#0e0e12!important;border-color:rgba(255,255,255,.08)!important;
+  box-shadow:0 12px 36px -28px rgba(0,0,0,.65)!important;
+}
+html[data-theme="dark"] bq-root #mapView.native-catalog .problem-table{
+  background:#0e0e12!important;
+}
+html[data-theme="dark"] bq-root #mapView.native-catalog .problem-table th{
+  background:#14141a!important;color:#9898a6!important;
+  border-bottom-color:rgba(255,255,255,.08)!important;
+}
+html[data-theme="dark"] bq-root #mapView.native-catalog .problem-table td{
+  background:#0e0e12!important;border-bottom-color:rgba(255,255,255,.065)!important;
+  color:#f4f4f6!important;
+  transition:background-color .22s ease;
+}
+html[data-theme="dark"] bq-root #mapView.native-catalog .problem-table tbody tr:hover td{
+  background:#18181e!important;
+}
+html[data-theme="dark"] bq-root #mapView.native-catalog .search-box,
+html[data-theme="dark"] bq-root #mapView.native-catalog .filters select,
+html[data-theme="dark"] bq-root #mapView.native-catalog .catalog-refresh,
+html[data-theme="dark"] bq-root #mapView.native-catalog .company-overflow-count{
+  background:#14141a!important;border-color:rgba(255,255,255,.10)!important;
+}
+html[data-theme="dark"] bq-root #mapView.native-catalog .search-box:focus-within{
+  border-color:rgba(52,211,153,.65)!important;box-shadow:0 0 0 3px rgba(52,211,153,.10)!important;
+}
+html[data-theme="dark"] bq-root #mapView.native-catalog .section-heading h2,
+html[data-theme="dark"] bq-root .native-leaderboard .leader-heading h1,
+html[data-theme="dark"] bq-root .native-practice .problem-title-row h3{
+  color:#f4f4f6!important;
+}
+html[data-theme="dark"] bq-root #mapView.native-catalog .section-heading .soft-pill{
+  background:rgba(255,255,255,.025)!important;border-color:rgba(255,255,255,.08)!important;
+}
+html[data-theme="dark"] bq-root #mapView.native-catalog .problem-table .problem-title.is-solved,
+html[data-theme="dark"] bq-root #mapView.native-catalog .catalog-solved{
+  color:#34d399!important;
+}
+
+/* Coding workspace: charcoal editorial surfaces without disturbing the editor,
+   transparent textarea/syntax overlay, pane sizes or submission mechanics. */
+html[data-theme="dark"] bq-root .native-practice .lab{
+  background:#0e0e12!important;border-color:rgba(255,255,255,.09)!important;
+  box-shadow:0 15px 45px -35px rgba(0,0,0,.8)!important;
+}
+html[data-theme="dark"] bq-root .native-practice :is(.problem-pane,.native-learning-content,.editor-pane){
+  background:#0e0e12!important;border-color:rgba(255,255,255,.08)!important;
+}
+html[data-theme="dark"] bq-root .native-practice :is(.pane-tabs,.editor-top,.editor-status,.test-header,.runbar){
+  background:#14141a!important;border-color:rgba(255,255,255,.08)!important;
+}
+html[data-theme="dark"] bq-root .native-practice :is(.example-card,.test-panel,.test-detail,.hint-bar){
+  background:#14141a!important;border-color:rgba(255,255,255,.08)!important;
+}
+html[data-theme="dark"] bq-root .native-practice .native-editor-area{
+  background:#0e0e12!important;
+}
+html[data-theme="dark"] bq-root .native-practice :is(.code-gutter,.code-stage,.editor-body){
+  background:#0e0e12!important;
+}
+html[data-theme="dark"] bq-root .native-practice .pane-tabs button.active:after{
+  background:#34d399!important;
+}
+html[data-theme="dark"] bq-root .native-practice .runbar .button.secondary{
+  background:#14141a!important;color:#f4f4f6!important;
+  border-color:rgba(255,255,255,.12)!important;
+}
+html[data-theme="dark"] bq-root .native-practice .runbar .button.primary,
+html[data-theme="dark"] bq-root .button.primary,
+html[data-theme="dark"] bq-root .bqp-button.primary{
+  background:#e4e4e7!important;border-color:#e4e4e7!important;color:#070709!important;
+  transition:transform .2s ease,box-shadow .2s ease,opacity .2s ease!important;
+}
+@media(hover:hover) and (pointer:fine){
+ html[data-theme="dark"] bq-root :is(.button.primary,.bqp-button.primary):hover:not(:disabled){
+   transform:translateY(-2px);
+   box-shadow:0 12px 30px -10px rgba(255,255,255,.23)!important;
+ }
+}
+html[data-theme="dark"] bq-root :is(button,select,input,textarea):focus-visible,
+html[data-theme="dark"] bq-root a:focus-visible{
+  outline:2px solid #34d399;outline-offset:3px;
+}
+
+/* Leaderboard: restrained table, near-black panels, preserve gold/silver/bronze. */
+html[data-theme="dark"] bq-root .native-leaderboard .leader-summary,
+html[data-theme="dark"] bq-root .native-leaderboard .leader-table-wrap{
+  background:#0e0e12!important;border-color:rgba(255,255,255,.08)!important;
+  box-shadow:0 12px 36px -30px rgba(0,0,0,.7)!important;
+}
+html[data-theme="dark"] bq-root .native-leaderboard .leader-tabs,
+html[data-theme="dark"] bq-root .native-leaderboard .leader-tools :is(select,button){
+  background:#14141a!important;border-color:rgba(255,255,255,.10)!important;
+}
+html[data-theme="dark"] bq-root .native-leaderboard .leader-tabs button[aria-selected=true]{
+  background:#202027!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)!important;
+}
+html[data-theme="dark"] bq-root .native-leaderboard .leader-table{
+  background:#0e0e12!important;
+}
+html[data-theme="dark"] bq-root .native-leaderboard .leader-table th{
+  background:#14141a!important;border-bottom-color:rgba(255,255,255,.08)!important;
+}
+html[data-theme="dark"] bq-root .native-leaderboard .leader-table td{
+  background:#0e0e12!important;border-top-color:rgba(255,255,255,.065)!important;
+  transition:background-color .22s ease;
+}
+html[data-theme="dark"] bq-root .native-leaderboard .leader-table tbody tr:hover td{
+  background:#18181e!important;
+}
+html[data-theme="dark"] bq-root .native-leaderboard .leader-table tbody tr.your-ranking td{
+  background:#11201b!important;
+}
+html[data-theme="dark"] bq-root .native-leaderboard .leader-table tbody tr.your-ranking:hover td{
+  background:#182b24!important;
+}
+html[data-theme="dark"] bq-root .native-leaderboard .leader-table tbody tr.your-ranking td:first-child{
+  box-shadow:inset 3px 0 0 #34d399!important;
+}
+
+/* Profile: preserve stats and calendar values, add the reference's serif
+   treatment to numbers only (never change labels or user-provided text). */
+html[data-theme="dark"] bq-root .bqp-metrics strong:not(.bqp-streak){
+  font-family:'Instrument Serif',Georgia,serif;
+  font-weight:400;
+}
+html[data-theme="dark"] bq-root :is(.bqp-presence,.native-online,.preview-pulse){
+  background:#34d399!important;box-shadow:0 0 10px rgba(52,211,153,.55)!important;
+  animation:bq-presence 2.4s ease-in-out infinite;
+}
+html[data-theme="dark"] bq-root .bqp-award{
+  transition:transform .3s cubic-bezier(.22,1,.36,1),filter .3s ease;
+}
+@media(hover:hover) and (pointer:fine){
+ html[data-theme="dark"] bq-root .bqp-award:hover{transform:translateY(-3px);filter:brightness(1.08)}
+}
+html[data-theme="dark"] bq-root .bqp-calendar-cell{
+  transition:border-color .18s ease,filter .18s ease;
+}
+html[data-theme="dark"] bq-root .bqp-calendar-cell.accepted{
+  background:#137e58;border-color:#137e58;
+}
+html[data-theme="dark"] bq-root .bqp-calendar-cell.accepted:hover{filter:brightness(1.22)}
+/* Animate in page sections only once, not whole lists or large code editors. */
+html[data-theme="dark"] bq-root :is(
+  .native-catalog .section-heading,.native-leaderboard .leader-heading,
+  .bqp-overview,.bqp-achievements,.native-practice .lab,
+  .native-find .section-heading,.native-studio .section-heading,
+  .submission-heading
+){animation:bq-enter .65s cubic-bezier(.22,1,.36,1) both}
+html[data-theme="dark"] bq-root :is(
+  .native-catalog .quest-grid,.native-leaderboard .leader-summary,
+  .native-leaderboard .leader-table-wrap,.bqp-panel
+){animation:bq-enter .7s cubic-bezier(.22,1,.36,1) both;animation-delay:.08s}
+html[data-theme="dark"] bq-root :is(
+  .native-account-menu,.native-chat-dialog
+){transform-origin:top right}
+
+@keyframes bq-enter{
+  from{opacity:.65;transform:translate3d(0,14px,0)}
+  to{opacity:1;transform:translate3d(0,0,0)}
+}
+@keyframes bq-pop{
+  from{opacity:.45;transform:translate3d(0,-6px,0) scale(.985)}
+  to{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+@keyframes bq-presence{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:.5;transform:scale(.86)}
+}
+@media(prefers-reduced-motion:reduce){
+ html[data-theme="dark"] bq-root :is(
+   .native-catalog .section-heading,.native-catalog .quest-grid,
+   .native-leaderboard .leader-heading,.native-leaderboard .leader-summary,
+   .native-leaderboard .leader-table-wrap,.bqp-overview,.bqp-achievements,
+   .bqp-panel,.native-practice .lab,.native-find .section-heading,
+   .native-studio .section-heading,.submission-heading,
+   .native-account-menu,.native-chat-dialog,.bqp-presence,.native-online,
+   .preview-pulse,.bqp-award
+ ){animation:none!important;transition:none!important;transform:none!important}
+ html[data-theme="dark"] bq-root *{scroll-behavior:auto!important}
+}
+
+/* Mouse-following, non-interactive spotlight. Pointer properties are written
+   outside Angular's zone to keep navigation and the editor responsive. */
+@media(hover:hover) and (pointer:fine){
+ html[data-theme="dark"] bq-root :is(.bqp-panel,.person-card,.leader-summary,.studio-access-panel){
+   position:relative;
+ }
+ html[data-theme="dark"] bq-root :is(.bqp-panel,.person-card,.leader-summary,.studio-access-panel)::before{
+   content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+   background:radial-gradient(440px circle at var(--bq-pointer-x,50%) var(--bq-pointer-y,50%),rgba(255,255,255,.065),transparent 55%);
+   opacity:0;transition:opacity .3s ease;z-index:0;
+ }
+ html[data-theme="dark"] bq-root :is(.bqp-panel,.person-card,.leader-summary,.studio-access-panel):hover::before{
+   opacity:1;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ html[data-theme="dark"] bq-root :is(.bqp-panel,.person-card,.leader-summary,.studio-access-panel)::before{
+   transition:none!important;
+ }
+}

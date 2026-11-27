@@ -1,0 +1,161 @@
+/* Alignment and decorative reward layer, appended AFTER calendar-year.css.
+   The values are the current server-backed solved, points and streak numbers. */
+.community-page #profileContent .profile-overview .social-stats.profile-metrics{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  align-items:start!important;
+  gap:8px clamp(10px,2.1vw,32px)!important;
+  justify-content:end!important;
+  padding:0!important;
+}
+.community-page #profileContent .profile-overview .profile-metrics .social-stat{
+  align-items:flex-end!important;
+  text-align:right!important;
+  justify-content:flex-start!important;
+  gap:7px!important;
+  padding:0!important;
+  min-width:0;
+}
+.community-page #profileContent .profile-overview .profile-metrics .metric-label{
+  display:block!important;
+  align-self:flex-end!important;
+  font:500 11px/1.45 var(--font-sans)!important;
+  white-space:nowrap;
+  margin:0!important;
+}
+.community-page #profileContent .profile-overview .profile-metrics .social-stat b{
+  display:block!important;
+  font:600 clamp(32px,3.15vw,46px)/1.04 var(--font-sans)!important;
+  font-variant-numeric:tabular-nums lining-nums!important;
+  letter-spacing:-.055em!important;
+  white-space:nowrap;
+  margin:0!important;
+  padding:0!important;
+  color:var(--text)!important;
+}
+.community-page #profileContent .profile-overview .profile-metrics .metric-solved b{
+  color:var(--accent)!important;
+}
+.community-page #profileContent .profile-overview .profile-metrics .social-stat b small{
+  font:400 clamp(11px,1vw,14px)/1.1 var(--font-sans)!important;
+  color:var(--muted)!important;
+  letter-spacing:0!important;
+  white-space:nowrap;
+}
+.community-page #profileContent .profile-overview .profile-metrics .metric-caption{
+  text-align:right!important;
+  align-self:flex-end!important;
+  max-width:15ch;
+  font:400 10px/1.55 var(--font-sans)!important;
+  margin:0!important;
+}
+/* A restrained, warm, moving flame only on a nonzero streak; the number stays legible. */
+.community-page #profileContent .profile-overview .streak-count{
+  display:inline-flex!important;
+  align-items:baseline;
+  justify-content:flex-end;
+  gap:3px;
+}
+.community-page #profileContent .profile-overview .streak-count.is-burning .streak-digits{
+  color:#ed842c;
+  background:linear-gradient(112deg,#efae53 0%,#e97422 27%,#ed5936 50%,#f6b65b 73%,#e97223 100%);
+  background-size:210% 100%;
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  animation:bq-streak-text 3s ease-in-out infinite;
+}
+@keyframes bq-streak-text{
+  0%,100%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+}
+/* Current-streak achievements: show every threshold, earn only when reached.
+   A broken streak does not pretend to be a lifetime-record badge. */
+.community-page #profileContent .profile-overview .profile-metrics .streak-milestones{
+  grid-column:1/-1;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+  gap:5px;
+  min-width:0;
+  margin:4px 0 0;
+}
+.community-page #profileContent .streak-milestone-heading{
+  margin-right:5px;
+  color:var(--muted);
+  font:500 9px/1.4 var(--font-sans);
+}
+.community-page #profileContent .streak-milestone{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  padding:4px 6px;
+  border-radius:6px;
+  border:1px solid var(--border);
+  background:transparent;
+  color:var(--muted);
+  font:600 10px/1.15 var(--font-mono);
+  white-space:nowrap;
+}
+.community-page #profileContent .streak-milestone svg{
+  width:12px;height:12px;flex:0 0 12px;
+}
+.community-page #profileContent .streak-milestone.is-locked{opacity:.52}
+.community-page #profileContent .streak-milestone.is-earned{
+  opacity:1;
+  background:color-mix(in srgb,var(--surface) 86%,#ffd992);
+  border-color:color-mix(in srgb,var(--border) 60%,#dfad5b);
+  color:#ad7628;
+}
+.community-page #profileContent .streak-milestone.is-earned[data-tier="2"]{color:#8b98a8;border-color:#9ba7b25c}
+.community-page #profileContent .streak-milestone.is-earned[data-tier="3"]{color:#c18a18;border-color:#d6a44b7a}
+.community-page #profileContent .streak-milestone.is-earned[data-tier="4"]{color:#128667;border-color:#2da78377}
+/* Only verified active users get a green blinking presence dot. Offline users
+   retain their textual last-seen indication and never receive a green glow. */
+.community-page #profileContent .profile-username-line .presence.online .presence-radar{
+  display:inline-block;
+  width:9px;height:9px;
+  margin:0 5px 0 3px;
+  border:0;border-radius:50%;
+  background:#12b981!important;
+  box-shadow:0 0 0 1px #13b98122,0 0 8px #13b98170!important;
+  animation:bq-online-blink 1.65s ease-in-out infinite;
+}
+.community-page #profileContent .profile-username-line .presence.online .presence-radar::before,
+.community-page #profileContent .profile-username-line .presence.online .presence-radar::after{
+  content:none!important;
+  display:none!important;
+  animation:none!important;
+}
+.community-page .friend-alert-dot{
+  background:#12b981!important;
+  box-shadow:0 0 7px #12b98165!important;
+}
+@keyframes bq-online-blink{
+  0%,100%{opacity:1;box-shadow:0 0 0 1px #13b98122,0 0 8px #13b98170}
+  50%{opacity:.35;box-shadow:0 0 0 1px #13b98111,0 0 3px #13b98122}
+}
+@media(max-width:860px){
+  .community-page #profileContent .profile-overview .profile-metrics .metric-label{
+    white-space:normal;
+    text-align:right!important;
+  }
+  .community-page #profileContent .profile-overview .profile-metrics .streak-milestones{
+    justify-content:flex-end;
+  }
+}
+@media(max-width:620px){
+  .community-page #profileContent .profile-overview .profile-metrics .social-stat b{
+    font-size:clamp(27px,7.2vw,36px)!important;
+  }
+  .community-page #profileContent .profile-overview .profile-metrics .metric-label{font-size:9px!important}
+  .community-page #profileContent .profile-overview .profile-metrics .metric-caption{font-size:9px!important}
+  .community-page #profileContent .streak-milestone-heading{font-size:9px}
+  .community-page #profileContent .streak-milestone{font-size:9px;padding:4px 5px}
+}
+@media(prefers-reduced-motion:reduce){
+  .community-page #profileContent .profile-overview .streak-count.is-burning .streak-digits,
+  .community-page #profileContent .profile-username-line .presence.online .presence-radar{
+    animation:none!important;
+  }
+}
