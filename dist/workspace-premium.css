@@ -329,3 +329,15 @@ body.bq-dragging-editor{user-select:none!important;cursor:row-resize!important}
 #practiceView .test-panel .result-summary.failed{color:#e05260!important}
 #practiceView #customBtn[hidden]{display:none!important}
 @media(max-width:480px){#practiceView .case-comparison{grid-template-columns:minmax(0,1fr)}}
+
+#successDialog{width:min(420px,calc(100vw - 32px));padding:24px!important;border-radius:12px!important;background:var(--surface)!important;color:var(--text)!important;border:1px solid var(--border)!important;text-align:left}
+#successDialog .success-check{display:inline-grid;place-items:center;width:34px;height:34px;border:1px solid #269c66;border-radius:50%;color:#269c66;font-size:20px;margin-bottom:12px}
+#successDialog #successTitle{font:600 22px/1.3 var(--font-sans);margin:0 0 8px!important}
+#successDialog #successCopy{font:400 13px/1.6 var(--font-sans);color:var(--muted)!important;margin:0 0 14px!important}
+#successDialog .success-review{font-size:12px;margin:0 0 14px;color:var(--muted)}
+#successDialog .success-review summary{cursor:pointer}
+#successDialog .success-review .explain-label{margin-top:12px}
+#successDialog .success-actions{display:flex;gap:8px;border-top:1px solid var(--border);padding-top:14px}
+#successDialog .success-actions .button{flex:1;width:auto;margin:0!important;min-height:36px;padding:8px;font-size:12px}
+#successDialog .confidence-options button{background:var(--surface-2)!important;color:var(--text)!important;border:1px solid var(--border)!important}
+#successDialog .confidence-options button.selected{border-color:var(--text)!important}
